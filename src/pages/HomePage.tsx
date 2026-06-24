@@ -52,6 +52,13 @@ export default function HomePage({
 }: HomePageProps) {
   const [sortKey, setSortKey] = useState<SortKey>('default');
 
+  // Map category id -> name for card labels
+  const categoryNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const c of categories) m[c.id] = c.name;
+    return m;
+  }, [categories]);
+
   const filtered = useMemo(() => {
     const list = templates.filter(t => {
       const matchCategory = activeCategory === 'all' || t.category === activeCategory;
@@ -93,6 +100,8 @@ export default function HomePage({
       .slice(0, 6);
   }, [recentlyViewed, templates, activeCategory, searchQuery]);
 
+  const activeCategoryName = categoryNameMap[activeCategory] || '全部';
+
   return (
     <div className="page home-page">
       <Navbar
@@ -111,6 +120,15 @@ export default function HomePage({
       />
 
       <main className="home-page__content">
+        {!searchQuery && activeCategory === 'all' && (
+          <section className="hero">
+            <h1 className="hero__title">拼豆模板收集</h1>
+            <p className="hero__subtitle">
+              共收录 {templates.length} 个模板 · {categories.length - 1} 个分类 · 点击卡片查看色卡与网格
+            </p>
+          </section>
+        )}
+
         {recentTemplates.length > 0 && (
           <section className="recent-section">
             <h2 className="recent-section__title">最近浏览</h2>
@@ -132,7 +150,8 @@ export default function HomePage({
 
         <div className="home-page__toolbar">
           <span className="home-page__count">
-            共 {filtered.length} 个模板
+            {searchQuery ? `搜索「${searchQuery}」` : activeCategoryName}
+            <span className="home-page__count-num"> · {filtered.length} 个</span>
           </span>
           <label className="home-page__sort">
             <span className="home-page__sort-label">排序</span>
@@ -164,6 +183,8 @@ export default function HomePage({
                 onClick={() => {
                   window.location.hash = `template/${template.id}`;
                 }}
+                highlight={searchQuery}
+                categoryName={activeCategory === 'all' ? categoryNameMap[template.category] : undefined}
               />
             ))}
           </div>

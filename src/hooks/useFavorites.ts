@@ -49,5 +49,12 @@ export function useFavorites() {
     });
   }, []);
 
-  return { favorites, isFavorite, toggleFavorite, removeFavorite };
+  const clearFavorites = useCallback(() => {
+    setFavorites(() => {
+      saveFavorites([]);
+      return [];
+    });
+  }, []);
+
+  return { favorites, isFavorite, toggleFavorite, removeFavorite, clearFavorites };
 }

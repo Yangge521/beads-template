@@ -35,6 +35,15 @@ export default function Navbar({
     [onSearch]
   );
 
+  const handleClear = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setQuery('');
+    onSearch('');
+  }, [onSearch]);
+
   return (
     <nav className="navbar">
       <button className="navbar__brand" onClick={onNavigateHome}>
@@ -52,7 +61,7 @@ export default function Navbar({
           onChange={handleChange}
         />
         {query && (
-          <button className="navbar__search-clear" onClick={() => { setQuery(''); onSearch(''); }}>
+          <button className="navbar__search-clear" onClick={handleClear} aria-label="清除搜索">
             <X size={14} />
           </button>
         )}

@@ -53,6 +53,8 @@ export default function DetailPage({
   }
 
   const diffStyle = difficultyStyles[template.difficulty] || difficultyStyles.medium;
+  const rows = template.grid.length;
+  const cols = rows > 0 ? template.grid[0].length : 0;
   const zoomIn = () => setZoom(z => Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)));
   const zoomOut = () => setZoom(z => Math.max(MIN_ZOOM, +(z - ZOOM_STEP).toFixed(2)));
   const zoomReset = () => setZoom(1);
@@ -125,6 +127,10 @@ export default function DetailPage({
           <div className="detail-page__stat">
             <span className="detail-page__stat-value">{template.colors.length}</span>
             <span className="detail-page__stat-label">颜色数</span>
+          </div>
+          <div className="detail-page__stat">
+            <span className="detail-page__stat-value">{cols}×{rows}</span>
+            <span className="detail-page__stat-label">网格尺寸</span>
           </div>
         </div>
 

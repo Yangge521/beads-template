@@ -29,7 +29,7 @@ const allTemplates: BeadTemplate[] = [
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
-  const { favorites, isFavorite, toggleFavorite } = useFavorites();
+  const { favorites, isFavorite, toggleFavorite, clearFavorites } = useFavorites();
   const { recentlyViewed, addRecentlyViewed } = useRecentlyViewed();
 
   const [activeCategory, setActiveCategory] = useState('all');
@@ -116,6 +116,7 @@ function AppContent() {
         templates={allTemplates}
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
+        onClearFavorites={clearFavorites}
         onBack={goHome}
         onNavigate={handleNavigate}
       />
