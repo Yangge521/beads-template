@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2 } from 'lucide-react';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
@@ -38,6 +38,23 @@ export default function DetailPage({
   const [showTop, setShowTop] = useState(false);
   const [showGridLines, setShowGridLines] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    if (!template) return;
+    const url = `${window.location.origin}${window.location.pathname}#template/${template.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: template.name, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 1500);
+    } catch {
+      // 用户取消分享或剪贴板不可用，静默处理
+    }
+  }, [template]);
 
   const handleCopyHex = useCallback(async (hex: string) => {
     try {
@@ -117,7 +134,18 @@ export default function DetailPage({
           <ArrowLeft size={20} />
           返回
         </button>
-        <FavoriteButton favorite={isFavorite} size={28} onClick={onToggleFavorite} />
+        <div className="detail-page__header-actions">
+          <button
+            type="button"
+            className="detail-page__share-btn"
+            onClick={handleShare}
+            aria-label="分享链接"
+            title="分享链接"
+          >
+            {copiedLink ? <Check size={20} /> : <Share2 size={20} />}
+          </button>
+          <FavoriteButton favorite={isFavorite} size={28} onClick={onToggleFavorite} />
+        </div>
       </header>
 
       <div className="detail-page__body">

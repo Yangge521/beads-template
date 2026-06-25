@@ -121,6 +121,12 @@ export default function HomePage({
 
   const activeCategoryName = categoryNameMap[activeCategory] || '全部';
 
+  const handleClearFilters = () => {
+    setDifficulty('all');
+    setSortKey('default');
+    onClearFilters();
+  };
+
   return (
     <div className="page home-page">
       <Navbar
@@ -231,7 +237,7 @@ export default function HomePage({
             <p className="empty-state__title">没有找到匹配的模板</p>
             <p className="empty-state__desc">试试其他关键词或分类吧</p>
             {(searchQuery || activeCategory !== 'all' || difficulty !== 'all') && (
-              <button type="button" className="empty-state__action" onClick={onClearFilters}>
+              <button type="button" className="empty-state__action" onClick={handleClearFilters}>
                 清除筛选条件
               </button>
             )}

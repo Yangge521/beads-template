@@ -22,11 +22,27 @@ export default function Navbar({
 }: NavbarProps) {
   const [query, setQuery] = useState(searchQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // 当外部 searchQuery 变化时（如导航返回/清除筛选），同步内部输入框
   useEffect(() => {
     setQuery(searchQuery);
   }, [searchQuery]);
+
+  // 按 / 键聚焦搜索框
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== '/') return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,12 +77,17 @@ export default function Navbar({
       <div className="navbar__search">
         <Search size={16} className="navbar__search-icon" />
         <input
+          ref={inputRef}
           type="text"
           className="navbar__search-input"
           placeholder="搜索模板..."
           value={query}
           onChange={handleChange}
+          aria-label="搜索模板"
         />
+        {!query && (
+          <kbd className="navbar__search-hint" aria-hidden="true">/</kbd>
+        )}
         {query && (
           <button type="button" className="navbar__search-clear" onClick={handleClear} aria-label="清除搜索">
             <X size={14} />

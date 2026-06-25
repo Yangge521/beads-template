@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 const STORAGE_KEY = 'beads-recently-viewed';
 const MAX_ITEMS = 8;
@@ -22,6 +22,17 @@ function saveRecentlyViewed(ids: string[]) {
 
 export function useRecentlyViewed() {
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>(loadRecentlyViewed);
+
+  // 跨标签页同步：监听 storage 事件
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        setRecentlyViewed(loadRecentlyViewed());
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const addRecentlyViewed = useCallback((id: string) => {
     setRecentlyViewed(prev => {

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { FavoriteEntry } from '../types/bead';
 
 const STORAGE_KEY = 'beads-favorites';
@@ -26,6 +26,17 @@ function saveFavorites(ids: string[]) {
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
+
+  // 跨标签页同步：监听 storage 事件
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        setFavorites(loadFavorites());
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const isFavorite = useCallback((id: string) => {
     return favorites.includes(id);
