@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { useToast } from '../components/ToastContainer';
 
@@ -130,6 +130,13 @@ export default function DetailPage({
       showToast('复制失败', 'error');
     }
   }, [template, scheduleReset, showToast]);
+
+  // 打印用量清单：调用浏览器打印，配合 @media print 样式输出清单
+  const handlePrintList = useCallback(() => {
+    if (!template) return;
+    showToast('正在准备打印清单', 'info');
+    window.print();
+  }, [template, showToast]);
 
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
@@ -318,6 +325,16 @@ export default function DetailPage({
                 {copiedAll ? <Check size={14} /> : <ClipboardList size={14} />}
                 <span>{copiedAll ? '已复制' : '复制全部'}</span>
               </button>
+              <button
+                type="button"
+                className="detail-page__copy-all"
+                onClick={handlePrintList}
+                title="打印用量清单"
+                aria-label="打印用量清单"
+              >
+                <Printer size={14} />
+                <span>用量清单</span>
+              </button>
             </div>
           </div>
           <div className="detail-page__palette-grid">
@@ -358,6 +375,51 @@ export default function DetailPage({
             })}
           </div>
         </div>
+
+        {/* 打印专用用量清单：屏幕隐藏，仅 @media print 可见 */}
+        <section className="detail-page__print-list" aria-hidden="true">
+          <h1 className="detail-page__print-title">{template.name}</h1>
+          <p className="detail-page__print-meta">
+            总颗数：{beadCount} · 颜色数：{correctedColors.length} · 网格：{cols}×{rows} ·
+            难度：{diffStyle.label} · 来源：{template.source}
+          </p>
+          <table className="detail-page__print-table">
+            <thead>
+              <tr>
+                <th>色块</th>
+                <th>色号</th>
+                <th>名称</th>
+                <th>数量</th>
+                <th>占比</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedColors.map((color, i) => (
+                <tr key={i}>
+                  <td>
+                    <span
+                      className="detail-page__print-swatch"
+                      style={{ backgroundColor: color.hex }}
+                    />
+                  </td>
+                  <td>{color.hex}</td>
+                  <td>{color.name}</td>
+                  <td>{color.count} 颗</td>
+                  <td>
+                    {beadCount > 0 ? ((color.count / beadCount) * 100).toFixed(1) : '0'}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={3}>合计</td>
+                <td>{beadCount} 颗</td>
+                <td>{correctedColors.length} 种颜色</td>
+              </tr>
+            </tfoot>
+          </table>
+        </section>
 
         <div className="detail-page__source">
           <span className="detail-page__source-label">来源：</span>

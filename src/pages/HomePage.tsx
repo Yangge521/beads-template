@@ -1,14 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { BeadTemplate, Category } from '../types/bead';
 import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
 import TemplateCard from '../components/TemplateCard';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 
 export type SortKey = 'default' | 'name' | 'beads-asc' | 'beads-desc' | 'difficulty';
 export type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
 export type GridSizeFilter = 'all' | 'small' | 'medium' | 'large';
-
 const difficultyOrder: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
 
 function getGridMaxDim(t: BeadTemplate): number {
@@ -63,6 +62,8 @@ interface HomePageProps {
   onDifficultyChange: (d: DifficultyFilter) => void;
   gridSize: GridSizeFilter;
   onGridSizeChange: (s: GridSizeFilter) => void;
+  colorFilter: string | null;
+  onColorFilterChange: (hex: string | null) => void;
 }
 
 export default function HomePage({
@@ -88,6 +89,8 @@ export default function HomePage({
   onDifficultyChange,
   gridSize,
   onGridSizeChange,
+  colorFilter,
+  onColorFilterChange,
 }: HomePageProps) {
 
   // Map category id -> name for card labels
@@ -109,12 +112,13 @@ export default function HomePage({
       const matchCategory = activeCategory === 'all' || t.category === activeCategory;
       const matchDifficulty = difficulty === 'all' || t.difficulty === difficulty;
       const matchGrid = matchGridSize(t, gridSize);
+      const matchColor = !colorFilter || t.colors.some(c => c.hex.toLowerCase() === colorFilter.toLowerCase());
       const matchSearch =
         !searchQuery ||
         t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
         t.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCategory && matchDifficulty && matchGrid && matchSearch;
+      return matchCategory && matchDifficulty && matchGrid && matchColor && matchSearch;
     });
 
     const sorted = [...list];
@@ -136,7 +140,7 @@ export default function HomePage({
         break;
     }
     return sorted;
-  }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize]);
+  }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize, colorFilter]);
 
   // Recently viewed templates (exclude those filtered out by current search/category)
   const recentTemplates = useMemo(() => {
@@ -149,10 +153,46 @@ export default function HomePage({
 
   const activeCategoryName = categoryNameMap[activeCategory] || '全部';
 
+  // 收集所有模板中出现过的颜色（去重，按 hex 排序），用于颜色筛选
+  const availableColors = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of templates) {
+      for (const c of t.colors) {
+        if (!map.has(c.hex)) map.set(c.hex, c.name);
+      }
+    }
+    return Array.from(map.entries())
+      .map(([hex, name]) => ({ hex, name }))
+      .sort((a, b) => a.hex.localeCompare(b.hex));
+  }, [templates]);
+
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const colorFilterRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部或按 ESC 关闭颜色筛选下拉
+  useEffect(() => {
+    if (!colorPickerOpen) return;
+    const onPointer = (e: PointerEvent) => {
+      if (colorFilterRef.current && !colorFilterRef.current.contains(e.target as Node)) {
+        setColorPickerOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setColorPickerOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [colorPickerOpen]);
+
   const handleClearFilters = () => {
     onDifficultyChange('all');
     onSortKeyChange('default');
     onGridSizeChange('all');
+    onColorFilterChange(null);
     onClearFilters();
   };
 
@@ -226,6 +266,74 @@ export default function HomePage({
                 </button>
               ))}
             </div>
+            <div className="color-filter" ref={colorFilterRef}>
+              <div className="color-filter__trigger">
+                <button
+                  type="button"
+                  className={`color-filter__btn ${colorFilter ? 'color-filter__btn--active' : ''}`}
+                  onClick={() => setColorPickerOpen(v => !v)}
+                  aria-haspopup="true"
+                  aria-expanded={colorPickerOpen}
+                  aria-label="按颜色筛选"
+                >
+                  {colorFilter ? (
+                    <span
+                      className="color-filter__swatch"
+                      style={{ backgroundColor: colorFilter }}
+                    />
+                  ) : (
+                    <span className="color-filter__swatch color-filter__swatch--rainbow" />
+                  )}
+                  <span className="color-filter__label">{colorFilter ? '颜色' : '按颜色'}</span>
+                </button>
+                {colorFilter && (
+                  <button
+                    type="button"
+                    className="color-filter__clear"
+                    onClick={() => onColorFilterChange(null)}
+                    aria-label="清除颜色筛选"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+              {colorPickerOpen && (
+                <div className="color-filter__dropdown" role="dialog" aria-label="选择颜色">
+                  <div className="color-filter__dropdown-header">
+                    <span>选择颜色筛选</span>
+                    <button
+                      type="button"
+                      className="color-filter__dropdown-close"
+                      onClick={() => setColorPickerOpen(false)}
+                      aria-label="关闭"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="color-filter__grid">
+                    {availableColors.map(c => (
+                      <button
+                        key={c.hex}
+                        type="button"
+                        className={`color-filter__option ${colorFilter === c.hex ? 'color-filter__option--active' : ''}`}
+                        onClick={() => {
+                          onColorFilterChange(c.hex);
+                          setColorPickerOpen(false);
+                        }}
+                        title={`${c.name} ${c.hex}`}
+                        aria-label={`${c.name} ${c.hex}`}
+                      >
+                        <span
+                          className="color-filter__option-color"
+                          style={{ backgroundColor: c.hex }}
+                        />
+                        <span className="color-filter__option-name">{c.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <label className="home-page__sort">
               <span className="home-page__sort-label">尺寸</span>
               <div className="home-page__sort-select">
@@ -283,7 +391,7 @@ export default function HomePage({
             <p className="empty-state__icon">🔍</p>
             <p className="empty-state__title">没有找到匹配的模板</p>
             <p className="empty-state__desc">试试其他关键词或分类吧</p>
-            {(searchQuery || activeCategory !== 'all' || difficulty !== 'all' || gridSize !== 'all') && (
+            {(searchQuery || activeCategory !== 'all' || difficulty !== 'all' || gridSize !== 'all' || colorFilter) && (
               <button type="button" className="empty-state__action" onClick={handleClearFilters}>
                 清除筛选条件
               </button>

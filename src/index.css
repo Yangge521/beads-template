@@ -1012,6 +1012,172 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   font-weight: 500;
 }
 
+/* Color filter */
+.color-filter {
+  position: relative;
+}
+
+.color-filter__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.color-filter__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.color-filter__btn:hover {
+  border-color: var(--text-h);
+}
+
+.color-filter__btn--active {
+  border-color: var(--text-h);
+  background: var(--bg);
+}
+
+.color-filter__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  background-size: 200% 200%;
+}
+
+.color-filter__swatch--rainbow {
+  background: linear-gradient(
+    45deg,
+    #ff0000 0%, #ff8c00 16%, #ffff00 33%,
+    #00ff00 50%, #00ffff 66%, #0000ff 83%, #ff00ff 100%
+  );
+}
+
+.color-filter__label {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.color-filter__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--bg);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.color-filter__clear:hover {
+  background: var(--text-h);
+}
+
+.color-filter__dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  width: 280px;
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.color-filter__dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.color-filter__dropdown-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.color-filter__dropdown-close:hover {
+  background: var(--code-bg);
+}
+
+.color-filter__grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.color-filter__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.color-filter__option:hover {
+  background: var(--code-bg);
+}
+
+.color-filter__option--active {
+  border-color: var(--text-h);
+  background: var(--code-bg);
+}
+
+.color-filter__option-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.color-filter__option-name {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Detail page pager */
 .detail-page__pager {
   display: flex;
@@ -1347,14 +1513,22 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
 }
 
 /* ===== 打印优化 ===== */
+/* 打印专用用量清单：屏幕隐藏 */
+.detail-page__print-list {
+  display: none;
+}
+
 @media print {
   .navbar,
   .category-filter,
   .detail-page__header,
   .detail-page__pixel-controls,
   .detail-page__copy-all,
+  .detail-page__palette,
   .detail-page__pager,
   .detail-page__shortcuts,
+  .detail-page__related,
+  .detail-page__source,
   .back-to-top,
   .favorites-page__header,
   .favorites-page__clear,
@@ -1380,6 +1554,55 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   }
 
   .pixel-cell {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* 用量清单打印样式 */
+  .detail-page__print-list {
+    display: block !important;
+    margin-top: 16px;
+  }
+
+  .detail-page__print-title {
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+
+  .detail-page__print-meta {
+    font-size: 12px;
+    margin: 0 0 12px;
+    color: #555;
+  }
+
+  .detail-page__print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .detail-page__print-table th,
+  .detail-page__print-table td {
+    border: 1px solid #999;
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  .detail-page__print-table th {
+    background: #eee;
+    font-weight: 600;
+  }
+
+  .detail-page__print-table tfoot td {
+    font-weight: 600;
+    background: #f5f5f5;
+  }
+
+  .detail-page__print-swatch {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 1px solid #999;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }

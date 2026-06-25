@@ -56,6 +56,7 @@ function AppContent() {
   const [sortKey, setSortKey] = useState<SortKey>('default');
   const [difficulty, setDifficulty] = useState<DifficultyFilter>('all');
   const [gridSize, setGridSize] = useState<GridSizeFilter>('all');
+  const [colorFilter, setColorFilter] = useState<string | null>(null);
 
   // Apply theme to document
   useEffect(() => {
@@ -115,6 +116,7 @@ function AppContent() {
     setSortKey('default');
     setDifficulty('all');
     setGridSize('all');
+    setColorFilter(null);
   }, []);
 
   // Parse route
@@ -233,6 +235,8 @@ function AppContent() {
       onDifficultyChange={setDifficulty}
       gridSize={gridSize}
       onGridSizeChange={setGridSize}
+      colorFilter={colorFilter}
+      onColorFilterChange={setColorFilter}
     />
   );
 }
