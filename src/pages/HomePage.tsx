@@ -50,6 +50,7 @@ interface HomePageProps {
   favorites: string[];
   onToggleFavorite: (id: string) => void;
   onNavigateFavorites: () => void;
+  onNavigateColorRef: () => void;
   onNavigateHome: () => void;
   theme: string;
   onToggleTheme: () => void;
@@ -74,6 +75,7 @@ export default function HomePage({
   favorites,
   onToggleFavorite,
   onNavigateFavorites,
+  onNavigateColorRef,
   onNavigateHome,
   theme,
   onToggleTheme,
@@ -162,6 +164,7 @@ export default function HomePage({
         theme={theme}
         favoritesCount={favorites.length}
         onNavigateFavorites={onNavigateFavorites}
+        onNavigateColorRef={onNavigateColorRef}
         onNavigateHome={onNavigateHome}
         searchQuery={searchQuery}
       />

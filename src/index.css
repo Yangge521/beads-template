@@ -1520,3 +1520,232 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   font-family: monospace;
   color: var(--text-h);
 }
+
+/* ===== 色卡参考页 ===== */
+.color-ref-page__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.color-ref-page__back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.color-ref-page__back:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.color-ref-page__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.color-ref-page__content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.color-ref-page__intro {
+  margin-bottom: 20px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.color-ref-page__hint {
+  margin-top: 4px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.color-ref-page__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.color-ref-page__search-icon {
+  color: var(--text);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.color-ref-page__search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-h);
+  font-size: 14px;
+  outline: none;
+}
+
+.color-ref-page__count {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.color-ref-page__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.color-ref-page__group-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--accent);
+  display: inline-block;
+}
+
+.color-ref-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.color-ref-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  text-align: left;
+}
+
+.color-ref-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.color-ref-card__color {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.color-ref-card__check {
+  color: #fff;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.6));
+}
+
+.color-ref-card__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.color-ref-card__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.color-ref-card__hex {
+  font-size: 12px;
+  color: var(--text);
+  font-family: monospace;
+}
+
+.color-ref-card__brands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.color-ref-card__brand {
+  font-size: 10px;
+  color: var(--text);
+  opacity: 0.7;
+  background: var(--code-bg);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.color-ref-card__copy {
+  color: var(--text);
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+.color-ref-card:hover .color-ref-card__copy {
+  opacity: 0.8;
+}
+
+.color-ref-page__legend {
+  margin-top: 40px;
+  padding: 16px;
+  background: var(--code-bg);
+  border-radius: 8px;
+}
+
+.color-ref-page__legend-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin-bottom: 8px;
+}
+
+.color-ref-page__legend-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.color-ref-page__note {
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.7;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .color-ref-page__grid {
+    grid-template-columns: 1fr;
+  }
+}

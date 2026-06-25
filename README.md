@@ -1,11 +1,11 @@
 # 拼豆收集 · Perler Bead Templates
 
-一个专注于拼豆（Perler Bead / 熨斗豆）图案模板的收集与浏览应用。收录动漫、游戏、食物、动物、节日等多种分类的像素图案，提供色卡、网格预览、收藏与快捷搜索，方便拼豆爱好者对照制作。
+一个专注于拼豆（Perler Bead / 熨斗豆）图案模板的收集与浏览应用。收录动漫、游戏、明星、食物、动物、节日等多种分类的像素图案，提供色卡、网格预览、收藏与快捷搜索，并内置拼豆色卡参考库（Perler/Artkal/Hama 三大品牌色号对照），方便拼豆爱好者对照制作与选购。
 
 ## 功能特性
 
 ### 浏览与搜索
-- **分类筛选**：9 大分类（动漫、游戏、食物、动物、节日、Kawaii、3D 立体、表情包），带分类图标与数量计数
+- **分类筛选**：10 大分类（动漫、游戏、明星、食物、动物、节日、Kawaii、3D 立体、表情包），带分类图标与数量计数
 - **难度筛选**：简单 / 中等 / 困难 三级过滤
 - **网格尺寸筛选**：小型 (≤16) / 中型 (17-29) / 大型 (≥30) 按网格最大边长过滤
 - **多维度排序**：默认、名称、颗数升降序、难度
@@ -29,6 +29,13 @@
 
 ### 通知与反馈
 - **Toast 通知**：收藏/取消收藏、复制色号、复制全部色卡、分享链接等操作均有即时反馈通知，自动消失，支持手动关闭
+
+### 色卡参考库
+- **品牌色号对照**：收录 Perler、Artkal、Hama 三大主流拼豆品牌常用色号
+- **12 大色系**：白色系、黑色系、红色系、粉色系、橙色系、黄色系、绿色系、青色系、蓝色系、紫色系、棕色系、肤色系
+- **搜索过滤**：支持按颜色名称、HEX 色号、品牌编号搜索
+- **一键复制**：点击色块即可复制色号，Toast 即时反馈
+- **选购指南**：品牌说明与色差提示，帮助用户选购拼豆材料
 
 ### 体验优化
 - **明暗主题**：跟随系统或手动切换，首屏无闪烁（FOUC），跨标签页同步，`color-scheme` 正确切换表单控件外观
@@ -70,15 +77,17 @@ src/
 ├── context/
 │   └── ThemeContext.tsx     # 主题上下文（明/暗 + 跨标签页同步）
 ├── data/                # 模板数据（JSON）
-│   ├── animals.json  anime.json  emoji.json  food.json
+│   ├── animals.json  anime.json  celebrity.json  emoji.json  food.json
 │   └── holiday.json  kawaii.json  pixel3d.json  pokemon.json
+│   └── beadColors.ts     # 拼豆色卡参考库（Perler/Artkal/Hama 色号对照）
 ├── hooks/
 │   ├── useFavorites.ts       # 收藏管理（单一数据源 + localStorage + 跨标签页同步）
 │   └── useRecentlyViewed.ts  # 最近浏览（localStorage + 跨标签页同步）
 ├── pages/
 │   ├── HomePage.tsx         # 首页（分类/搜索/排序/难度/尺寸/最近浏览）
 │   ├── DetailPage.tsx       # 详情页（缩放/色卡排序/分享/上下页）
-│   └── FavoritesPage.tsx    # 收藏页（排序/清空确认弹窗）
+│   ├── FavoritesPage.tsx    # 收藏页（排序/清空确认弹窗）
+│   └── ColorReferencePage.tsx # 色卡参考页（品牌色号对照/搜索/复制）
 ├── types/
 │   └── bead.ts              # 类型定义
 ├── utils/

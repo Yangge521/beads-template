@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, Heart, Sun, Moon, X } from 'lucide-react';
+import { Search, Heart, Sun, Moon, X, Palette } from 'lucide-react';
 
 interface NavbarProps {
   onSearch: (q: string) => void;
@@ -7,6 +7,7 @@ interface NavbarProps {
   theme: string;
   favoritesCount: number;
   onNavigateFavorites: () => void;
+  onNavigateColorRef: () => void;
   onNavigateHome: () => void;
   searchQuery: string;
 }
@@ -17,6 +18,7 @@ export default function Navbar({
   theme,
   favoritesCount,
   onNavigateFavorites,
+  onNavigateColorRef,
   onNavigateHome,
   searchQuery,
 }: NavbarProps) {
@@ -106,6 +108,16 @@ export default function Navbar({
       </div>
 
       <div className="navbar__actions">
+        <button
+          type="button"
+          className="navbar__action-btn"
+          onClick={onNavigateColorRef}
+          aria-label="色卡参考"
+          title="色卡参考"
+        >
+          <Palette size={20} />
+        </button>
+
         <button
           type="button"
           className="navbar__action-btn"

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage, { type SortKey, type DifficultyFilter, type GridSizeFilter } from './pages/HomePage';
 import DetailPage from './pages/DetailPage';
 import FavoritesPage from './pages/FavoritesPage';
+import ColorReferencePage from './pages/ColorReferencePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer, { useToast } from './components/ToastContainer';
 import ShortcutHelp from './components/ShortcutHelp';
@@ -12,6 +13,7 @@ import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
 import animeData from './data/anime.json';
 import pokemonData from './data/pokemon.json';
+import celebrityData from './data/celebrity.json';
 import foodData from './data/food.json';
 import animalsData from './data/animals.json';
 import holidayData from './data/holiday.json';
@@ -22,6 +24,7 @@ import emojiData from './data/emoji.json';
 const allTemplates: BeadTemplate[] = [
   ...animeData,
   ...pokemonData,
+  ...celebrityData,
   ...foodData,
   ...animalsData,
   ...holidayData,
@@ -102,6 +105,10 @@ function AppContent() {
     window.location.hash = 'favorites';
   }, []);
 
+  const handleNavigateColorRef = useCallback(() => {
+    window.location.hash = 'colors';
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setActiveCategory('all');
     setSearchQuery('');
@@ -161,6 +168,8 @@ function AppContent() {
       document.title = `${currentTemplate.name} - 拼豆收集`;
     } else if (routeParts[0] === 'favorites') {
       document.title = `我的收藏 - 拼豆收集`;
+    } else if (routeParts[0] === 'colors') {
+      document.title = `色卡参考 - 拼豆收集`;
     } else if (routeParts[0] === 'template') {
       document.title = `模板不存在 - 拼豆收集`;
     } else {
@@ -196,6 +205,10 @@ function AppContent() {
     );
   }
 
+  if (routeParts[0] === 'colors') {
+    return <ColorReferencePage onBack={goHome} />;
+  }
+
   return (
     <HomePage
       templates={allTemplates}
@@ -207,6 +220,7 @@ function AppContent() {
       favorites={favorites}
       onToggleFavorite={toggleFavorite}
       onNavigateFavorites={handleNavigateFavorites}
+      onNavigateColorRef={handleNavigateColorRef}
       onNavigateHome={goHome}
       theme={theme}
       onToggleTheme={toggleTheme}

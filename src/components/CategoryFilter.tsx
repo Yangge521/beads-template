@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
 import type { Category } from '../types/bead';
 import {
-  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile,
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star,
   type LucideIcon,
 } from 'lucide-react';
 
 const iconMap: Record<string, LucideIcon> = {
-  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile,
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star,
 };
 
 interface CategoryFilterProps {
