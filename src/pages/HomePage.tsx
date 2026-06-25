@@ -6,6 +6,7 @@ import TemplateCard from '../components/TemplateCard';
 import { ChevronDown } from 'lucide-react';
 
 type SortKey = 'default' | 'name' | 'beads-asc' | 'beads-desc' | 'difficulty';
+type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
 
 const difficultyOrder: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
 
@@ -15,6 +16,13 @@ const sortOptions: { value: SortKey; label: string }[] = [
   { value: 'beads-asc', label: '颗数 ↑' },
   { value: 'beads-desc', label: '颗数 ↓' },
   { value: 'difficulty', label: '难度' },
+];
+
+const difficultyFilters: { value: DifficultyFilter; label: string; color: string }[] = [
+  { value: 'all', label: '全部', color: 'var(--text)' },
+  { value: 'easy', label: '简单', color: '#22c55e' },
+  { value: 'medium', label: '中等', color: '#f59e0b' },
+  { value: 'hard', label: '困难', color: '#ef4444' },
 ];
 
 interface HomePageProps {
@@ -51,6 +59,7 @@ export default function HomePage({
   onNavigate,
 }: HomePageProps) {
   const [sortKey, setSortKey] = useState<SortKey>('default');
+  const [difficulty, setDifficulty] = useState<DifficultyFilter>('all');
 
   // Map category id -> name for card labels
   const categoryNameMap = useMemo(() => {
@@ -59,15 +68,23 @@ export default function HomePage({
     return m;
   }, [categories]);
 
+  // 分类计数（不受搜索/难度影响，反映每个分类的总量）
+  const categoryCounts = useMemo(() => {
+    const m: Record<string, number> = { all: templates.length };
+    for (const t of templates) m[t.category] = (m[t.category] || 0) + 1;
+    return m;
+  }, [templates]);
+
   const filtered = useMemo(() => {
     const list = templates.filter(t => {
       const matchCategory = activeCategory === 'all' || t.category === activeCategory;
+      const matchDifficulty = difficulty === 'all' || t.difficulty === difficulty;
       const matchSearch =
         !searchQuery ||
         t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
         t.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCategory && matchSearch;
+      return matchCategory && matchDifficulty && matchSearch;
     });
 
     const sorted = [...list];
@@ -89,7 +106,7 @@ export default function HomePage({
         break;
     }
     return sorted;
-  }, [templates, activeCategory, searchQuery, sortKey]);
+  }, [templates, activeCategory, searchQuery, sortKey, difficulty]);
 
   // Recently viewed templates (exclude those filtered out by current search/category)
   const recentTemplates = useMemo(() => {
@@ -117,6 +134,7 @@ export default function HomePage({
         categories={categories}
         active={activeCategory}
         onSelect={onCategorySelect}
+        counts={categoryCounts}
       />
 
       <main className="home-page__content">
@@ -153,23 +171,38 @@ export default function HomePage({
             {searchQuery ? `搜索「${searchQuery}」` : activeCategoryName}
             <span className="home-page__count-num"> · {filtered.length} 个</span>
           </span>
-          <label className="home-page__sort">
-            <span className="home-page__sort-label">排序</span>
-            <div className="home-page__sort-select">
-              <select
-                value={sortKey}
-                onChange={e => setSortKey(e.target.value as SortKey)}
-                aria-label="排序方式"
-              >
-                {sortOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="home-page__sort-icon" />
+          <div className="home-page__toolbar-right">
+            <div className="difficulty-filter" role="group" aria-label="难度筛选">
+              {difficultyFilters.map(d => (
+                <button
+                  key={d.value}
+                  type="button"
+                  className={`difficulty-pill ${difficulty === d.value ? 'difficulty-pill--active' : ''}`}
+                  onClick={() => setDifficulty(d.value)}
+                  style={difficulty === d.value ? { borderColor: d.color, color: d.color } : {}}
+                >
+                  {d.label}
+                </button>
+              ))}
             </div>
-          </label>
+            <label className="home-page__sort">
+              <span className="home-page__sort-label">排序</span>
+              <div className="home-page__sort-select">
+                <select
+                  value={sortKey}
+                  onChange={e => setSortKey(e.target.value as SortKey)}
+                  aria-label="排序方式"
+                >
+                  {sortOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="home-page__sort-icon" />
+              </div>
+            </label>
+          </div>
         </div>
 
         {filtered.length > 0 ? (

@@ -13,9 +13,11 @@ export default function FavoriteButton({
 }: FavoriteButtonProps) {
   return (
     <button
+      type="button"
       className={`favorite-btn ${favorite ? 'favorite-btn--active' : ''}`}
       onClick={onClick}
       aria-label={favorite ? '取消收藏' : '加入收藏'}
+      aria-pressed={favorite}
       style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       <Heart

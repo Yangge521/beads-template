@@ -1,20 +1,23 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ZoomIn, ZoomOut, Check, Copy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy } from 'lucide-react';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
   onBack: () => void;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  onNavigateTemplate?: (id: string) => void;
+  prevTemplate?: BeadTemplate | null;
+  nextTemplate?: BeadTemplate | null;
 }
 
-const difficultyStyles: Record<string, { bg: string; text: string; label: string }> = {
-  easy: { bg: '#22c55e', text: '#fff', label: '简单' },
-  medium: { bg: '#f59e0b', text: '#fff', label: '中等' },
-  hard: { bg: '#ef4444', text: '#fff', label: '困难' },
+const difficultyStyles: Record<string, { bg: string; label: string }> = {
+  easy: { bg: '#22c55e', label: '简单' },
+  medium: { bg: '#f59e0b', label: '中等' },
+  hard: { bg: '#ef4444', label: '困难' },
 };
 
 const MIN_ZOOM = 0.5;
@@ -26,9 +29,13 @@ export default function DetailPage({
   onBack,
   isFavorite,
   onToggleFavorite,
+  onNavigateTemplate,
+  prevTemplate,
+  nextTemplate,
 }: DetailPageProps) {
   const [zoom, setZoom] = useState(1);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
+  const [showTop, setShowTop] = useState(false);
 
   const handleCopyHex = useCallback(async (hex: string) => {
     try {
@@ -39,6 +46,34 @@ export default function DetailPage({
       // Clipboard API may be unavailable; fail silently
     }
   }, []);
+
+  // 切换模板时重置缩放并滚动到顶部
+  useEffect(() => {
+    setZoom(1);
+    window.scrollTo({ top: 0 });
+  }, [template?.id]);
+
+  // 滚动监听，控制返回顶部按钮显示
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // 左右箭头键切换模板
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!onNavigateTemplate) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'ArrowLeft' && prevTemplate) {
+        onNavigateTemplate(prevTemplate.id);
+      } else if (e.key === 'ArrowRight' && nextTemplate) {
+        onNavigateTemplate(nextTemplate.id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [prevTemplate, nextTemplate, onNavigateTemplate]);
 
   if (!template) {
     return (
@@ -62,7 +97,7 @@ export default function DetailPage({
   return (
     <div className="page detail-page">
       <header className="detail-page__header">
-        <button className="detail-page__back" onClick={onBack}>
+        <button type="button" className="detail-page__back" onClick={onBack}>
           <ArrowLeft size={20} />
           返回
         </button>
@@ -89,6 +124,7 @@ export default function DetailPage({
         <div className="detail-page__pixel-wrapper">
           <div className="detail-page__pixel-controls">
             <button
+              type="button"
               className="detail-page__zoom-btn"
               onClick={zoomOut}
               disabled={zoom <= MIN_ZOOM}
@@ -97,6 +133,7 @@ export default function DetailPage({
               <ZoomOut size={16} />
             </button>
             <button
+              type="button"
               className="detail-page__zoom-btn detail-page__zoom-label"
               onClick={zoomReset}
               aria-label="重置缩放"
@@ -104,6 +141,7 @@ export default function DetailPage({
               {Math.round(zoom * 100)}%
             </button>
             <button
+              type="button"
               className="detail-page__zoom-btn"
               onClick={zoomIn}
               disabled={zoom >= MAX_ZOOM}
@@ -140,6 +178,7 @@ export default function DetailPage({
             {template.colors.map((color, i) => (
               <button
                 key={i}
+                type="button"
                 className="detail-page__swatch"
                 onClick={() => handleCopyHex(color.hex)}
                 title={`复制 ${color.hex}`}
@@ -165,7 +204,45 @@ export default function DetailPage({
           <span className="detail-page__source-label">来源：</span>
           <span className="detail-page__source-value">{template.source}</span>
         </div>
+
+        {(prevTemplate || nextTemplate) && (
+          <nav className="detail-page__pager" aria-label="模板切换">
+            {prevTemplate ? (
+              <button
+                type="button"
+                className="detail-page__pager-btn detail-page__pager-btn--prev"
+                onClick={() => onNavigateTemplate?.(prevTemplate.id)}
+              >
+                <ArrowLeft size={16} />
+                <span className="detail-page__pager-label">上一个</span>
+                <span className="detail-page__pager-name">{prevTemplate.name}</span>
+              </button>
+            ) : <span className="detail-page__pager-spacer" />}
+            {nextTemplate ? (
+              <button
+                type="button"
+                className="detail-page__pager-btn detail-page__pager-btn--next"
+                onClick={() => onNavigateTemplate?.(nextTemplate.id)}
+              >
+                <span className="detail-page__pager-label">下一个</span>
+                <span className="detail-page__pager-name">{nextTemplate.name}</span>
+                <ArrowRight size={16} />
+              </button>
+            ) : <span className="detail-page__pager-spacer" />}
+          </nav>
+        )}
       </div>
+
+      {showTop && (
+        <button
+          type="button"
+          className="back-to-top"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="返回顶部"
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 }

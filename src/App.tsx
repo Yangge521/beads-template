@@ -92,6 +92,20 @@ function AppContent() {
     ? allTemplates.find(t => t.id === templateId) || null
     : null;
 
+  // 计算上一个/下一个模板（基于全量列表顺序）
+  const currentIdx = currentTemplate
+    ? allTemplates.findIndex(t => t.id === currentTemplate.id)
+    : -1;
+  const prevTemplate = currentIdx > 0 ? allTemplates[currentIdx - 1] : null;
+  const nextTemplate =
+    currentIdx >= 0 && currentIdx < allTemplates.length - 1
+      ? allTemplates[currentIdx + 1]
+      : null;
+
+  const handleNavigateTemplate = useCallback((id: string) => {
+    window.location.hash = `template/${id}`;
+  }, []);
+
   // Track recently viewed when entering a valid detail page
   useEffect(() => {
     if (currentTemplate) {
@@ -106,6 +120,9 @@ function AppContent() {
         onBack={goHome}
         isFavorite={currentTemplate ? isFavorite(currentTemplate.id) : false}
         onToggleFavorite={currentTemplate ? () => toggleFavorite(currentTemplate.id) : () => {}}
+        onNavigateTemplate={handleNavigateTemplate}
+        prevTemplate={prevTemplate}
+        nextTemplate={nextTemplate}
       />
     );
   }
