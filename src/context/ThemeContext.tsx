@@ -59,6 +59,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mql.removeEventListener('change', onChange);
   }, []);
 
+  // 跨标签页同步：监听 storage 事件
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        const stored = e.newValue as ThemeMode | null;
+        if (stored === 'light' || stored === 'dark') {
+          setTheme(stored);
+        }
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}

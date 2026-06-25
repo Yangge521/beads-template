@@ -52,14 +52,6 @@ export function useFavorites() {
     });
   }, []);
 
-  const removeFavorite = useCallback((id: string) => {
-    setFavorites(prev => {
-      const next = prev.filter(f => f !== id);
-      saveFavorites(next);
-      return next;
-    });
-  }, []);
-
   const clearFavorites = useCallback(() => {
     setFavorites(() => {
       saveFavorites([]);
@@ -67,5 +59,5 @@ export function useFavorites() {
     });
   }, []);
 
-  return { favorites, isFavorite, toggleFavorite, removeFavorite, clearFavorites };
+  return { favorites, isFavorite, toggleFavorite, clearFavorites };
 }

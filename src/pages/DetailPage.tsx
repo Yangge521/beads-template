@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
 import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2 } from 'lucide-react';
+import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
@@ -68,7 +69,8 @@ export default function DetailPage({
 
   const handleCopyAllColors = useCallback(async () => {
     if (!template) return;
-    const text = template.colors
+    const colors = getCorrectedColors(template);
+    const text = colors
       .map(c => `${c.hex}\t${c.name}\t${c.count}颗`)
       .join('\n');
     try {
@@ -97,10 +99,16 @@ export default function DetailPage({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!onNavigateTemplate) return;
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // 忽略带修饰键的组合（如 Cmd+ArrowLeft 浏览器后退）
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return;
       if (e.key === 'ArrowLeft' && prevTemplate) {
+        e.preventDefault();
         onNavigateTemplate(prevTemplate.id);
       } else if (e.key === 'ArrowRight' && nextTemplate) {
+        e.preventDefault();
         onNavigateTemplate(nextTemplate.id);
       }
     };
@@ -123,6 +131,12 @@ export default function DetailPage({
   const diffStyle = difficultyStyles[template.difficulty] || difficultyStyles.medium;
   const rows = template.grid.length;
   const cols = rows > 0 ? template.grid[0].length : 0;
+  const beadCount = useMemo(() => getBeadCount(template), [template]);
+  const correctedColors = useMemo(() => getCorrectedColors(template), [template]);
+  const maxColorCount = useMemo(
+    () => correctedColors.reduce((m, c) => Math.max(m, c.count), 0),
+    [correctedColors]
+  );
   const zoomIn = () => setZoom(z => Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)));
   const zoomOut = () => setZoom(z => Math.max(MIN_ZOOM, +(z - ZOOM_STEP).toFixed(2)));
   const zoomReset = () => setZoom(1);
@@ -206,18 +220,18 @@ export default function DetailPage({
           </div>
           <div className="detail-page__pixel" style={{ overflow: 'auto' }}>
             <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-              <PixelGrid grid={template.grid} colors={template.colors} showGridLines={showGridLines} />
+              <PixelGrid grid={template.grid} colors={correctedColors} showGridLines={showGridLines} />
             </div>
           </div>
         </div>
 
         <div className="detail-page__stats">
           <div className="detail-page__stat">
-            <span className="detail-page__stat-value">{template.beadCount}</span>
+            <span className="detail-page__stat-value">{beadCount}</span>
             <span className="detail-page__stat-label">总颗数</span>
           </div>
           <div className="detail-page__stat">
-            <span className="detail-page__stat-value">{template.colors.length}</span>
+            <span className="detail-page__stat-value">{correctedColors.length}</span>
             <span className="detail-page__stat-label">颜色数</span>
           </div>
           <div className="detail-page__stat">
@@ -240,28 +254,40 @@ export default function DetailPage({
             </button>
           </div>
           <div className="detail-page__palette-grid">
-            {template.colors.map((color, i) => (
-              <button
-                key={i}
-                type="button"
-                className="detail-page__swatch"
-                onClick={() => handleCopyHex(color.hex)}
-                title={`复制 ${color.hex}`}
-              >
-                <div
-                  className="detail-page__swatch-color"
-                  style={{ backgroundColor: color.hex }}
-                />
-                <div className="detail-page__swatch-info">
-                  <span className="detail-page__swatch-name">{color.name}</span>
-                  <span className="detail-page__swatch-hex">{color.hex}</span>
-                </div>
-                <span className="detail-page__swatch-count">{color.count}</span>
-                <span className="detail-page__swatch-copy">
-                  {copiedHex === color.hex ? <Check size={14} /> : <Copy size={14} />}
-                </span>
-              </button>
-            ))}
+            {correctedColors.map((color, i) => {
+              const pct = maxColorCount > 0 ? (color.count / maxColorCount) * 100 : 0;
+              const ratio = beadCount > 0 ? ((color.count / beadCount) * 100).toFixed(1) : '0';
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className="detail-page__swatch"
+                  onClick={() => handleCopyHex(color.hex)}
+                  title={`复制 ${color.hex}`}
+                >
+                  <div
+                    className="detail-page__swatch-color"
+                    style={{ backgroundColor: color.hex }}
+                  />
+                  <div className="detail-page__swatch-info">
+                    <span className="detail-page__swatch-name">{color.name}</span>
+                    <span className="detail-page__swatch-hex">{color.hex}</span>
+                    <span
+                      className="detail-page__swatch-bar"
+                      style={{ width: `${pct}%`, backgroundColor: color.hex }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <span className="detail-page__swatch-count">
+                    {color.count}
+                    <span className="detail-page__swatch-pct">{ratio}%</span>
+                  </span>
+                  <span className="detail-page__swatch-copy">
+                    {copiedHex === color.hex ? <Check size={14} /> : <Copy size={14} />}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

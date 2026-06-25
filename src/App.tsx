@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import HomePage from './pages/HomePage';
 import DetailPage from './pages/DetailPage';
 import FavoritesPage from './pages/FavoritesPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { useFavorites } from './hooks/useFavorites';
 import { useRecentlyViewed } from './hooks/useRecentlyViewed';
@@ -51,7 +52,9 @@ function AppContent() {
   }, []);
 
   const goHome = useCallback(() => {
-    window.location.hash = '';
+    // 使用 history.pushState 避免 URL 残留 # 号
+    history.pushState(null, '', location.pathname);
+    setHash('/');
   }, []);
 
   // ESC key to go back from detail/favorites pages
@@ -69,16 +72,12 @@ function AppContent() {
     setActiveCategory(id);
   }, []);
 
-  const handleNavigate = useCallback((hash: string) => {
-    window.location.hash = hash;
+  const handleNavigate = useCallback((targetHash: string) => {
+    window.location.hash = targetHash;
   }, []);
 
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
-  }, []);
-
-  const handleNavigateHome = useCallback(() => {
-    window.location.hash = '';
   }, []);
 
   const handleNavigateFavorites = useCallback(() => {
@@ -156,7 +155,7 @@ function AppContent() {
       favorites={favorites}
       onToggleFavorite={toggleFavorite}
       onNavigateFavorites={handleNavigateFavorites}
-      onNavigateHome={handleNavigateHome}
+      onNavigateHome={goHome}
       theme={theme}
       onToggleTheme={toggleTheme}
       recentlyViewed={recentlyViewed}
@@ -168,8 +167,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

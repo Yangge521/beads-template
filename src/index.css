@@ -808,6 +808,20 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   animation: card-in 0.3s ease both;
 }
 
+/* 卡片入场动画错开（前 12 个，每个延迟 40ms） */
+.template-grid .template-card:nth-child(1) { animation-delay: 0ms; }
+.template-grid .template-card:nth-child(2) { animation-delay: 40ms; }
+.template-grid .template-card:nth-child(3) { animation-delay: 80ms; }
+.template-grid .template-card:nth-child(4) { animation-delay: 120ms; }
+.template-grid .template-card:nth-child(5) { animation-delay: 160ms; }
+.template-grid .template-card:nth-child(6) { animation-delay: 200ms; }
+.template-grid .template-card:nth-child(7) { animation-delay: 240ms; }
+.template-grid .template-card:nth-child(8) { animation-delay: 280ms; }
+.template-grid .template-card:nth-child(9) { animation-delay: 320ms; }
+.template-grid .template-card:nth-child(10) { animation-delay: 360ms; }
+.template-grid .template-card:nth-child(11) { animation-delay: 400ms; }
+.template-grid .template-card:nth-child(12) { animation-delay: 440ms; }
+
 @keyframes card-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1151,4 +1165,123 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
 .detail-page__shortcuts-sep {
   color: var(--border);
   margin: 0 2px;
+}
+
+/* ===== 分类图标 ===== */
+.category-pill__icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.category-pill--active .category-pill__icon {
+  opacity: 1;
+}
+
+/* ===== 色卡占比条形图 ===== */
+.detail-page__swatch-info {
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-page__swatch-bar {
+  display: block;
+  height: 3px;
+  margin-top: 4px;
+  border-radius: 2px;
+  min-width: 2px;
+  opacity: 0.7;
+  transition: width 0.3s ease;
+}
+
+.detail-page__swatch-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.detail-page__swatch-pct {
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* ===== 收藏页排序 ===== */
+.favorites-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.favorites-page__sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.favorites-page__sort-label {
+  white-space: nowrap;
+}
+
+.favorites-page__sort select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 13px;
+  outline: none;
+}
+
+.favorites-page__sort select:focus {
+  border-color: var(--accent);
+}
+
+/* ===== ErrorBoundary ===== */
+.error-boundary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* ===== 打印优化 ===== */
+@media print {
+  .navbar,
+  .category-filter,
+  .detail-page__header,
+  .detail-page__pixel-controls,
+  .detail-page__copy-all,
+  .detail-page__pager,
+  .detail-page__shortcuts,
+  .back-to-top,
+  .favorites-page__header,
+  .favorites-page__clear,
+  .template-card__fav,
+  .hero,
+  .recent-section,
+  .home-page__toolbar {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .detail-page__body {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .detail-page__swatch {
+    break-inside: avoid;
+  }
+
+  .pixel-cell {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }

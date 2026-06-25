@@ -1,5 +1,13 @@
 import { useRef, useState, useEffect } from 'react';
 import type { Category } from '../types/bead';
+import {
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile,
+  type LucideIcon,
+} from 'lucide-react';
+
+const iconMap: Record<string, LucideIcon> = {
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile,
+};
 
 interface CategoryFilterProps {
   categories: Category[];
@@ -54,6 +62,7 @@ export default function CategoryFilter({
         {categories.map(cat => {
           const count = counts?.[cat.id];
           const isActive = active === cat.id;
+          const Icon = iconMap[cat.icon];
           return (
             <button
               key={cat.id}
@@ -63,6 +72,7 @@ export default function CategoryFilter({
               onClick={() => onSelect(cat.id)}
               title={cat.description}
             >
+              {Icon && <Icon size={14} className="category-pill__icon" />}
               <span>{cat.name}</span>
               {count !== undefined && (
                 <span className="category-pill__count">{count}</span>

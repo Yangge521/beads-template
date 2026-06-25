@@ -1,6 +1,7 @@
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from './PixelGrid';
 import FavoriteButton from './FavoriteButton';
+import { getBeadCount } from '../utils/beadStats';
 
 interface TemplateCardProps {
   template: BeadTemplate;
@@ -43,6 +44,7 @@ export default function TemplateCard({
   const diffStyle = difficultyStyles[template.difficulty] || difficultyStyles.medium;
   const rows = template.grid.length;
   const cols = rows > 0 ? template.grid[0].length : 0;
+  const beadCount = getBeadCount(template);
 
   // Show a thumbnail by using a smaller grid (max 10x10)
   const thumbRows = Math.min(rows, 10);
@@ -79,7 +81,7 @@ export default function TemplateCard({
           <Highlight text={template.name} query={highlight} />
         </h3>
         <div className="template-card__meta">
-          <span className="template-card__beads">{template.beadCount} 颗</span>
+          <span className="template-card__beads">{beadCount} 颗</span>
           <span className="template-card__dim">{cols}×{rows}</span>
           {categoryName && <span className="template-card__cat">{categoryName}</span>}
         </div>
