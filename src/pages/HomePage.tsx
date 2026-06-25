@@ -1,14 +1,29 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { BeadTemplate, Category } from '../types/bead';
 import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
 import TemplateCard from '../components/TemplateCard';
 import { ChevronDown } from 'lucide-react';
 
-type SortKey = 'default' | 'name' | 'beads-asc' | 'beads-desc' | 'difficulty';
-type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
+export type SortKey = 'default' | 'name' | 'beads-asc' | 'beads-desc' | 'difficulty';
+export type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
+export type GridSizeFilter = 'all' | 'small' | 'medium' | 'large';
 
 const difficultyOrder: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
+
+function getGridMaxDim(t: BeadTemplate): number {
+  const rows = t.grid.length;
+  const cols = rows > 0 ? t.grid[0].length : 0;
+  return Math.max(rows, cols);
+}
+
+function matchGridSize(t: BeadTemplate, size: GridSizeFilter): boolean {
+  if (size === 'all') return true;
+  const dim = getGridMaxDim(t);
+  if (size === 'small') return dim <= 16;
+  if (size === 'medium') return dim >= 17 && dim <= 29;
+  return dim >= 30;
+}
 
 const sortOptions: { value: SortKey; label: string }[] = [
   { value: 'default', label: '默认' },
@@ -41,6 +56,12 @@ interface HomePageProps {
   recentlyViewed: string[];
   onNavigate: (hash: string) => void;
   onClearFilters: () => void;
+  sortKey: SortKey;
+  onSortKeyChange: (key: SortKey) => void;
+  difficulty: DifficultyFilter;
+  onDifficultyChange: (d: DifficultyFilter) => void;
+  gridSize: GridSizeFilter;
+  onGridSizeChange: (s: GridSizeFilter) => void;
 }
 
 export default function HomePage({
@@ -59,9 +80,13 @@ export default function HomePage({
   recentlyViewed,
   onNavigate,
   onClearFilters,
+  sortKey,
+  onSortKeyChange,
+  difficulty,
+  onDifficultyChange,
+  gridSize,
+  onGridSizeChange,
 }: HomePageProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('default');
-  const [difficulty, setDifficulty] = useState<DifficultyFilter>('all');
 
   // Map category id -> name for card labels
   const categoryNameMap = useMemo(() => {
@@ -81,12 +106,13 @@ export default function HomePage({
     const list = templates.filter(t => {
       const matchCategory = activeCategory === 'all' || t.category === activeCategory;
       const matchDifficulty = difficulty === 'all' || t.difficulty === difficulty;
+      const matchGrid = matchGridSize(t, gridSize);
       const matchSearch =
         !searchQuery ||
         t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
         t.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchCategory && matchDifficulty && matchSearch;
+      return matchCategory && matchDifficulty && matchGrid && matchSearch;
     });
 
     const sorted = [...list];
@@ -108,7 +134,7 @@ export default function HomePage({
         break;
     }
     return sorted;
-  }, [templates, activeCategory, searchQuery, sortKey, difficulty]);
+  }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize]);
 
   // Recently viewed templates (exclude those filtered out by current search/category)
   const recentTemplates = useMemo(() => {
@@ -122,8 +148,9 @@ export default function HomePage({
   const activeCategoryName = categoryNameMap[activeCategory] || '全部';
 
   const handleClearFilters = () => {
-    setDifficulty('all');
-    setSortKey('default');
+    onDifficultyChange('all');
+    onSortKeyChange('default');
+    onGridSizeChange('all');
     onClearFilters();
   };
 
@@ -188,7 +215,7 @@ export default function HomePage({
                   key={d.value}
                   type="button"
                   className={`difficulty-pill ${difficulty === d.value ? 'difficulty-pill--active' : ''}`}
-                  onClick={() => setDifficulty(d.value)}
+                  onClick={() => onDifficultyChange(d.value)}
                   style={difficulty === d.value ? { borderColor: d.color, color: d.color } : {}}
                   aria-pressed={difficulty === d.value}
                 >
@@ -197,11 +224,27 @@ export default function HomePage({
               ))}
             </div>
             <label className="home-page__sort">
+              <span className="home-page__sort-label">尺寸</span>
+              <div className="home-page__sort-select">
+                <select
+                  value={gridSize}
+                  onChange={e => onGridSizeChange(e.target.value as GridSizeFilter)}
+                  aria-label="网格尺寸筛选"
+                >
+                  <option value="all">全部</option>
+                  <option value="small">小型 (≤16)</option>
+                  <option value="medium">中型 (17-29)</option>
+                  <option value="large">大型 (≥30)</option>
+                </select>
+                <ChevronDown size={14} className="home-page__sort-icon" />
+              </div>
+            </label>
+            <label className="home-page__sort">
               <span className="home-page__sort-label">排序</span>
               <div className="home-page__sort-select">
                 <select
                   value={sortKey}
-                  onChange={e => setSortKey(e.target.value as SortKey)}
+                  onChange={e => onSortKeyChange(e.target.value as SortKey)}
                   aria-label="排序方式"
                 >
                   {sortOptions.map(opt => (
@@ -237,7 +280,7 @@ export default function HomePage({
             <p className="empty-state__icon">🔍</p>
             <p className="empty-state__title">没有找到匹配的模板</p>
             <p className="empty-state__desc">试试其他关键词或分类吧</p>
-            {(searchQuery || activeCategory !== 'all' || difficulty !== 'all') && (
+            {(searchQuery || activeCategory !== 'all' || difficulty !== 'all' || gridSize !== 'all') && (
               <button type="button" className="empty-state__action" onClick={handleClearFilters}>
                 清除筛选条件
               </button>

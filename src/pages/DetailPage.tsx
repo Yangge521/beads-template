@@ -4,6 +4,7 @@ import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
 import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2 } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
+import { useToast } from '../components/ToastContainer';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
@@ -42,7 +43,9 @@ export default function DetailPage({
   const [showGridLines, setShowGridLines] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const { showToast } = useToast();
 
   // 所有 hooks 必须在提前 return 之前调用，避免违反 Rules of Hooks
   const beadCount = useMemo(() => (template ? getBeadCount(template) : 0), [template]);
@@ -54,6 +57,22 @@ export default function DetailPage({
     () => correctedColors.reduce((m, c) => Math.max(m, c.count), 0),
     [correctedColors]
   );
+  const sortedColors = useMemo(() => {
+    const list = [...correctedColors];
+    switch (colorSort) {
+      case 'name':
+        list.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
+        break;
+      case 'hex':
+        list.sort((a, b) => a.hex.localeCompare(b.hex));
+        break;
+      case 'count':
+      default:
+        list.sort((a, b) => b.count - a.count);
+        break;
+    }
+    return list;
+  }, [correctedColors, colorSort]);
 
   const scheduleReset = useCallback((setter: (v: boolean) => void) => {
     const t = setTimeout(() => setter(false), 1500);
@@ -79,20 +98,22 @@ export default function DetailPage({
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       scheduleReset(setCopiedLink);
+      showToast('链接已复制', 'success');
     } catch {
       // 用户取消分享或剪贴板不可用，静默处理
     }
-  }, [template, scheduleReset]);
+  }, [template, scheduleReset, showToast]);
 
   const handleCopyHex = useCallback(async (hex: string) => {
     try {
       await navigator.clipboard.writeText(hex);
       setCopiedHex(hex);
       scheduleReset(() => setCopiedHex(null));
+      showToast(`已复制 ${hex}`, 'success');
     } catch {
-      // Clipboard API may be unavailable; fail silently
+      showToast('复制失败', 'error');
     }
-  }, [scheduleReset]);
+  }, [scheduleReset, showToast]);
 
   const handleCopyAllColors = useCallback(async () => {
     if (!template) return;
@@ -104,10 +125,11 @@ export default function DetailPage({
       await navigator.clipboard.writeText(text);
       setCopiedAll(true);
       scheduleReset(setCopiedAll);
+      showToast(`已复制 ${colors.length} 种颜色`, 'success');
     } catch {
-      // fail silently
+      showToast('复制失败', 'error');
     }
-  }, [template, scheduleReset]);
+  }, [template, scheduleReset, showToast]);
 
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
@@ -156,11 +178,11 @@ export default function DetailPage({
   if (!template) {
     return (
       <div className="page detail-page">
-        <div className="empty-state">
+        <main id="main-content" className="empty-state">
           <p className="empty-state__icon">😕</p>
           <p className="empty-state__title">模板不存在</p>
           <p className="empty-state__desc">该模板可能已被移除</p>
-        </div>
+        </main>
       </div>
     );
   }
@@ -193,7 +215,7 @@ export default function DetailPage({
         </div>
       </header>
 
-      <div id="main-content" className="detail-page__body">
+      <main id="main-content" className="detail-page__body">
         <h1 className="detail-page__title">{template.name}</h1>
 
         <div className="detail-page__tags">
@@ -274,18 +296,32 @@ export default function DetailPage({
         <div className="detail-page__palette">
           <div className="detail-page__palette-header">
             <h2 className="detail-page__section-title">色卡（点击复制色号）</h2>
-            <button
-              type="button"
-              className="detail-page__copy-all"
-              onClick={handleCopyAllColors}
-              title="复制全部色卡"
-            >
-              {copiedAll ? <Check size={14} /> : <ClipboardList size={14} />}
-              <span>{copiedAll ? '已复制' : '复制全部'}</span>
-            </button>
+            <div className="detail-page__palette-actions">
+              <label className="detail-page__color-sort">
+                <span className="detail-page__color-sort-label">排序</span>
+                <select
+                  value={colorSort}
+                  onChange={e => setColorSort(e.target.value as 'count' | 'name' | 'hex')}
+                  aria-label="色卡排序方式"
+                >
+                  <option value="count">数量 ↓</option>
+                  <option value="name">名称</option>
+                  <option value="hex">色号</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                className="detail-page__copy-all"
+                onClick={handleCopyAllColors}
+                title="复制全部色卡"
+              >
+                {copiedAll ? <Check size={14} /> : <ClipboardList size={14} />}
+                <span>{copiedAll ? '已复制' : '复制全部'}</span>
+              </button>
+            </div>
           </div>
           <div className="detail-page__palette-grid">
-            {correctedColors.map((color, i) => {
+            {sortedColors.map((color, i) => {
               const pct = maxColorCount > 0 ? (color.count / maxColorCount) * 100 : 0;
               const ratio = beadCount > 0 ? ((color.count / beadCount) * 100).toFixed(1) : '0';
               return (
@@ -357,7 +393,7 @@ export default function DetailPage({
 
         {relatedTemplates.length > 0 && (
           <section className="detail-page__related" aria-label="相似模板推荐">
-            <h2 className="detail-page__section-title">相似模板</h2>
+            <h2 className="detail-page__section-title detail-page__section-title--related">相似模板</h2>
             <div className="detail-page__related-list">
               {relatedTemplates.map(rt => (
                 <button
@@ -381,7 +417,7 @@ export default function DetailPage({
           <span className="detail-page__shortcuts-sep">·</span>
           <kbd>Esc</kbd> 返回首页
         </div>
-      </div>
+      </main>
 
       {showTop && (
         <button

@@ -26,14 +26,13 @@ export default function CategoryFilter({
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
 
-  const updateScrollState = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanLeft(el.scrollLeft > 4);
-    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  };
-
   useEffect(() => {
+    const updateScrollState = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      setCanLeft(el.scrollLeft > 4);
+      setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    };
     updateScrollState();
     const el = scrollRef.current;
     if (!el) return;

@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import HomePage from './pages/HomePage';
+import HomePage, { type SortKey, type DifficultyFilter, type GridSizeFilter } from './pages/HomePage';
 import DetailPage from './pages/DetailPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer, { useToast } from './components/ToastContainer';
+import ShortcutHelp from './components/ShortcutHelp';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { useFavorites } from './hooks/useFavorites';
 import { useRecentlyViewed } from './hooks/useRecentlyViewed';
@@ -30,11 +32,27 @@ const allTemplates: BeadTemplate[] = [
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
-  const { favorites, isFavorite, toggleFavorite, clearFavorites } = useFavorites();
+  const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
   const { recentlyViewed, addRecentlyViewed } = useRecentlyViewed();
+  const { showToast } = useToast();
+
+  const toggleFavorite = useCallback((id: string) => {
+    const willAdd = !isFavorite(id);
+    toggleFav(id);
+    showToast(willAdd ? '已加入收藏' : '已取消收藏', willAdd ? 'success' : 'info');
+  }, [isFavorite, toggleFav, showToast]);
+
+  const handleClearFavoritesWithToast = useCallback(() => {
+    clearFavorites();
+    showToast('已清空收藏', 'info');
+  }, [clearFavorites, showToast]);
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  // 提升到 App 层：导航到详情/收藏页再返回时，筛选/排序状态得以保留
+  const [sortKey, setSortKey] = useState<SortKey>('default');
+  const [difficulty, setDifficulty] = useState<DifficultyFilter>('all');
+  const [gridSize, setGridSize] = useState<GridSizeFilter>('all');
 
   // Apply theme to document
   useEffect(() => {
@@ -87,6 +105,9 @@ function AppContent() {
   const handleClearFilters = useCallback(() => {
     setActiveCategory('all');
     setSearchQuery('');
+    setSortKey('default');
+    setDifficulty('all');
+    setGridSize('all');
   }, []);
 
   // Parse route
@@ -145,7 +166,7 @@ function AppContent() {
     } else {
       document.title = '拼豆收集 - Perler Bead Templates';
     }
-  }, [currentTemplate, routeParts]);
+  }, [currentTemplate, hash]);
 
   if (routeParts[0] === 'template' && routeParts[1]) {
     return (
@@ -168,7 +189,7 @@ function AppContent() {
         templates={allTemplates}
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
-        onClearFavorites={clearFavorites}
+        onClearFavorites={handleClearFavoritesWithToast}
         onBack={goHome}
         onNavigate={handleNavigate}
       />
@@ -192,6 +213,12 @@ function AppContent() {
       recentlyViewed={recentlyViewed}
       onNavigate={handleNavigate}
       onClearFilters={handleClearFilters}
+      sortKey={sortKey}
+      onSortKeyChange={setSortKey}
+      difficulty={difficulty}
+      onDifficultyChange={setDifficulty}
+      gridSize={gridSize}
+      onGridSizeChange={setGridSize}
     />
   );
 }
@@ -200,7 +227,10 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppContent />
+        <ToastContainer>
+          <AppContent />
+          <ShortcutHelp />
+        </ToastContainer>
       </ThemeProvider>
     </ErrorBoundary>
   );

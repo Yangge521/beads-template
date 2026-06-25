@@ -23,15 +23,28 @@ function Highlight({ text, query }: { text: string; query: string }) {
   if (!query) return <>{text}</>;
   const lower = text.toLowerCase();
   const q = query.toLowerCase();
-  const idx = lower.indexOf(q);
-  if (idx === -1) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark className="template-card__highlight">{text.slice(idx, idx + query.length)}</mark>
-      {text.slice(idx + query.length)}
-    </>
-  );
+  if (!q || lower.indexOf(q) === -1) return <>{text}</>;
+
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  let idx = lower.indexOf(q, cursor);
+  let key = 0;
+  while (idx !== -1) {
+    if (idx > cursor) {
+      parts.push(text.slice(cursor, idx));
+    }
+    parts.push(
+      <mark key={key++} className="template-card__highlight">
+        {text.slice(idx, idx + query.length)}
+      </mark>
+    );
+    cursor = idx + query.length;
+    idx = lower.indexOf(q, cursor);
+  }
+  if (cursor < text.length) {
+    parts.push(text.slice(cursor));
+  }
+  return <>{parts}</>;
 }
 
 function TemplateCard({

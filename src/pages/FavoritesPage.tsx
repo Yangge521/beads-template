@@ -33,7 +33,6 @@ export default function FavoritesPage({
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const modalRef = useRef<HTMLDivElement>(null);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
-  const clearBtnRef = useRef<HTMLButtonElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   const favoritedTemplates = useMemo(() => {
@@ -141,7 +140,6 @@ export default function FavoritesPage({
                 </select>
               </label>
               <button
-                ref={clearBtnRef}
                 type="button"
                 className="favorites-page__clear"
                 onClick={handleClearClick}

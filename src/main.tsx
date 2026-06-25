@@ -3,9 +3,17 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
+function handleSkip() {
+  const el = document.getElementById('main-content');
+  if (el) {
+    el.focus();
+    el.scrollIntoView({ block: 'start' });
+  }
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <a href="#main-content" className="skip-link">跳到主内容</a>
+    <button type="button" className="skip-link" onClick={handleSkip}>跳到主内容</button>
     <App />
   </StrictMode>,
 )
