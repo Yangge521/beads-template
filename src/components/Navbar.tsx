@@ -44,6 +44,16 @@ export default function Navbar({
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // 组件卸载时清理防抖定时器
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;

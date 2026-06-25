@@ -146,7 +146,7 @@ export default function HomePage({
         counts={categoryCounts}
       />
 
-      <main className="home-page__content">
+      <main id="main-content" className="home-page__content">
         {!searchQuery && activeCategory === 'all' && (
           <section className="hero">
             <h1 className="hero__title">拼豆模板收集</h1>
@@ -177,7 +177,7 @@ export default function HomePage({
         )}
 
         <div className="home-page__toolbar">
-          <span className="home-page__count">
+          <span className="home-page__count" aria-live="polite" aria-atomic="true">
             {searchQuery ? `搜索「${searchQuery}」` : activeCategoryName}
             <span className="home-page__count-num"> · {filtered.length} 个</span>
           </span>
@@ -190,6 +190,7 @@ export default function HomePage({
                   className={`difficulty-pill ${difficulty === d.value ? 'difficulty-pill--active' : ''}`}
                   onClick={() => setDifficulty(d.value)}
                   style={difficulty === d.value ? { borderColor: d.color, color: d.color } : {}}
+                  aria-pressed={difficulty === d.value}
                 >
                   {d.label}
                 </button>

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from './PixelGrid';
 import FavoriteButton from './FavoriteButton';
@@ -33,7 +34,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-export default function TemplateCard({
+function TemplateCard({
   template,
   isFavorite,
   onToggleFavorite,
@@ -99,3 +100,5 @@ export default function TemplateCard({
     </div>
   );
 }
+
+export default memo(TemplateCard);

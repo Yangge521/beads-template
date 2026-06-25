@@ -23,8 +23,8 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   handleReset = () => {
     this.setState({ hasError: false, message: undefined });
-    // 回到首页
-    history.pushState(null, '', location.pathname);
+    // 回到首页（replaceState 避免历史栈冗余）
+    history.replaceState(null, '', location.pathname);
     location.reload();
   };
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import HomePage from './pages/HomePage';
 import DetailPage from './pages/DetailPage';
 import FavoritesPage from './pages/FavoritesPage';
@@ -52,8 +52,8 @@ function AppContent() {
   }, []);
 
   const goHome = useCallback(() => {
-    // 使用 history.pushState 避免 URL 残留 # 号
-    history.pushState(null, '', location.pathname);
+    // 使用 replaceState 避免 URL 残留 # 号，且不增加历史栈
+    history.replaceState(null, '', location.pathname);
     setHash('/');
   }, []);
 
@@ -106,6 +106,23 @@ function AppContent() {
       ? allTemplates[currentIdx + 1]
       : null;
 
+  // 相似模板推荐：基于共同标签，排除当前模板，最多 4 个
+  const relatedTemplates = useMemo(() => {
+    if (!currentTemplate) return [];
+    const tags = new Set(currentTemplate.tags);
+    return allTemplates
+      .filter(t => t.id !== currentTemplate.id)
+      .map(t => ({
+        template: t,
+        score: t.tags.filter(tag => tags.has(tag)).length
+            + (t.category === currentTemplate.category ? 1 : 0),
+      }))
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4)
+      .map(x => x.template);
+  }, [currentTemplate]);
+
   const handleNavigateTemplate = useCallback((id: string) => {
     window.location.hash = `template/${id}`;
   }, []);
@@ -117,6 +134,19 @@ function AppContent() {
     }
   }, [currentTemplate, addRecentlyViewed]);
 
+  // 动态 document.title
+  useEffect(() => {
+    if (currentTemplate) {
+      document.title = `${currentTemplate.name} - 拼豆收集`;
+    } else if (routeParts[0] === 'favorites') {
+      document.title = `我的收藏 - 拼豆收集`;
+    } else if (routeParts[0] === 'template') {
+      document.title = `模板不存在 - 拼豆收集`;
+    } else {
+      document.title = '拼豆收集 - Perler Bead Templates';
+    }
+  }, [currentTemplate, routeParts]);
+
   if (routeParts[0] === 'template' && routeParts[1]) {
     return (
       <DetailPage
@@ -127,6 +157,7 @@ function AppContent() {
         onNavigateTemplate={handleNavigateTemplate}
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}
+        relatedTemplates={relatedTemplates}
       />
     );
   }

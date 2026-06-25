@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
@@ -13,6 +13,7 @@ interface DetailPageProps {
   onNavigateTemplate?: (id: string) => void;
   prevTemplate?: BeadTemplate | null;
   nextTemplate?: BeadTemplate | null;
+  relatedTemplates?: BeadTemplate[];
 }
 
 const difficultyStyles: Record<string, { bg: string; label: string }> = {
@@ -33,6 +34,7 @@ export default function DetailPage({
   onNavigateTemplate,
   prevTemplate,
   nextTemplate,
+  relatedTemplates = [],
 }: DetailPageProps) {
   const [zoom, setZoom] = useState(1);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
@@ -40,6 +42,31 @@ export default function DetailPage({
   const [showGridLines, setShowGridLines] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // 所有 hooks 必须在提前 return 之前调用，避免违反 Rules of Hooks
+  const beadCount = useMemo(() => (template ? getBeadCount(template) : 0), [template]);
+  const correctedColors = useMemo(
+    () => (template ? getCorrectedColors(template) : []),
+    [template]
+  );
+  const maxColorCount = useMemo(
+    () => correctedColors.reduce((m, c) => Math.max(m, c.count), 0),
+    [correctedColors]
+  );
+
+  const scheduleReset = useCallback((setter: (v: boolean) => void) => {
+    const t = setTimeout(() => setter(false), 1500);
+    timersRef.current.push(t);
+  }, []);
+
+  // 组件卸载时清理所有定时器
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(t => clearTimeout(t));
+      timersRef.current = [];
+    };
+  }, []);
 
   const handleShare = useCallback(async () => {
     if (!template) return;
@@ -51,21 +78,21 @@ export default function DetailPage({
       }
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 1500);
+      scheduleReset(setCopiedLink);
     } catch {
       // 用户取消分享或剪贴板不可用，静默处理
     }
-  }, [template]);
+  }, [template, scheduleReset]);
 
   const handleCopyHex = useCallback(async (hex: string) => {
     try {
       await navigator.clipboard.writeText(hex);
       setCopiedHex(hex);
-      setTimeout(() => setCopiedHex(null), 1500);
+      scheduleReset(() => setCopiedHex(null));
     } catch {
       // Clipboard API may be unavailable; fail silently
     }
-  }, []);
+  }, [scheduleReset]);
 
   const handleCopyAllColors = useCallback(async () => {
     if (!template) return;
@@ -76,11 +103,11 @@ export default function DetailPage({
     try {
       await navigator.clipboard.writeText(text);
       setCopiedAll(true);
-      setTimeout(() => setCopiedAll(false), 1500);
+      scheduleReset(setCopiedAll);
     } catch {
       // fail silently
     }
-  }, [template]);
+  }, [template, scheduleReset]);
 
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
@@ -88,11 +115,21 @@ export default function DetailPage({
     window.scrollTo({ top: 0 });
   }, [template?.id]);
 
-  // 滚动监听，控制返回顶部按钮显示
+  // 滚动监听，控制返回顶部按钮显示（rAF 节流）
   useEffect(() => {
-    const onScroll = () => setShowTop(window.scrollY > 400);
+    let rafId: number | null = null;
+    const onScroll = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        setShowTop(window.scrollY > 400);
+        rafId = null;
+      });
+    };
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // 左右箭头键切换模板
@@ -131,12 +168,6 @@ export default function DetailPage({
   const diffStyle = difficultyStyles[template.difficulty] || difficultyStyles.medium;
   const rows = template.grid.length;
   const cols = rows > 0 ? template.grid[0].length : 0;
-  const beadCount = useMemo(() => getBeadCount(template), [template]);
-  const correctedColors = useMemo(() => getCorrectedColors(template), [template]);
-  const maxColorCount = useMemo(
-    () => correctedColors.reduce((m, c) => Math.max(m, c.count), 0),
-    [correctedColors]
-  );
   const zoomIn = () => setZoom(z => Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)));
   const zoomOut = () => setZoom(z => Math.max(MIN_ZOOM, +(z - ZOOM_STEP).toFixed(2)));
   const zoomReset = () => setZoom(1);
@@ -162,7 +193,7 @@ export default function DetailPage({
         </div>
       </header>
 
-      <div className="detail-page__body">
+      <div id="main-content" className="detail-page__body">
         <h1 className="detail-page__title">{template.name}</h1>
 
         <div className="detail-page__tags">
@@ -264,6 +295,7 @@ export default function DetailPage({
                   className="detail-page__swatch"
                   onClick={() => handleCopyHex(color.hex)}
                   title={`复制 ${color.hex}`}
+                  aria-label={`复制色号 ${color.hex} ${color.name} ${color.count}颗`}
                 >
                   <div
                     className="detail-page__swatch-color"
@@ -321,6 +353,27 @@ export default function DetailPage({
               </button>
             ) : <span className="detail-page__pager-spacer" />}
           </nav>
+        )}
+
+        {relatedTemplates.length > 0 && (
+          <section className="detail-page__related" aria-label="相似模板推荐">
+            <h2 className="detail-page__section-title">相似模板</h2>
+            <div className="detail-page__related-list">
+              {relatedTemplates.map(rt => (
+                <button
+                  key={rt.id}
+                  type="button"
+                  className="detail-page__related-item"
+                  onClick={() => onNavigateTemplate?.(rt.id)}
+                  title={rt.name}
+                >
+                  <PixelGrid grid={rt.grid.slice(0, 8).map(r => r.slice(0, 8))} colors={rt.colors} />
+                  <span className="detail-page__related-name">{rt.name}</span>
+                  <span className="detail-page__related-beads">{getBeadCount(rt)} 颗</span>
+                </button>
+              ))}
+            </div>
+          </section>
         )}
 
         <div className="detail-page__shortcuts">

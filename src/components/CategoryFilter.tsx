@@ -71,6 +71,7 @@ export default function CategoryFilter({
               className={`category-pill ${isActive ? 'category-pill--active' : ''}`}
               onClick={() => onSelect(cat.id)}
               title={cat.description}
+              aria-current={isActive ? 'true' : undefined}
             >
               {Icon && <Icon size={14} className="category-pill__icon" />}
               <span>{cat.name}</span>

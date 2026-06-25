@@ -34,6 +34,7 @@ export default function FavoritesPage({
   const modalRef = useRef<HTMLDivElement>(null);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
   const clearBtnRef = useRef<HTMLButtonElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   const favoritedTemplates = useMemo(() => {
     const list = templates.filter(t => favorites.includes(t.id));
@@ -55,6 +56,7 @@ export default function FavoritesPage({
 
   const handleClearClick = () => {
     if (favoritedTemplates.length === 0) return;
+    lastFocusedRef.current = document.activeElement as HTMLElement;
     setConfirming(true);
   };
 
@@ -107,10 +109,9 @@ export default function FavoritesPage({
   // 关闭弹窗后焦点返回触发按钮
   useEffect(() => {
     if (!confirming) {
-      // 弹窗刚关闭时，焦点回到清空按钮
-      if (clearBtnRef.current && document.activeElement === document.body) {
-        // 仅在 body 有焦点时恢复（避免抢占用户已聚焦的其他元素）
-      }
+      // 弹窗刚关闭时，焦点回到触发元素
+      lastFocusedRef.current?.focus();
+      lastFocusedRef.current = null;
     }
   }, [confirming]);
 
@@ -155,7 +156,7 @@ export default function FavoritesPage({
         </div>
       </header>
 
-      <main className="favorites-page__content">
+      <main id="main-content" className="favorites-page__content">
         {favoritedTemplates.length > 0 ? (
           <div className="template-grid">
             {favoritedTemplates.map(template => (

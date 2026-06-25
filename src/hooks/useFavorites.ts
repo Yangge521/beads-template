@@ -3,35 +3,63 @@ import type { FavoriteEntry } from '../types/bead';
 
 const STORAGE_KEY = 'beads-favorites';
 
+// 兼容旧格式：既可能是 FavoriteEntry[]，也可能是纯 string[]
 function loadFavorites(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      const entries: FavoriteEntry[] = JSON.parse(data);
-      return entries.map(e => e.templateId);
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) {
+      // 旧格式：string[]
+      if (parsed.length > 0 && typeof parsed[0] === 'string') {
+        return parsed as string[];
+      }
+      // 新格式：FavoriteEntry[]
+      return (parsed as FavoriteEntry[])
+        .map(e => e?.templateId)
+        .filter((id): id is string => typeof id === 'string');
     }
   } catch {}
   return [];
 }
 
-function saveFavorites(ids: string[]) {
+function loadEntries(): FavoriteEntry[] {
   try {
-    const entries: FavoriteEntry[] = ids.map(templateId => ({
-      templateId,
-      favoritedAt: new Date().toISOString(),
-    }));
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return [];
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) {
+      if (parsed.length > 0 && typeof parsed[0] === 'string') {
+        // 旧格式迁移：补上当前时间
+        return (parsed as string[]).map(templateId => ({
+          templateId,
+          favoritedAt: new Date().toISOString(),
+        }));
+      }
+      return (parsed as FavoriteEntry[]).filter(
+        e => e && typeof e.templateId === 'string'
+      );
+    }
+  } catch {}
+  return [];
+}
+
+function saveEntries(entries: FavoriteEntry[]) {
+  try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
   } catch {}
 }
 
 export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>(loadFavorites);
+  const [entries, setEntries] = useState<FavoriteEntry[]>(loadEntries);
 
   // 跨标签页同步：监听 storage 事件
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY) {
         setFavorites(loadFavorites());
+        setEntries(loadEntries());
       }
     };
     window.addEventListener('storage', onStorage);
@@ -43,21 +71,31 @@ export function useFavorites() {
   }, [favorites]);
 
   const toggleFavorite = useCallback((id: string) => {
-    setFavorites(prev => {
-      const next = prev.includes(id)
-        ? prev.filter(f => f !== id)
-        : [...prev, id];
-      saveFavorites(next);
-      return next;
+    setFavorites(prevIds => {
+      setEntries(prevEntries => {
+        let nextEntries: FavoriteEntry[];
+        if (prevIds.includes(id)) {
+          nextEntries = prevEntries.filter(e => e.templateId !== id);
+        } else {
+          nextEntries = [
+            { templateId: id, favoritedAt: new Date().toISOString() },
+            ...prevEntries,
+          ];
+        }
+        saveEntries(nextEntries);
+        return nextEntries;
+      });
+      return prevIds.includes(id)
+        ? prevIds.filter(f => f !== id)
+        : [id, ...prevIds];
     });
   }, []);
 
   const clearFavorites = useCallback(() => {
-    setFavorites(() => {
-      saveFavorites([]);
-      return [];
-    });
+    setFavorites([]);
+    setEntries([]);
+    saveEntries([]);
   }, []);
 
-  return { favorites, isFavorite, toggleFavorite, clearFavorites };
+  return { favorites, entries, isFavorite, toggleFavorite, clearFavorites };
 }
