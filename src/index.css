@@ -2,6 +2,7 @@
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
+  --card-bg: #ffffff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #aa3bff;
@@ -18,6 +19,7 @@
   --text: #9ca3af;
   --text-h: #f3f4f6;
   --bg: #16171d;
+  --card-bg: #1f2028;
   --border: #2e303a;
   --code-bg: #1f2028;
   --accent: #c084fc;
@@ -76,6 +78,13 @@ body {
 }
 
 h1, h2, h3 { color: var(--text-h); font-weight: 600; }
+
+/* 全局键盘焦点样式：统一所有可聚焦元素的 focus-visible 外观 */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 
 /* Navbar */
 .navbar {
@@ -1169,6 +1178,15 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   border-radius: 4px;
   border: 1px solid var(--border);
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-filter__option-check {
+  color: #fff;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
 }
 
 .color-filter__option-name {
@@ -1549,6 +1567,10 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
     padding: 0 !important;
   }
 
+  .detail-page__pixel {
+    overflow: visible !important;
+  }
+
   .detail-page__swatch {
     break-inside: avoid;
   }
@@ -1826,6 +1848,69 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   color: var(--text-h);
   font-size: 14px;
   outline: none;
+}
+
+.color-ref-page__search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: var(--code-bg);
+  color: var(--text);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.color-ref-page__search-clear:hover {
+  background: var(--border);
+  color: var(--text-h);
+}
+
+.color-ref-page__brand-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.color-ref-page__brand-pill {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.color-ref-page__brand-pill:hover {
+  border-color: var(--text-h);
+}
+
+.color-ref-page__brand-pill--active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.color-ref-page__brand-reset {
+  padding: 4px 10px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.color-ref-page__brand-reset:hover {
+  color: var(--text-h);
 }
 
 .color-ref-page__count {

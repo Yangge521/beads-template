@@ -46,7 +46,22 @@ export default function ToastContainer({ children }: { children: ReactNode }) {
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
     const id = ++idRef.current;
-    setToasts(prev => [...prev, { id, message, type }].slice(-MAX_TOASTS));
+    setToasts(prev => {
+      const next = [...prev, { id, message, type }];
+      // 超出上限时，主动清理被剔除 toast 的定时器，避免泄漏
+      if (next.length > MAX_TOASTS) {
+        const evicted = next.slice(0, next.length - MAX_TOASTS);
+        for (const t of evicted) {
+          const timer = timersRef.current.get(t.id);
+          if (timer) {
+            clearTimeout(timer);
+            timersRef.current.delete(t.id);
+          }
+        }
+        return next.slice(-MAX_TOASTS);
+      }
+      return next;
+    });
     const timer = setTimeout(() => dismiss(id), DURATION);
     timersRef.current.set(id, timer);
   }, [dismiss]);

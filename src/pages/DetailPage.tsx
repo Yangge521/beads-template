@@ -108,12 +108,14 @@ export default function DetailPage({
     try {
       await navigator.clipboard.writeText(hex);
       setCopiedHex(hex);
-      scheduleReset(() => setCopiedHex(null));
+      // 仅当当前高亮仍是该 hex 时才清除，避免连续复制时旧定时器误清新高亮
+      const t = setTimeout(() => setCopiedHex(prev => (prev === hex ? null : prev)), 1500);
+      timersRef.current.push(t);
       showToast(`已复制 ${hex}`, 'success');
     } catch {
       showToast('复制失败', 'error');
     }
-  }, [scheduleReset, showToast]);
+  }, [showToast]);
 
   const handleCopyAllColors = useCallback(async () => {
     if (!template) return;
@@ -131,11 +133,12 @@ export default function DetailPage({
     }
   }, [template, scheduleReset, showToast]);
 
-  // 打印用量清单：调用浏览器打印，配合 @media print 样式输出清单
+  // 打印用量清单：重置缩放避免打印放大图，等待重绘后调用浏览器打印
   const handlePrintList = useCallback(() => {
     if (!template) return;
     showToast('正在准备打印清单', 'info');
-    window.print();
+    setZoom(1);
+    setTimeout(() => window.print(), 50);
   }, [template, showToast]);
 
   // 切换模板时重置缩放并滚动到顶部
@@ -185,10 +188,13 @@ export default function DetailPage({
   if (!template) {
     return (
       <div className="page detail-page">
-        <main id="main-content" className="empty-state">
+        <main id="main-content" className="empty-state" tabIndex={-1}>
           <p className="empty-state__icon">😕</p>
           <p className="empty-state__title">模板不存在</p>
           <p className="empty-state__desc">该模板可能已被移除</p>
+          <button type="button" className="empty-state__action" onClick={onBack}>
+            返回首页
+          </button>
         </main>
       </div>
     );
@@ -222,7 +228,7 @@ export default function DetailPage({
         </div>
       </header>
 
-      <main id="main-content" className="detail-page__body">
+      <main id="main-content" className="detail-page__body" tabIndex={-1}>
         <h1 className="detail-page__title">{template.name}</h1>
 
         <div className="detail-page__tags">

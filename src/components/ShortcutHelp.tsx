@@ -16,8 +16,44 @@ const shortcuts: Shortcut[] = [
 export default function ShortcutHelp() {
   const [open, setOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   const close = useCallback(() => setOpen(false), []);
+
+  // 打开时聚焦关闭按钮，关闭时焦点返回触发元素；Tab 循环
+  useEffect(() => {
+    if (!open) {
+      lastFocusedRef.current?.focus();
+      lastFocusedRef.current = null;
+      return;
+    }
+    lastFocusedRef.current = document.activeElement as HTMLElement;
+    const focusTimer = setTimeout(() => closeBtnRef.current?.focus(), 0);
+    const modal = modalRef.current;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Tab' && modal) {
+        const focusable = modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -52,7 +88,7 @@ export default function ShortcutHelp() {
       >
         <div className="shortcut-help__header">
           <h3 id="shortcut-help-title" className="modal__title">键盘快捷键</h3>
-          <button type="button" className="shortcut-help__close" onClick={close} aria-label="关闭">
+          <button ref={closeBtnRef} type="button" className="shortcut-help__close" onClick={close} aria-label="关闭">
             <X size={18} />
           </button>
         </div>

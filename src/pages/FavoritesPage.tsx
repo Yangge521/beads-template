@@ -47,7 +47,7 @@ export default function FavoritesPage({
       case 'recent':
       default:
         // favorites 数组顺序即为收藏顺序（最新的在前）
-        list.sort((a, b) => favorites.indexOf(b.id) - favorites.indexOf(a.id));
+        list.sort((a, b) => favorites.indexOf(a.id) - favorites.indexOf(b.id));
         break;
     }
     return list;
@@ -154,7 +154,7 @@ export default function FavoritesPage({
         </div>
       </header>
 
-      <main id="main-content" className="favorites-page__content">
+      <main id="main-content" className="favorites-page__content" tabIndex={-1}>
         {favoritedTemplates.length > 0 ? (
           <div className="template-grid">
             {favoritedTemplates.map(template => (

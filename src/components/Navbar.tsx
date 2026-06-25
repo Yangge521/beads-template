@@ -27,8 +27,13 @@ export default function Navbar({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 当外部 searchQuery 变化时（如导航返回/清除筛选），同步内部输入框
+  // 同时清除可能残留的防抖定时器，避免旧值回灌
   useEffect(() => {
     setQuery(searchQuery);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
   }, [searchQuery]);
 
   // 按 / 键聚焦搜索框
@@ -82,7 +87,7 @@ export default function Navbar({
   return (
     <nav className="navbar">
       <button type="button" className="navbar__brand" onClick={onNavigateHome}>
-        <span className="navbar__logo">🔴</span>
+        <span className="navbar__logo" aria-hidden="true">🔴</span>
         <span className="navbar__title">拼豆收集</span>
       </button>
 

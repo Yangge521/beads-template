@@ -80,11 +80,12 @@ function AppContent() {
   }, []);
 
   // ESC key to go back from detail/favorites pages
+  // 注意：若当前有模态弹窗（帮助面板/确认框）打开，让弹窗优先处理 Esc，不导航
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && hash !== '/') {
-        goHome();
-      }
+      if (e.key !== 'Escape' || hash === '/') return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      goHome();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -209,6 +210,22 @@ function AppContent() {
 
   if (routeParts[0] === 'colors') {
     return <ColorReferencePage onBack={goHome} />;
+  }
+
+  // 未知路由：显示 404 空状态
+  if (routeParts.length > 0 && !['template', 'favorites', 'colors'].includes(routeParts[0])) {
+    return (
+      <div className="page">
+        <main id="main-content" className="empty-state" tabIndex={-1}>
+          <p className="empty-state__icon">🧭</p>
+          <p className="empty-state__title">页面不存在</p>
+          <p className="empty-state__desc">找不到该路径，可能链接已失效</p>
+          <button type="button" className="empty-state__action" onClick={goHome}>
+            返回首页
+          </button>
+        </main>
+      </div>
+    );
   }
 
   return (

@@ -3,7 +3,8 @@ import type { BeadTemplate, Category } from '../types/bead';
 import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
 import TemplateCard from '../components/TemplateCard';
-import { ChevronDown, X } from 'lucide-react';
+import { getBeadCount } from '../utils/beadStats';
+import { ChevronDown, X, Check } from 'lucide-react';
 
 export type SortKey = 'default' | 'name' | 'beads-asc' | 'beads-desc' | 'difficulty';
 export type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
@@ -127,10 +128,10 @@ export default function HomePage({
         sorted.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
         break;
       case 'beads-asc':
-        sorted.sort((a, b) => a.beadCount - b.beadCount);
+        sorted.sort((a, b) => getBeadCount(a) - getBeadCount(b));
         break;
       case 'beads-desc':
-        sorted.sort((a, b) => b.beadCount - a.beadCount);
+        sorted.sort((a, b) => getBeadCount(b) - getBeadCount(a));
         break;
       case 'difficulty':
         sorted.sort(
@@ -142,14 +143,20 @@ export default function HomePage({
     return sorted;
   }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize, colorFilter]);
 
-  // Recently viewed templates (exclude those filtered out by current search/category)
+  // 最近浏览：仅在无任何筛选时显示，避免与下方筛选结果不一致造成混淆
   const recentTemplates = useMemo(() => {
-    if (activeCategory !== 'all' || searchQuery) return [];
+    const hasFilter =
+      activeCategory !== 'all' ||
+      !!searchQuery ||
+      difficulty !== 'all' ||
+      gridSize !== 'all' ||
+      !!colorFilter;
+    if (hasFilter) return [];
     return recentlyViewed
       .map(id => templates.find(t => t.id === id))
       .filter((t): t is BeadTemplate => Boolean(t))
       .slice(0, 6);
-  }, [recentlyViewed, templates, activeCategory, searchQuery]);
+  }, [recentlyViewed, templates, activeCategory, searchQuery, difficulty, gridSize, colorFilter]);
 
   const activeCategoryName = categoryNameMap[activeCategory] || '全部';
 
@@ -216,7 +223,7 @@ export default function HomePage({
         counts={categoryCounts}
       />
 
-      <main id="main-content" className="home-page__content">
+      <main id="main-content" className="home-page__content" tabIndex={-1}>
         {!searchQuery && activeCategory === 'all' && (
           <section className="hero">
             <h1 className="hero__title">拼豆模板收集</h1>
@@ -290,7 +297,10 @@ export default function HomePage({
                   <button
                     type="button"
                     className="color-filter__clear"
-                    onClick={() => onColorFilterChange(null)}
+                    onClick={() => {
+                      onColorFilterChange(null);
+                      setColorPickerOpen(false);
+                    }}
                     aria-label="清除颜色筛选"
                   >
                     <X size={12} />
@@ -326,7 +336,11 @@ export default function HomePage({
                         <span
                           className="color-filter__option-color"
                           style={{ backgroundColor: c.hex }}
-                        />
+                        >
+                          {colorFilter === c.hex && (
+                            <Check size={12} className="color-filter__option-check" />
+                          )}
+                        </span>
                         <span className="color-filter__option-name">{c.name}</span>
                       </button>
                     ))}
