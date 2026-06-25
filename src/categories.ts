@@ -11,4 +11,7 @@ export const CATEGORIES: Category[] = [
   { id: 'kawaii', name: 'Kawaii', icon: 'Heart', description: '可爱日系风格', sortOrder: 7 },
   { id: 'pixel3d', name: '3D立体', icon: 'Box', description: '立体方块作品', sortOrder: 8 },
   { id: 'emoji', name: '表情包', icon: 'Smile', description: '像素头像与 emoji 表情', sortOrder: 9 },
+  { id: 'seasonal', name: '季节', icon: 'Leaf', description: '春夏秋冬与节日季节主题', sortOrder: 10 },
+  { id: 'collab', name: '联名致敬', icon: 'Sparkles', description: 'IP 联名与经典角色致敬风格', sortOrder: 11 },
+  { id: 'custom', name: '我的上传', icon: 'Upload', description: '用户上传图片生成的自定义模板', sortOrder: 12 },
 ];

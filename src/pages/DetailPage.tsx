@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, Clipboard
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { useToast } from '../components/ToastContainer';
+import { useTranslation } from '../context/LanguageContext';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
@@ -18,10 +19,11 @@ interface DetailPageProps {
   relatedTemplates?: BeadTemplate[];
 }
 
-const difficultyStyles: Record<string, { bg: string; label: string }> = {
-  easy: { bg: '#22c55e', label: '简单' },
-  medium: { bg: '#f59e0b', label: '中等' },
-  hard: { bg: '#ef4444', label: '困难' },
+// 难度仅保留背景色，label 运行时通过 t(`difficulty.${difficulty}`) 解析
+const difficultyStyles: Record<string, { bg: string }> = {
+  easy: { bg: '#22c55e' },
+  medium: { bg: '#f59e0b' },
+  hard: { bg: '#ef4444' },
 };
 
 const MIN_ZOOM = 0.5;
@@ -47,6 +49,7 @@ export default function DetailPage({
   const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   // 所有 hooks 必须在提前 return 之前调用，避免违反 Rules of Hooks
   const beadCount = useMemo(() => (template ? getBeadCount(template) : 0), [template]);
@@ -99,59 +102,59 @@ export default function DetailPage({
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       scheduleReset(setCopiedLink);
-      showToast('链接已复制', 'success');
+      showToast(t('detail.toast.linkCopied'), 'success');
     } catch {
       // 用户取消分享或剪贴板不可用，静默处理
     }
-  }, [template, scheduleReset, showToast]);
+  }, [template, scheduleReset, showToast, t]);
 
   const handleCopyHex = useCallback(async (hex: string) => {
     try {
       await navigator.clipboard.writeText(hex);
       setCopiedHex(hex);
       // 仅当当前高亮仍是该 hex 时才清除，避免连续复制时旧定时器误清新高亮
-      const t = setTimeout(() => setCopiedHex(prev => (prev === hex ? null : prev)), 1500);
-      timersRef.current.push(t);
-      showToast(`已复制 ${hex}`, 'success');
+      const timer = setTimeout(() => setCopiedHex(prev => (prev === hex ? null : prev)), 1500);
+      timersRef.current.push(timer);
+      showToast(t('detail.toast.hexCopied', { hex }), 'success');
     } catch {
-      showToast('复制失败', 'error');
+      showToast(t('detail.toast.copyFailed'), 'error');
     }
-  }, [showToast]);
+  }, [showToast, t]);
 
   const handleCopyAllColors = useCallback(async () => {
     if (!template) return;
     const colors = getCorrectedColors(template);
     const text = colors
-      .map(c => `${c.hex}\t${c.name}\t${c.count}颗`)
+      .map(c => `${c.hex}\t${c.name}\t${t('common.beadsUnitShort', { count: c.count })}`)
       .join('\n');
     try {
       await navigator.clipboard.writeText(text);
       setCopiedAll(true);
       scheduleReset(setCopiedAll);
-      showToast(`已复制 ${colors.length} 种颜色`, 'success');
+      showToast(t('detail.toast.colorsCopied', { count: colors.length }), 'success');
     } catch {
-      showToast('复制失败', 'error');
+      showToast(t('detail.toast.copyFailed'), 'error');
     }
-  }, [template, scheduleReset, showToast]);
+  }, [template, scheduleReset, showToast, t]);
 
   // 打印用量清单：重置缩放避免打印放大图，等待重绘后调用浏览器打印
   const handlePrintList = useCallback(() => {
     if (!template) return;
-    showToast('正在准备打印清单', 'info');
+    showToast(t('detail.toast.preparingPrint'), 'info');
     setZoom(1);
     setTimeout(() => window.print(), 50);
-  }, [template, showToast]);
+  }, [template, showToast, t]);
 
   // 导出 PNG：把 grid 渲染到 canvas 并下载
   const handleExportPNG = useCallback(() => {
     if (!template) return;
     try {
       exportTemplateToPNG(template, 24, showGridLines);
-      showToast('已导出 PNG 图片', 'success');
+      showToast(t('detail.toast.pngExported'), 'success');
     } catch {
-      showToast('导出失败', 'error');
+      showToast(t('detail.toast.exportFailed'), 'error');
     }
-  }, [template, showGridLines, showToast]);
+  }, [template, showGridLines, showToast, t]);
 
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
@@ -202,10 +205,10 @@ export default function DetailPage({
       <div className="page detail-page">
         <main id="main-content" className="empty-state" tabIndex={-1}>
           <p className="empty-state__icon">😕</p>
-          <p className="empty-state__title">模板不存在</p>
-          <p className="empty-state__desc">该模板可能已被移除</p>
+          <p className="empty-state__title">{t('detail.empty.title')}</p>
+          <p className="empty-state__desc">{t('detail.empty.desc')}</p>
           <button type="button" className="empty-state__action" onClick={onBack}>
-            返回首页
+            {t('detail.empty.backHome')}
           </button>
         </main>
       </div>
@@ -213,6 +216,7 @@ export default function DetailPage({
   }
 
   const diffStyle = difficultyStyles[template.difficulty] || difficultyStyles.medium;
+  const difficultyLabel = t(`difficulty.${template.difficulty}`);
   const rows = template.grid.length;
   const cols = rows > 0 ? template.grid[0].length : 0;
   const zoomIn = () => setZoom(z => Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)));
@@ -224,15 +228,15 @@ export default function DetailPage({
       <header className="detail-page__header">
         <button type="button" className="detail-page__back" onClick={onBack}>
           <ArrowLeft size={20} />
-          返回
+          {t('detail.back')}
         </button>
         <div className="detail-page__header-actions">
           <button
             type="button"
             className="detail-page__share-btn"
             onClick={handleShare}
-            aria-label="分享链接"
-            title="分享链接"
+            aria-label={t('detail.share.ariaLabel')}
+            title={t('detail.share.title')}
           >
             {copiedLink ? <Check size={20} /> : <Share2 size={20} />}
           </button>
@@ -248,7 +252,7 @@ export default function DetailPage({
             className="template-card__difficulty"
             style={{ backgroundColor: diffStyle.bg }}
           >
-            {diffStyle.label}
+            {difficultyLabel}
           </span>
           {template.tags.map(tag => (
             <span key={tag} className="detail-page__tag">#{tag}</span>
@@ -264,7 +268,7 @@ export default function DetailPage({
               className="detail-page__zoom-btn"
               onClick={zoomOut}
               disabled={zoom <= MIN_ZOOM}
-              aria-label="缩小"
+              aria-label={t('detail.zoom.out')}
             >
               <ZoomOut size={16} />
             </button>
@@ -272,7 +276,7 @@ export default function DetailPage({
               type="button"
               className="detail-page__zoom-btn detail-page__zoom-label"
               onClick={zoomReset}
-              aria-label="重置缩放"
+              aria-label={t('detail.zoom.reset')}
             >
               {Math.round(zoom * 100)}%
             </button>
@@ -281,7 +285,7 @@ export default function DetailPage({
               className="detail-page__zoom-btn"
               onClick={zoomIn}
               disabled={zoom >= MAX_ZOOM}
-              aria-label="放大"
+              aria-label={t('detail.zoom.in')}
             >
               <ZoomIn size={16} />
             </button>
@@ -289,9 +293,9 @@ export default function DetailPage({
               type="button"
               className={`detail-page__zoom-btn ${showGridLines ? 'detail-page__zoom-btn--active' : ''}`}
               onClick={() => setShowGridLines(v => !v)}
-              aria-label="切换网格线"
+              aria-label={t('detail.zoom.gridLines')}
               aria-pressed={showGridLines}
-              title="网格线"
+              title={t('detail.zoom.gridLinesTitle')}
             >
               <Grid3x3 size={16} />
             </button>
@@ -306,62 +310,62 @@ export default function DetailPage({
         <div className="detail-page__stats">
           <div className="detail-page__stat">
             <span className="detail-page__stat-value">{beadCount}</span>
-            <span className="detail-page__stat-label">总颗数</span>
+            <span className="detail-page__stat-label">{t('detail.stat.totalBeads')}</span>
           </div>
           <div className="detail-page__stat">
             <span className="detail-page__stat-value">{correctedColors.length}</span>
-            <span className="detail-page__stat-label">颜色数</span>
+            <span className="detail-page__stat-label">{t('detail.stat.colors')}</span>
           </div>
           <div className="detail-page__stat">
             <span className="detail-page__stat-value">{cols}×{rows}</span>
-            <span className="detail-page__stat-label">网格尺寸</span>
+            <span className="detail-page__stat-label">{t('detail.stat.gridSize')}</span>
           </div>
         </div>
 
         <div className="detail-page__palette">
           <div className="detail-page__palette-header">
-            <h2 className="detail-page__section-title">色卡（点击复制色号）</h2>
+            <h2 className="detail-page__section-title">{t('detail.palette.title')}</h2>
             <div className="detail-page__palette-actions">
               <label className="detail-page__color-sort">
-                <span className="detail-page__color-sort-label">排序</span>
+                <span className="detail-page__color-sort-label">{t('detail.palette.sortLabel')}</span>
                 <select
                   value={colorSort}
                   onChange={e => setColorSort(e.target.value as 'count' | 'name' | 'hex')}
-                  aria-label="色卡排序方式"
+                  aria-label={t('detail.palette.sort.ariaLabel')}
                 >
-                  <option value="count">数量 ↓</option>
-                  <option value="name">名称</option>
-                  <option value="hex">色号</option>
+                  <option value="count">{t('detail.palette.sort.count')}</option>
+                  <option value="name">{t('detail.palette.sort.name')}</option>
+                  <option value="hex">{t('detail.palette.sort.hex')}</option>
                 </select>
               </label>
               <button
                 type="button"
                 className="detail-page__copy-all"
                 onClick={handleCopyAllColors}
-                title="复制全部色卡"
+                title={t('detail.palette.copyAll.title')}
               >
                 {copiedAll ? <Check size={14} /> : <ClipboardList size={14} />}
-                <span>{copiedAll ? '已复制' : '复制全部'}</span>
+                <span>{copiedAll ? t('detail.palette.copied') : t('detail.palette.copyAll')}</span>
               </button>
               <button
                 type="button"
                 className="detail-page__copy-all"
                 onClick={handlePrintList}
-                title="打印用量清单"
-                aria-label="打印用量清单"
+                title={t('detail.palette.printList.title')}
+                aria-label={t('detail.palette.printList.ariaLabel')}
               >
                 <Printer size={14} />
-                <span>用量清单</span>
+                <span>{t('detail.palette.printList')}</span>
               </button>
               <button
                 type="button"
                 className="detail-page__copy-all"
                 onClick={handleExportPNG}
-                title="导出 PNG 图片"
-                aria-label="导出 PNG 图片"
+                title={t('detail.palette.export.title')}
+                aria-label={t('detail.palette.export.ariaLabel')}
               >
                 <Download size={14} />
-                <span>导出图片</span>
+                <span>{t('detail.palette.export')}</span>
               </button>
             </div>
           </div>
@@ -375,8 +379,8 @@ export default function DetailPage({
                   type="button"
                   className="detail-page__swatch"
                   onClick={() => handleCopyHex(color.hex)}
-                  title={`复制 ${color.hex}`}
-                  aria-label={`复制色号 ${color.hex} ${color.name} ${color.count}颗`}
+                  title={t('detail.swatch.copyTitle', { hex: color.hex })}
+                  aria-label={t('detail.swatch.ariaLabel', { hex: color.hex, name: color.name, count: color.count })}
                 >
                   <div
                     className="detail-page__swatch-color"
@@ -408,17 +412,23 @@ export default function DetailPage({
         <section className="detail-page__print-list" aria-hidden="true">
           <h1 className="detail-page__print-title">{template.name}</h1>
           <p className="detail-page__print-meta">
-            总颗数：{beadCount} · 颜色数：{correctedColors.length} · 网格：{cols}×{rows} ·
-            难度：{diffStyle.label} · 来源：{template.source}
+            {t('detail.print.meta', {
+              beadCount,
+              colors: correctedColors.length,
+              cols,
+              rows,
+              difficulty: difficultyLabel,
+              source: template.source,
+            })}
           </p>
           <table className="detail-page__print-table">
             <thead>
               <tr>
-                <th>色块</th>
-                <th>色号</th>
-                <th>名称</th>
-                <th>数量</th>
-                <th>占比</th>
+                <th>{t('detail.print.col.swatch')}</th>
+                <th>{t('detail.print.col.hex')}</th>
+                <th>{t('detail.print.col.name')}</th>
+                <th>{t('detail.print.col.count')}</th>
+                <th>{t('detail.print.col.ratio')}</th>
               </tr>
             </thead>
             <tbody>
@@ -432,7 +442,7 @@ export default function DetailPage({
                   </td>
                   <td>{color.hex}</td>
                   <td>{color.name}</td>
-                  <td>{color.count} 颗</td>
+                  <td>{t('detail.print.cell.beads', { count: color.count })}</td>
                   <td>
                     {beadCount > 0 ? ((color.count / beadCount) * 100).toFixed(1) : '0'}%
                   </td>
@@ -441,21 +451,21 @@ export default function DetailPage({
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={3}>合计</td>
-                <td>{beadCount} 颗</td>
-                <td>{correctedColors.length} 种颜色</td>
+                <td colSpan={3}>{t('detail.print.total')}</td>
+                <td>{t('detail.print.totalBeads', { beadCount })}</td>
+                <td>{t('detail.print.colors', { count: correctedColors.length })}</td>
               </tr>
             </tfoot>
           </table>
         </section>
 
         <div className="detail-page__source">
-          <span className="detail-page__source-label">来源：</span>
+          <span className="detail-page__source-label">{t('detail.source.label')}</span>
           <span className="detail-page__source-value">{template.source}</span>
         </div>
 
         {(prevTemplate || nextTemplate) && (
-          <nav className="detail-page__pager" aria-label="模板切换">
+          <nav className="detail-page__pager" aria-label={t('detail.pager.ariaLabel')}>
             {prevTemplate ? (
               <button
                 type="button"
@@ -463,7 +473,7 @@ export default function DetailPage({
                 onClick={() => onNavigateTemplate?.(prevTemplate.id)}
               >
                 <ArrowLeft size={16} />
-                <span className="detail-page__pager-label">上一个</span>
+                <span className="detail-page__pager-label">{t('detail.pager.prev')}</span>
                 <span className="detail-page__pager-name">{prevTemplate.name}</span>
               </button>
             ) : <span className="detail-page__pager-spacer" />}
@@ -473,7 +483,7 @@ export default function DetailPage({
                 className="detail-page__pager-btn detail-page__pager-btn--next"
                 onClick={() => onNavigateTemplate?.(nextTemplate.id)}
               >
-                <span className="detail-page__pager-label">下一个</span>
+                <span className="detail-page__pager-label">{t('detail.pager.next')}</span>
                 <span className="detail-page__pager-name">{nextTemplate.name}</span>
                 <ArrowRight size={16} />
               </button>
@@ -482,8 +492,8 @@ export default function DetailPage({
         )}
 
         {relatedTemplates.length > 0 && (
-          <section className="detail-page__related" aria-label="相似模板推荐">
-            <h2 className="detail-page__section-title detail-page__section-title--related">相似模板</h2>
+          <section className="detail-page__related" aria-label={t('detail.related.ariaLabel')}>
+            <h2 className="detail-page__section-title detail-page__section-title--related">{t('detail.related.title')}</h2>
             <div className="detail-page__related-list">
               {relatedTemplates.map(rt => (
                 <button
@@ -495,7 +505,7 @@ export default function DetailPage({
                 >
                   <PixelGrid grid={rt.grid.slice(0, 8).map(r => r.slice(0, 8))} colors={rt.colors} />
                   <span className="detail-page__related-name">{rt.name}</span>
-                  <span className="detail-page__related-beads">{getBeadCount(rt)} 颗</span>
+                  <span className="detail-page__related-beads">{t('detail.related.beads', { count: getBeadCount(rt) })}</span>
                 </button>
               ))}
             </div>
@@ -503,9 +513,9 @@ export default function DetailPage({
         )}
 
         <div className="detail-page__shortcuts">
-          <kbd>←</kbd><kbd>→</kbd> 切换模板
+          <kbd>←</kbd><kbd>→</kbd> {t('detail.shortcuts.switchTemplate')}
           <span className="detail-page__shortcuts-sep">·</span>
-          <kbd>Esc</kbd> 返回首页
+          <kbd>Esc</kbd> {t('detail.shortcuts.backHome')}
         </div>
       </main>
 
@@ -514,7 +524,7 @@ export default function DetailPage({
           type="button"
           className="back-to-top"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label="返回顶部"
+          aria-label={t('detail.backToTop')}
         >
           ↑
         </button>

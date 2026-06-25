@@ -3,14 +3,18 @@ import HomePage, { type SortKey, type DifficultyFilter, type GridSizeFilter } fr
 import DetailPage from './pages/DetailPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ColorReferencePage from './pages/ColorReferencePage';
+import UploadPage from './pages/UploadPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer, { useToast } from './components/ToastContainer';
 import ShortcutHelp from './components/ShortcutHelp';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { LanguageProvider, useTranslation } from './context/LanguageContext';
 import { useFavorites } from './hooks/useFavorites';
 import { useRecentlyViewed } from './hooks/useRecentlyViewed';
+import { useCustomTemplates } from './hooks/useCustomTemplates';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
+import { downloadBackupFile, parseBackupFile, importUserData } from './utils/dataSync';
 import animeData from './data/anime.json';
 import pokemonData from './data/pokemon.json';
 import celebrityData from './data/celebrity.json';
@@ -20,8 +24,11 @@ import holidayData from './data/holiday.json';
 import kawaiiData from './data/kawaii.json';
 import pixel3dData from './data/pixel3d.json';
 import emojiData from './data/emoji.json';
+import seasonalData from './data/seasonal.json';
+import collabData from './data/collab.json';
 
-const allTemplates: BeadTemplate[] = [
+// 内置模板（静态数据）
+const builtinTemplates: BeadTemplate[] = [
   ...animeData,
   ...pokemonData,
   ...celebrityData,
@@ -31,24 +38,34 @@ const allTemplates: BeadTemplate[] = [
   ...kawaiiData,
   ...pixel3dData,
   ...emojiData,
+  ...seasonalData,
+  ...collabData,
 ] as BeadTemplate[];
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
   const { recentlyViewed, addRecentlyViewed } = useRecentlyViewed();
+  const { templates: customTemplates, addTemplate: addCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
+  const { t } = useTranslation();
+
+  // 合并内置 + 自定义模板作为全量列表
+  const allTemplates = useMemo(
+    () => [...customTemplates, ...builtinTemplates],
+    [customTemplates]
+  );
 
   const toggleFavorite = useCallback((id: string) => {
     const willAdd = !isFavorite(id);
     toggleFav(id);
-    showToast(willAdd ? '已加入收藏' : '已取消收藏', willAdd ? 'success' : 'info');
-  }, [isFavorite, toggleFav, showToast]);
+    showToast(willAdd ? t('app.toast.favorited') : t('app.toast.unfavorited'), willAdd ? 'success' : 'info');
+  }, [isFavorite, toggleFav, showToast, t]);
 
   const handleClearFavoritesWithToast = useCallback(() => {
     clearFavorites();
-    showToast('已清空收藏', 'info');
-  }, [clearFavorites, showToast]);
+    showToast(t('app.toast.favoritesCleared'), 'info');
+  }, [clearFavorites, showToast, t]);
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,6 +128,47 @@ function AppContent() {
     window.location.hash = 'colors';
   }, []);
 
+  const handleNavigateUpload = useCallback(() => {
+    window.location.hash = 'upload';
+  }, []);
+
+  // 数据导出：下载 JSON 备份文件
+  const handleExportData = useCallback(() => {
+    try {
+      downloadBackupFile();
+      showToast(t('app.toast.exported'), 'success');
+    } catch {
+      showToast(t('app.toast.exportFailed'), 'error');
+    }
+  }, [showToast, t]);
+
+  // 数据导入：读取 JSON 文件并合并
+  const handleImportData = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = reader.result as string;
+      const payload = parseBackupFile(text);
+      if (!payload) {
+        showToast(t('app.toast.invalidFile'), 'error');
+        return;
+      }
+      const result = importUserData(payload, 'merge');
+      showToast(
+        result.success
+          ? t('app.toast.importSummary', {
+              message: result.message,
+              fav: result.counts.favorites,
+              recent: result.counts.recentlyViewed,
+              custom: result.counts.customTemplates,
+            })
+          : result.message,
+        result.success ? 'success' : 'error'
+      );
+    };
+    reader.onerror = () => showToast(t('app.toast.fileReadFailed'), 'error');
+    reader.readAsText(file);
+  }, [showToast, t]);
+
   const handleClearFilters = useCallback(() => {
     setActiveCategory('all');
     setSearchQuery('');
@@ -168,17 +226,28 @@ function AppContent() {
   // 动态 document.title
   useEffect(() => {
     if (currentTemplate) {
-      document.title = `${currentTemplate.name} - 拼豆收集`;
+      document.title = t('app.title.detail', { name: currentTemplate.name });
     } else if (routeParts[0] === 'favorites') {
-      document.title = `我的收藏 - 拼豆收集`;
+      document.title = t('app.title.favorites');
     } else if (routeParts[0] === 'colors') {
-      document.title = `色卡参考 - 拼豆收集`;
+      document.title = t('app.title.colorRef');
+    } else if (routeParts[0] === 'upload') {
+      document.title = t('app.title.upload');
     } else if (routeParts[0] === 'template') {
-      document.title = `模板不存在 - 拼豆收集`;
+      document.title = t('app.title.notFound');
     } else {
-      document.title = '拼豆收集 - Perler Bead Templates';
+      document.title = t('app.title.default');
     }
-  }, [currentTemplate, hash]);
+  }, [currentTemplate, hash, t]);
+
+  // 监听 Service Worker 更新事件，提示用户刷新
+  useEffect(() => {
+    const onSWUpdate = () => {
+      showToast(t('app.toast.updateAvailable'), 'info');
+    };
+    window.addEventListener('sw:update-available', onSWUpdate);
+    return () => window.removeEventListener('sw:update-available', onSWUpdate);
+  }, [showToast, t]);
 
   if (routeParts[0] === 'template' && routeParts[1]) {
     return (
@@ -204,6 +273,8 @@ function AppContent() {
         onClearFavorites={handleClearFavoritesWithToast}
         onBack={goHome}
         onNavigate={handleNavigate}
+        onExportData={handleExportData}
+        onImportData={handleImportData}
       />
     );
   }
@@ -212,16 +283,34 @@ function AppContent() {
     return <ColorReferencePage onBack={goHome} />;
   }
 
+  if (routeParts[0] === 'upload') {
+    return (
+      <UploadPage
+        onBack={goHome}
+        onNavigate={handleNavigate}
+        onSearch={handleSearch}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        favoritesCount={favorites.length}
+        onNavigateFavorites={handleNavigateFavorites}
+        onNavigateColorRef={handleNavigateColorRef}
+        onNavigateHome={goHome}
+        searchQuery={searchQuery}
+        onSaveTemplate={addCustomTemplate}
+      />
+    );
+  }
+
   // 未知路由：显示 404 空状态
-  if (routeParts.length > 0 && !['template', 'favorites', 'colors'].includes(routeParts[0])) {
+  if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload'].includes(routeParts[0])) {
     return (
       <div className="page">
         <main id="main-content" className="empty-state" tabIndex={-1}>
           <p className="empty-state__icon">🧭</p>
-          <p className="empty-state__title">页面不存在</p>
-          <p className="empty-state__desc">找不到该路径，可能链接已失效</p>
+          <p className="empty-state__title">{t('app.404.title')}</p>
+          <p className="empty-state__desc">{t('app.404.desc')}</p>
           <button type="button" className="empty-state__action" onClick={goHome}>
-            返回首页
+            {t('app.404.backHome')}
           </button>
         </main>
       </div>
@@ -241,6 +330,7 @@ function AppContent() {
       onNavigateFavorites={handleNavigateFavorites}
       onNavigateColorRef={handleNavigateColorRef}
       onNavigateHome={goHome}
+      onNavigateUpload={handleNavigateUpload}
       theme={theme}
       onToggleTheme={toggleTheme}
       recentlyViewed={recentlyViewed}
@@ -262,10 +352,12 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <ToastContainer>
-          <AppContent />
-          <ShortcutHelp />
-        </ToastContainer>
+        <LanguageProvider>
+          <ToastContainer>
+            <AppContent />
+            <ShortcutHelp />
+          </ToastContainer>
+        </LanguageProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

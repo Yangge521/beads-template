@@ -1,19 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 
 interface Shortcut {
   keys: string[];
-  desc: string;
+  descKey: string;
 }
 
 const shortcuts: Shortcut[] = [
-  { keys: ['/'], desc: '聚焦搜索框' },
-  { keys: ['Esc'], desc: '返回首页 / 关闭弹窗' },
-  { keys: ['←', '→'], desc: '上一个 / 下一个模板（详情页）' },
-  { keys: ['?'], desc: '显示 / 隐藏快捷键帮助' },
+  { keys: ['/'], descKey: 'shortcut.focusSearch' },
+  { keys: ['Esc'], descKey: 'shortcut.backOrClose' },
+  { keys: ['←', '→'], descKey: 'shortcut.switchTemplate' },
+  { keys: ['?'], descKey: 'shortcut.toggleHelp' },
 ];
 
 export default function ShortcutHelp() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -87,15 +89,15 @@ export default function ShortcutHelp() {
         aria-labelledby="shortcut-help-title"
       >
         <div className="shortcut-help__header">
-          <h3 id="shortcut-help-title" className="modal__title">键盘快捷键</h3>
-          <button ref={closeBtnRef} type="button" className="shortcut-help__close" onClick={close} aria-label="关闭">
+          <h3 id="shortcut-help-title" className="modal__title">{t('shortcut.title')}</h3>
+          <button ref={closeBtnRef} type="button" className="shortcut-help__close" onClick={close} aria-label={t('common.close')}>
             <X size={18} />
           </button>
         </div>
         <ul className="shortcut-help__list">
           {shortcuts.map((s, i) => (
             <li key={i} className="shortcut-help__item">
-              <span className="shortcut-help__desc">{s.desc}</span>
+              <span className="shortcut-help__desc">{t(s.descKey)}</span>
               <span className="shortcut-help__keys">
                 {s.keys.map((k, j) => (
                   <kbd key={j} className="shortcut-help__kbd">{k}</kbd>

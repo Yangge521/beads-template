@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, Heart, Sun, Moon, X, Palette } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 
 interface NavbarProps {
   onSearch: (q: string) => void;
@@ -25,6 +26,7 @@ export default function Navbar({
   const [query, setQuery] = useState(searchQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { lang, toggleLang, t } = useTranslation();
 
   // 当外部 searchQuery 变化时（如导航返回/清除筛选），同步内部输入框
   // 同时清除可能残留的防抖定时器，避免旧值回灌
@@ -88,7 +90,7 @@ export default function Navbar({
     <nav className="navbar">
       <button type="button" className="navbar__brand" onClick={onNavigateHome}>
         <span className="navbar__logo" aria-hidden="true">🔴</span>
-        <span className="navbar__title">拼豆收集</span>
+        <span className="navbar__title">{t('nav.brand')}</span>
       </button>
 
       <div className="navbar__search">
@@ -97,16 +99,16 @@ export default function Navbar({
           ref={inputRef}
           type="text"
           className="navbar__search-input"
-          placeholder="搜索模板..."
+          placeholder={t('nav.search.placeholder')}
           value={query}
           onChange={handleChange}
-          aria-label="搜索模板"
+          aria-label={t('nav.search.ariaLabel')}
         />
         {!query && (
           <kbd className="navbar__search-hint" aria-hidden="true">/</kbd>
         )}
         {query && (
-          <button type="button" className="navbar__search-clear" onClick={handleClear} aria-label="清除搜索">
+          <button type="button" className="navbar__search-clear" onClick={handleClear} aria-label={t('nav.search.clear')}>
             <X size={14} />
           </button>
         )}
@@ -117,8 +119,8 @@ export default function Navbar({
           type="button"
           className="navbar__action-btn"
           onClick={onNavigateColorRef}
-          aria-label="色卡参考"
-          title="色卡参考"
+          aria-label={t('nav.colorRef.ariaLabel')}
+          title={t('nav.colorRef.title')}
         >
           <Palette size={20} />
         </button>
@@ -127,7 +129,7 @@ export default function Navbar({
           type="button"
           className="navbar__action-btn"
           onClick={onNavigateFavorites}
-          aria-label={`收藏 (${favoritesCount})`}
+          aria-label={t('nav.favorites.ariaLabel', { count: favoritesCount })}
         >
           <Heart size={20} fill={favoritesCount > 0 ? '#ef4444' : 'none'} />
           {favoritesCount > 0 && (
@@ -139,9 +141,19 @@ export default function Navbar({
           type="button"
           className="navbar__action-btn"
           onClick={onToggleTheme}
-          aria-label={`切换${theme === 'dark' ? '明亮' : '深色'}主题`}
+          aria-label={theme === 'dark' ? t('nav.theme.toggleToLight') : t('nav.theme.toggleToDark')}
         >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+
+        <button
+          type="button"
+          className="navbar__action-btn navbar__lang-btn"
+          onClick={toggleLang}
+          aria-label={t('nav.lang.ariaLabel')}
+          title={t('nav.lang.title')}
+        >
+          {lang === 'zh' ? t('nav.lang.labelToEn') : t('nav.lang.labelToZh')}
         </button>
       </div>
     </nav>

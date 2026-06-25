@@ -3,6 +3,7 @@ import type { BeadTemplate } from '../types/bead';
 import PixelGrid from './PixelGrid';
 import FavoriteButton from './FavoriteButton';
 import { getBeadCount } from '../utils/beadStats';
+import { useTranslation } from '../context/LanguageContext';
 
 interface TemplateCardProps {
   template: BeadTemplate;
@@ -13,10 +14,10 @@ interface TemplateCardProps {
   categoryName?: string;
 }
 
-const difficultyStyles: Record<string, { bg: string; label: string }> = {
-  easy: { bg: '#22c55e', label: '简单' },
-  medium: { bg: '#f59e0b', label: '中等' },
-  hard: { bg: '#ef4444', label: '困难' },
+const difficultyBg: Record<string, string> = {
+  easy: '#22c55e',
+  medium: '#f59e0b',
+  hard: '#ef4444',
 };
 
 function Highlight({ text, query }: { text: string; query: string }) {
@@ -55,7 +56,9 @@ function TemplateCard({
   highlight = '',
   categoryName,
 }: TemplateCardProps) {
-  const diffStyle = difficultyStyles[template.difficulty] || difficultyStyles.medium;
+  const { t } = useTranslation();
+  const diffBg = difficultyBg[template.difficulty] || difficultyBg.medium;
+  const diffLabel = t(`difficulty.${template.difficulty}`);
   const rows = template.grid.length;
   const cols = rows > 0 ? template.grid[0].length : 0;
   const beadCount = getBeadCount(template);
@@ -84,9 +87,9 @@ function TemplateCard({
         <PixelGrid grid={thumbGrid} colors={template.colors} />
         <span
           className="template-card__difficulty"
-          style={{ backgroundColor: diffStyle.bg }}
+          style={{ backgroundColor: diffBg }}
         >
-          {diffStyle.label}
+          {diffLabel}
         </span>
       </div>
 
@@ -95,7 +98,7 @@ function TemplateCard({
           <Highlight text={template.name} query={highlight} />
         </h3>
         <div className="template-card__meta">
-          <span className="template-card__beads">{beadCount} 颗</span>
+          <span className="template-card__beads">{t('common.beadsUnitShort', { count: beadCount })}</span>
           <span className="template-card__dim">{cols}×{rows}</span>
           {categoryName && <span className="template-card__cat">{categoryName}</span>}
         </div>

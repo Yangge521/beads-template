@@ -1,12 +1,13 @@
 import { useRef, useState, useEffect } from 'react';
 import type { Category } from '../types/bead';
 import {
-  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star,
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star, Leaf, Upload,
   type LucideIcon,
 } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
-  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star,
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star, Leaf, Upload,
 };
 
 interface CategoryFilterProps {
@@ -25,6 +26,7 @@ export default function CategoryFilter({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const updateScrollState = () => {
@@ -60,6 +62,8 @@ export default function CategoryFilter({
       <div className="category-filter__list" ref={scrollRef}>
         {categories.map(cat => {
           const count = counts?.[cat.id];
+          // 隐藏计数为 0 的非"全部"分类（如未上传模板时的"我的上传"）
+          if (cat.id !== 'all' && count === 0) return null;
           const isActive = active === cat.id;
           const Icon = iconMap[cat.icon];
           return (
@@ -69,11 +73,11 @@ export default function CategoryFilter({
               data-cat={cat.id}
               className={`category-pill ${isActive ? 'category-pill--active' : ''}`}
               onClick={() => onSelect(cat.id)}
-              title={cat.description}
+              title={t(`category.${cat.id}.desc`)}
               aria-current={isActive ? 'true' : undefined}
             >
               {Icon && <Icon size={14} className="category-pill__icon" />}
-              <span>{cat.name}</span>
+              <span>{t(`category.${cat.id}.name`)}</span>
               {count !== undefined && (
                 <span className="category-pill__count">{count}</span>
               )}

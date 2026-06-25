@@ -4,7 +4,8 @@ import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
 import TemplateCard from '../components/TemplateCard';
 import { getBeadCount } from '../utils/beadStats';
-import { ChevronDown, X, Check } from 'lucide-react';
+import { ChevronDown, X, Check, Upload } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 
 export type SortKey = 'default' | 'name' | 'beads-asc' | 'beads-desc' | 'difficulty';
 export type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
@@ -25,19 +26,20 @@ function matchGridSize(t: BeadTemplate, size: GridSizeFilter): boolean {
   return dim >= 30;
 }
 
+// label 字段存储翻译键，渲染时通过 t() 解析
 const sortOptions: { value: SortKey; label: string }[] = [
-  { value: 'default', label: '默认' },
-  { value: 'name', label: '名称' },
-  { value: 'beads-asc', label: '颗数 ↑' },
-  { value: 'beads-desc', label: '颗数 ↓' },
-  { value: 'difficulty', label: '难度' },
+  { value: 'default', label: 'home.sort.default' },
+  { value: 'name', label: 'home.sort.name' },
+  { value: 'beads-asc', label: 'home.sort.beadsAsc' },
+  { value: 'beads-desc', label: 'home.sort.beadsDesc' },
+  { value: 'difficulty', label: 'home.sort.difficulty' },
 ];
 
 const difficultyFilters: { value: DifficultyFilter; label: string; color: string }[] = [
-  { value: 'all', label: '全部', color: 'var(--text)' },
-  { value: 'easy', label: '简单', color: '#22c55e' },
-  { value: 'medium', label: '中等', color: '#f59e0b' },
-  { value: 'hard', label: '困难', color: '#ef4444' },
+  { value: 'all', label: 'difficulty.all', color: 'var(--text)' },
+  { value: 'easy', label: 'difficulty.easy', color: '#22c55e' },
+  { value: 'medium', label: 'difficulty.medium', color: '#f59e0b' },
+  { value: 'hard', label: 'difficulty.hard', color: '#ef4444' },
 ];
 
 interface HomePageProps {
@@ -52,6 +54,7 @@ interface HomePageProps {
   onNavigateFavorites: () => void;
   onNavigateColorRef: () => void;
   onNavigateHome: () => void;
+  onNavigateUpload: () => void;
   theme: string;
   onToggleTheme: () => void;
   recentlyViewed: string[];
@@ -79,6 +82,7 @@ export default function HomePage({
   onNavigateFavorites,
   onNavigateColorRef,
   onNavigateHome,
+  onNavigateUpload,
   theme,
   onToggleTheme,
   recentlyViewed,
@@ -93,13 +97,14 @@ export default function HomePage({
   colorFilter,
   onColorFilterChange,
 }: HomePageProps) {
+  const { t } = useTranslation();
 
-  // Map category id -> name for card labels
+  // Map category id -> name for card labels（通过 t() 解析分类名）
   const categoryNameMap = useMemo(() => {
     const m: Record<string, string> = {};
-    for (const c of categories) m[c.id] = c.name;
+    for (const c of categories) m[c.id] = t(`category.${c.id}.name`);
     return m;
-  }, [categories]);
+  }, [categories, t]);
 
   // 分类计数（不受搜索/难度影响，反映每个分类的总量）
   const categoryCounts = useMemo(() => {
@@ -158,7 +163,7 @@ export default function HomePage({
       .slice(0, 6);
   }, [recentlyViewed, templates, activeCategory, searchQuery, difficulty, gridSize, colorFilter]);
 
-  const activeCategoryName = categoryNameMap[activeCategory] || '全部';
+  const activeCategoryName = categoryNameMap[activeCategory] || t('category.all.name');
 
   // 收集所有模板中出现过的颜色（去重，按 hex 排序），用于颜色筛选
   const availableColors = useMemo(() => {
@@ -233,56 +238,64 @@ export default function HomePage({
       <main id="main-content" className="home-page__content" tabIndex={-1}>
         {!searchQuery && activeCategory === 'all' && (
           <section className="hero">
-            <h1 className="hero__title"><span aria-hidden="true">🔴 </span>拼豆模板收集</h1>
+            <h1 className="hero__title"><span aria-hidden="true">🔴 </span>{t('home.hero.title')}</h1>
             <p className="hero__subtitle">
-              收录动漫、游戏、明星等像素图案 · 内置三品牌色卡参考 · 让拼豆制作更简单
+              {t('home.hero.subtitle')}
             </p>
             <div className="hero__stats">
               <div className="hero__stat">
                 <span className="hero__stat-value">{templates.length}</span>
-                <span className="hero__stat-label">模板</span>
+                <span className="hero__stat-label">{t('home.hero.stat.templates')}</span>
               </div>
               <div className="hero__stat-divider" aria-hidden="true" />
               <div className="hero__stat">
                 <span className="hero__stat-value">{categories.length - 1}</span>
-                <span className="hero__stat-label">分类</span>
+                <span className="hero__stat-label">{t('home.hero.stat.categories')}</span>
               </div>
               <div className="hero__stat-divider" aria-hidden="true" />
               <div className="hero__stat">
                 <span className="hero__stat-value">{totalBeads}</span>
-                <span className="hero__stat-label">总颗数</span>
+                <span className="hero__stat-label">{t('home.hero.stat.totalBeads')}</span>
               </div>
               <div className="hero__stat-divider" aria-hidden="true" />
               <div className="hero__stat">
                 <span className="hero__stat-value">{totalColors}</span>
-                <span className="hero__stat-label">颜色</span>
+                <span className="hero__stat-label">{t('home.hero.stat.colors')}</span>
               </div>
             </div>
             <div className="hero__features">
-              <span className="hero__feature"><span aria-hidden="true">🔍 </span>即时搜索</span>
-              <span className="hero__feature"><span aria-hidden="true">🎨 </span>色卡参考</span>
-              <span className="hero__feature"><span aria-hidden="true">❤️ </span>一键收藏</span>
-              <span className="hero__feature"><span aria-hidden="true">🖨️ </span>用量清单</span>
-              <span className="hero__feature"><span aria-hidden="true">🌓 </span>明暗主题</span>
-              <span className="hero__feature"><span aria-hidden="true">⌨️ </span>快捷键</span>
+              <span className="hero__feature"><span aria-hidden="true">🔍 </span>{t('home.hero.feature.search')}</span>
+              <span className="hero__feature"><span aria-hidden="true">🎨 </span>{t('home.hero.feature.colorRef')}</span>
+              <span className="hero__feature"><span aria-hidden="true">❤️ </span>{t('home.hero.feature.favorites')}</span>
+              <span className="hero__feature"><span aria-hidden="true">🖨️ </span>{t('home.hero.feature.materialList')}</span>
+              <span className="hero__feature"><span aria-hidden="true">🌓 </span>{t('home.hero.feature.theme')}</span>
+              <span className="hero__feature"><span aria-hidden="true">⌨️ </span>{t('home.hero.feature.shortcuts')}</span>
             </div>
+            <button
+              type="button"
+              className="hero__upload-btn"
+              onClick={onNavigateUpload}
+            >
+              <Upload size={18} />
+              <span>{t('home.hero.upload')}</span>
+            </button>
           </section>
         )}
 
         {recentTemplates.length > 0 && (
           <section className="recent-section">
-            <h2 className="recent-section__title">最近浏览</h2>
+            <h2 className="recent-section__title">{t('home.recent.title')}</h2>
             <div className="recent-section__list">
-              {recentTemplates.map(t => (
+              {recentTemplates.map(rt => (
                 <button
-                  key={t.id}
+                  key={rt.id}
                   type="button"
                   className="recent-chip"
-                  onClick={() => onNavigate(`template/${t.id}`)}
-                  title={t.name}
+                  onClick={() => onNavigate(`template/${rt.id}`)}
+                  title={rt.name}
                 >
-                  <span className="recent-chip__name">{t.name}</span>
-                  <span className="recent-chip__beads">{t.beadCount}颗</span>
+                  <span className="recent-chip__name">{rt.name}</span>
+                  <span className="recent-chip__beads">{t('home.recent.beads', { count: rt.beadCount })}</span>
                 </button>
               ))}
             </div>
@@ -291,11 +304,11 @@ export default function HomePage({
 
         <div className="home-page__toolbar">
           <span className="home-page__count" aria-live="polite" aria-atomic="true">
-            {searchQuery ? `搜索「${searchQuery}」` : activeCategoryName}
-            <span className="home-page__count-num"> · {filtered.length} 个</span>
+            {searchQuery ? t('home.toolbar.searchFor', { query: searchQuery }) : activeCategoryName}
+            <span className="home-page__count-num">{t('home.toolbar.resultCount', { count: filtered.length })}</span>
           </span>
           <div className="home-page__toolbar-right">
-            <div className="difficulty-filter" role="group" aria-label="难度筛选">
+            <div className="difficulty-filter" role="group" aria-label={t('home.toolbar.ariaLabel.difficulty')}>
               {difficultyFilters.map(d => (
                 <button
                   key={d.value}
@@ -305,7 +318,7 @@ export default function HomePage({
                   style={difficulty === d.value ? { borderColor: d.color, color: d.color } : {}}
                   aria-pressed={difficulty === d.value}
                 >
-                  {d.label}
+                  {t(d.label)}
                 </button>
               ))}
             </div>
@@ -317,7 +330,7 @@ export default function HomePage({
                   onClick={() => setColorPickerOpen(v => !v)}
                   aria-haspopup="true"
                   aria-expanded={colorPickerOpen}
-                  aria-label="按颜色筛选"
+                  aria-label={t('home.toolbar.ariaLabel.colorFilter')}
                 >
                   {colorFilter ? (
                     <span
@@ -327,7 +340,7 @@ export default function HomePage({
                   ) : (
                     <span className="color-filter__swatch color-filter__swatch--rainbow" />
                   )}
-                  <span className="color-filter__label">{colorFilter ? '颜色' : '按颜色'}</span>
+                  <span className="color-filter__label">{colorFilter ? t('home.toolbar.color.selected') : t('home.toolbar.color.byColor')}</span>
                 </button>
                 {colorFilter && (
                   <button
@@ -337,21 +350,21 @@ export default function HomePage({
                       onColorFilterChange(null);
                       setColorPickerOpen(false);
                     }}
-                    aria-label="清除颜色筛选"
+                    aria-label={t('home.toolbar.ariaLabel.clearColorFilter')}
                   >
                     <X size={12} />
                   </button>
                 )}
               </div>
               {colorPickerOpen && (
-                <div className="color-filter__dropdown" role="dialog" aria-label="选择颜色">
+                <div className="color-filter__dropdown" role="dialog" aria-label={t('home.toolbar.ariaLabel.selectColor')}>
                   <div className="color-filter__dropdown-header">
-                    <span>选择颜色筛选</span>
+                    <span>{t('home.toolbar.color.dropdownTitle')}</span>
                     <button
                       type="button"
                       className="color-filter__dropdown-close"
                       onClick={() => setColorPickerOpen(false)}
-                      aria-label="关闭"
+                      aria-label={t('home.toolbar.color.close')}
                     >
                       <X size={14} />
                     </button>
@@ -385,32 +398,32 @@ export default function HomePage({
               )}
             </div>
             <label className="home-page__sort">
-              <span className="home-page__sort-label">尺寸</span>
+              <span className="home-page__sort-label">{t('common.size')}</span>
               <div className="home-page__sort-select">
                 <select
                   value={gridSize}
                   onChange={e => onGridSizeChange(e.target.value as GridSizeFilter)}
-                  aria-label="网格尺寸筛选"
+                  aria-label={t('home.toolbar.ariaLabel.gridSize')}
                 >
-                  <option value="all">全部</option>
-                  <option value="small">小型 (≤16)</option>
-                  <option value="medium">中型 (17-29)</option>
-                  <option value="large">大型 (≥30)</option>
+                  <option value="all">{t('home.toolbar.gridSize.all')}</option>
+                  <option value="small">{t('home.toolbar.gridSize.small')}</option>
+                  <option value="medium">{t('home.toolbar.gridSize.medium')}</option>
+                  <option value="large">{t('home.toolbar.gridSize.large')}</option>
                 </select>
                 <ChevronDown size={14} className="home-page__sort-icon" />
               </div>
             </label>
             <label className="home-page__sort">
-              <span className="home-page__sort-label">排序</span>
+              <span className="home-page__sort-label">{t('common.sort')}</span>
               <div className="home-page__sort-select">
                 <select
                   value={sortKey}
                   onChange={e => onSortKeyChange(e.target.value as SortKey)}
-                  aria-label="排序方式"
+                  aria-label={t('home.toolbar.ariaLabel.sort')}
                 >
                   {sortOptions.map(opt => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {t(opt.label)}
                     </option>
                   ))}
                 </select>
@@ -439,11 +452,11 @@ export default function HomePage({
         ) : (
           <div className="empty-state">
             <p className="empty-state__icon">🔍</p>
-            <p className="empty-state__title">没有找到匹配的模板</p>
-            <p className="empty-state__desc">试试其他关键词或分类吧</p>
+            <p className="empty-state__title">{t('home.empty.title')}</p>
+            <p className="empty-state__desc">{t('home.empty.desc')}</p>
             {(searchQuery || activeCategory !== 'all' || difficulty !== 'all' || gridSize !== 'all' || colorFilter) && (
               <button type="button" className="empty-state__action" onClick={handleClearFilters}>
-                清除筛选条件
+                {t('common.clearFilters')}
               </button>
             )}
           </div>

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import TemplateCard from '../components/TemplateCard';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Download, Upload } from 'lucide-react';
 import { getBeadCount } from '../utils/beadStats';
+import { useTranslation } from '../context/LanguageContext';
 
 interface FavoritesPageProps {
   templates: BeadTemplate[];
@@ -11,14 +12,17 @@ interface FavoritesPageProps {
   onClearFavorites: () => void;
   onBack: () => void;
   onNavigate: (hash: string) => void;
+  onExportData: () => void;
+  onImportData: (file: File) => void;
 }
 
 type SortKey = 'recent' | 'name' | 'beads';
 
+// label 字段存储翻译键，渲染时通过 t() 解析
 const sortOptions: { value: SortKey; label: string }[] = [
-  { value: 'recent', label: '收藏时间' },
-  { value: 'name', label: '名称' },
-  { value: 'beads', label: '颗数' },
+  { value: 'recent', label: 'favorites.sort.recent' },
+  { value: 'name', label: 'favorites.sort.name' },
+  { value: 'beads', label: 'favorites.sort.beads' },
 ];
 
 export default function FavoritesPage({
@@ -28,12 +32,16 @@ export default function FavoritesPage({
   onClearFavorites,
   onBack,
   onNavigate,
+  onExportData,
+  onImportData,
 }: FavoritesPageProps) {
   const [confirming, setConfirming] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const modalRef = useRef<HTMLDivElement>(null);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   const favoritedTemplates = useMemo(() => {
     const list = templates.filter(t => favorites.includes(t.id));
@@ -119,38 +127,75 @@ export default function FavoritesPage({
       <header className="favorites-page__header">
         <button type="button" className="favorites-page__back" onClick={onBack}>
           <ArrowLeft size={20} />
-          返回
+          {t('common.back')}
         </button>
         <div className="favorites-page__title-row">
-          <h1 className="favorites-page__title">我的收藏 ({favoritedTemplates.length})</h1>
-          {favoritedTemplates.length > 0 && (
-            <div className="favorites-page__actions">
-              <label className="favorites-page__sort">
-                <span className="favorites-page__sort-label">排序</span>
-                <select
-                  value={sortKey}
-                  onChange={e => setSortKey(e.target.value as SortKey)}
-                  aria-label="收藏排序方式"
-                >
-                  {sortOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <h1 className="favorites-page__title">{t('favorites.title', { count: favoritedTemplates.length })}</h1>
+          <div className="favorites-page__actions">
+            <div className="favorites-page__data-sync" role="group" aria-label={t('favorites.dataSync.ariaLabel')}>
               <button
                 type="button"
-                className="favorites-page__clear"
-                onClick={handleClearClick}
-                aria-label="清空收藏"
-                title="清空收藏"
+                className="favorites-page__sync-btn"
+                onClick={onExportData}
+                aria-label={t('favorites.export.ariaLabel')}
+                title={t('favorites.export.title')}
               >
-                <Trash2 size={16} />
-                <span>清空</span>
+                <Download size={16} />
+                <span>{t('favorites.export')}</span>
               </button>
+              <button
+                type="button"
+                className="favorites-page__sync-btn"
+                onClick={() => importInputRef.current?.click()}
+                aria-label={t('favorites.import.ariaLabel')}
+                title={t('favorites.import.title')}
+              >
+                <Upload size={16} />
+                <span>{t('favorites.import')}</span>
+              </button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="upload-page__file-input"
+                aria-hidden="true"
+                tabIndex={-1}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) onImportData(file);
+                  e.target.value = '';
+                }}
+              />
             </div>
-          )}
+            {favoritedTemplates.length > 0 && (
+              <>
+                <label className="favorites-page__sort">
+                  <span className="favorites-page__sort-label">{t('favorites.sortLabel')}</span>
+                  <select
+                    value={sortKey}
+                    onChange={e => setSortKey(e.target.value as SortKey)}
+                    aria-label={t('favorites.sort.ariaLabel')}
+                  >
+                    {sortOptions.map(opt => (
+                      <option key={opt.value} value={opt.value}>
+                        {t(opt.label)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  className="favorites-page__clear"
+                  onClick={handleClearClick}
+                  aria-label={t('favorites.clear.ariaLabel')}
+                  title={t('favorites.clear.title')}
+                >
+                  <Trash2 size={16} />
+                  <span>{t('favorites.clear')}</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -170,10 +215,10 @@ export default function FavoritesPage({
         ) : (
           <div className="empty-state">
             <p className="empty-state__icon">💔</p>
-            <p className="empty-state__title">还没有收藏</p>
-            <p className="empty-state__desc">去首页发现你喜欢的拼豆模板吧！</p>
+            <p className="empty-state__title">{t('favorites.empty.title')}</p>
+            <p className="empty-state__desc">{t('favorites.empty.desc')}</p>
             <button type="button" className="empty-state__action" onClick={onBack}>
-              去首页逛逛
+              {t('favorites.empty.action')}
             </button>
           </div>
         )}
@@ -189,8 +234,8 @@ export default function FavoritesPage({
             aria-modal="true"
             aria-labelledby="modal-title"
           >
-            <h3 id="modal-title" className="modal__title">确认清空收藏？</h3>
-            <p className="modal__desc">将移除全部 {favoritedTemplates.length} 个收藏，此操作不可撤销。</p>
+            <h3 id="modal-title" className="modal__title">{t('favorites.modal.title')}</h3>
+            <p className="modal__desc">{t('favorites.modal.desc', { count: favoritedTemplates.length })}</p>
             <div className="modal__actions">
               <button
                 ref={cancelBtnRef}
@@ -198,14 +243,14 @@ export default function FavoritesPage({
                 className="modal__btn modal__btn--cancel"
                 onClick={closeModal}
               >
-                取消
+                {t('favorites.modal.cancel')}
               </button>
               <button
                 type="button"
                 className="modal__btn modal__btn--danger"
                 onClick={handleConfirmClear}
               >
-                清空
+                {t('favorites.modal.confirm')}
               </button>
             </div>
           </div>
