@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList } from 'lucide-react';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
@@ -36,6 +36,8 @@ export default function DetailPage({
   const [zoom, setZoom] = useState(1);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [showTop, setShowTop] = useState(false);
+  const [showGridLines, setShowGridLines] = useState(false);
+  const [copiedAll, setCopiedAll] = useState(false);
 
   const handleCopyHex = useCallback(async (hex: string) => {
     try {
@@ -46,6 +48,20 @@ export default function DetailPage({
       // Clipboard API may be unavailable; fail silently
     }
   }, []);
+
+  const handleCopyAllColors = useCallback(async () => {
+    if (!template) return;
+    const text = template.colors
+      .map(c => `${c.hex}\t${c.name}\t${c.count}颗`)
+      .join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAll(true);
+      setTimeout(() => setCopiedAll(false), 1500);
+    } catch {
+      // fail silently
+    }
+  }, [template]);
 
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
@@ -149,10 +165,20 @@ export default function DetailPage({
             >
               <ZoomIn size={16} />
             </button>
+            <button
+              type="button"
+              className={`detail-page__zoom-btn ${showGridLines ? 'detail-page__zoom-btn--active' : ''}`}
+              onClick={() => setShowGridLines(v => !v)}
+              aria-label="切换网格线"
+              aria-pressed={showGridLines}
+              title="网格线"
+            >
+              <Grid3x3 size={16} />
+            </button>
           </div>
           <div className="detail-page__pixel" style={{ overflow: 'auto' }}>
             <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-              <PixelGrid grid={template.grid} colors={template.colors} />
+              <PixelGrid grid={template.grid} colors={template.colors} showGridLines={showGridLines} />
             </div>
           </div>
         </div>
@@ -173,7 +199,18 @@ export default function DetailPage({
         </div>
 
         <div className="detail-page__palette">
-          <h2 className="detail-page__section-title">色卡（点击复制色号）</h2>
+          <div className="detail-page__palette-header">
+            <h2 className="detail-page__section-title">色卡（点击复制色号）</h2>
+            <button
+              type="button"
+              className="detail-page__copy-all"
+              onClick={handleCopyAllColors}
+              title="复制全部色卡"
+            >
+              {copiedAll ? <Check size={14} /> : <ClipboardList size={14} />}
+              <span>{copiedAll ? '已复制' : '复制全部'}</span>
+            </button>
+          </div>
           <div className="detail-page__palette-grid">
             {template.colors.map((color, i) => (
               <button
@@ -231,6 +268,12 @@ export default function DetailPage({
             ) : <span className="detail-page__pager-spacer" />}
           </nav>
         )}
+
+        <div className="detail-page__shortcuts">
+          <kbd>←</kbd><kbd>→</kbd> 切换模板
+          <span className="detail-page__shortcuts-sep">·</span>
+          <kbd>Esc</kbd> 返回首页
+        </div>
       </div>
 
       {showTop && (

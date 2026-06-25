@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, Heart, Sun, Moon, X } from 'lucide-react';
 
 interface NavbarProps {
@@ -8,6 +8,7 @@ interface NavbarProps {
   favoritesCount: number;
   onNavigateFavorites: () => void;
   onNavigateHome: () => void;
+  searchQuery: string;
 }
 
 export default function Navbar({
@@ -17,9 +18,15 @@ export default function Navbar({
   favoritesCount,
   onNavigateFavorites,
   onNavigateHome,
+  searchQuery,
 }: NavbarProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(searchQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 当外部 searchQuery 变化时（如导航返回/清除筛选），同步内部输入框
+  useEffect(() => {
+    setQuery(searchQuery);
+  }, [searchQuery]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +53,7 @@ export default function Navbar({
 
   return (
     <nav className="navbar">
-      <button className="navbar__brand" onClick={onNavigateHome}>
+      <button type="button" className="navbar__brand" onClick={onNavigateHome}>
         <span className="navbar__logo">🔴</span>
         <span className="navbar__title">拼豆收集</span>
       </button>
@@ -61,7 +68,7 @@ export default function Navbar({
           onChange={handleChange}
         />
         {query && (
-          <button className="navbar__search-clear" onClick={handleClear} aria-label="清除搜索">
+          <button type="button" className="navbar__search-clear" onClick={handleClear} aria-label="清除搜索">
             <X size={14} />
           </button>
         )}
@@ -69,6 +76,7 @@ export default function Navbar({
 
       <div className="navbar__actions">
         <button
+          type="button"
           className="navbar__action-btn"
           onClick={onNavigateFavorites}
           aria-label={`收藏 (${favoritesCount})`}
@@ -80,6 +88,7 @@ export default function Navbar({
         </button>
 
         <button
+          type="button"
           className="navbar__action-btn"
           onClick={onToggleTheme}
           aria-label={`切换${theme === 'dark' ? '明亮' : '深色'}主题`}

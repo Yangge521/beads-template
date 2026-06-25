@@ -40,6 +40,7 @@ interface HomePageProps {
   onToggleTheme: () => void;
   recentlyViewed: string[];
   onNavigate: (hash: string) => void;
+  onClearFilters: () => void;
 }
 
 export default function HomePage({
@@ -57,6 +58,7 @@ export default function HomePage({
   onToggleTheme,
   recentlyViewed,
   onNavigate,
+  onClearFilters,
 }: HomePageProps) {
   const [sortKey, setSortKey] = useState<SortKey>('default');
   const [difficulty, setDifficulty] = useState<DifficultyFilter>('all');
@@ -128,6 +130,7 @@ export default function HomePage({
         favoritesCount={favorites.length}
         onNavigateFavorites={onNavigateFavorites}
         onNavigateHome={onNavigateHome}
+        searchQuery={searchQuery}
       />
 
       <CategoryFilter
@@ -154,6 +157,7 @@ export default function HomePage({
               {recentTemplates.map(t => (
                 <button
                   key={t.id}
+                  type="button"
                   className="recent-chip"
                   onClick={() => onNavigate(`template/${t.id}`)}
                   title={t.name}
@@ -226,6 +230,11 @@ export default function HomePage({
             <p className="empty-state__icon">🔍</p>
             <p className="empty-state__title">没有找到匹配的模板</p>
             <p className="empty-state__desc">试试其他关键词或分类吧</p>
+            {(searchQuery || activeCategory !== 'all' || difficulty !== 'all') && (
+              <button type="button" className="empty-state__action" onClick={onClearFilters}>
+                清除筛选条件
+              </button>
+            )}
           </div>
         )}
       </main>

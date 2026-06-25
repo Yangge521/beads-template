@@ -4,9 +4,15 @@ interface PixelGridProps {
   grid: number[][];
   colors: ColorInfo[];
   className?: string;
+  showGridLines?: boolean;
 }
 
-export default function PixelGrid({ grid, colors, className = '' }: PixelGridProps) {
+export default function PixelGrid({
+  grid,
+  colors,
+  className = '',
+  showGridLines = false,
+}: PixelGridProps) {
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
 
@@ -14,11 +20,11 @@ export default function PixelGrid({ grid, colors, className = '' }: PixelGridPro
 
   return (
     <div
-      className={`pixel-grid ${className}`}
+      className={`pixel-grid ${className} ${showGridLines ? 'pixel-grid--lined' : ''}`}
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: '1px',
+        gap: showGridLines ? '0' : '1px',
         width: 'fit-content',
       }}
       role="img"
@@ -35,7 +41,8 @@ export default function PixelGrid({ grid, colors, className = '' }: PixelGridPro
               style={{
                 backgroundColor: color ? color.hex : 'transparent',
                 aspectRatio: '1',
-                borderRadius: '2px',
+                borderRadius: showGridLines ? '0' : '2px',
+                outline: showGridLines ? '0.5px solid var(--pixel-line, rgba(0,0,0,0.15))' : 'none',
               }}
               title={
                 color ? `${color.name} (${color.hex})` : '空白'

@@ -36,7 +36,7 @@ export default function FavoritesPage({
   return (
     <div className="page favorites-page">
       <header className="favorites-page__header">
-        <button className="favorites-page__back" onClick={onBack}>
+        <button type="button" className="favorites-page__back" onClick={onBack}>
           <ArrowLeft size={20} />
           返回
         </button>
@@ -44,6 +44,7 @@ export default function FavoritesPage({
           <h1 className="favorites-page__title">我的收藏 ({favoritedTemplates.length})</h1>
           {favoritedTemplates.length > 0 && (
             <button
+              type="button"
               className="favorites-page__clear"
               onClick={handleClearClick}
               aria-label="清空收藏"
@@ -74,7 +75,7 @@ export default function FavoritesPage({
             <p className="empty-state__icon">💔</p>
             <p className="empty-state__title">还没有收藏</p>
             <p className="empty-state__desc">去首页发现你喜欢的拼豆模板吧！</p>
-            <button className="empty-state__action" onClick={onBack}>
+            <button type="button" className="empty-state__action" onClick={onBack}>
               去首页逛逛
             </button>
           </div>
@@ -87,10 +88,10 @@ export default function FavoritesPage({
             <h3 className="modal__title">确认清空收藏？</h3>
             <p className="modal__desc">将移除全部 {favoritedTemplates.length} 个收藏，此操作不可撤销。</p>
             <div className="modal__actions">
-              <button className="modal__btn modal__btn--cancel" onClick={() => setConfirming(false)}>
+              <button type="button" className="modal__btn modal__btn--cancel" onClick={() => setConfirming(false)}>
                 取消
               </button>
-              <button className="modal__btn modal__btn--danger" onClick={handleConfirmClear}>
+              <button type="button" className="modal__btn modal__btn--danger" onClick={handleConfirmClear}>
                 清空
               </button>
             </div>

@@ -85,6 +85,11 @@ function AppContent() {
     window.location.hash = 'favorites';
   }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setActiveCategory('all');
+    setSearchQuery('');
+  }, []);
+
   // Parse route
   const routeParts = hash.split('/').filter(Boolean);
   const templateId = routeParts[0] === 'template' ? routeParts[1] : undefined;
@@ -156,6 +161,7 @@ function AppContent() {
       onToggleTheme={toggleTheme}
       recentlyViewed={recentlyViewed}
       onNavigate={handleNavigate}
+      onClearFilters={handleClearFilters}
     />
   );
 }
