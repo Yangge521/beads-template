@@ -286,6 +286,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'upload.toast.defaultName': '自定义模板',
     'upload.toast.saved': '已保存「{name}」',
     'upload.toast.saveFailed': '保存失败',
+    'upload.build.description': '上传图片自动生成 · {cols}×{rows} · {colors} 色',
+    'upload.build.tagCustom': '自定义',
+    'upload.build.tagUpload': '上传',
+    'upload.build.source': '用户上传',
+    'upload.build.colorNamePrefix': '颜色',
 
     // ---- shortcut help ----
     'shortcut.title': '键盘快捷键',
@@ -575,6 +580,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'upload.toast.defaultName': 'Custom template',
     'upload.toast.saved': 'Saved "{name}"',
     'upload.toast.saveFailed': 'Failed to save',
+    'upload.build.description': 'Auto-generated from upload · {cols}×{rows} · {colors} colors',
+    'upload.build.tagCustom': 'custom',
+    'upload.build.tagUpload': 'upload',
+    'upload.build.source': 'User upload',
+    'upload.build.colorNamePrefix': 'Color',
 
     // ---- shortcut help ----
     'shortcut.title': 'Keyboard Shortcuts',

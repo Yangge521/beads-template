@@ -183,12 +183,12 @@ function AppContent() {
   const routeParts = hash.split('/').filter(Boolean);
   const templateId = routeParts[0] === 'template' ? routeParts[1] : undefined;
   const currentTemplate = templateId
-    ? allTemplates.find(t => t.id === templateId) || null
+    ? allTemplates.find(tpl => tpl.id === templateId) || null
     : null;
 
   // 计算上一个/下一个模板（基于全量列表顺序）
   const currentIdx = currentTemplate
-    ? allTemplates.findIndex(t => t.id === currentTemplate.id)
+    ? allTemplates.findIndex(tpl => tpl.id === currentTemplate.id)
     : -1;
   const prevTemplate = currentIdx > 0 ? allTemplates[currentIdx - 1] : null;
   const nextTemplate =
@@ -201,11 +201,11 @@ function AppContent() {
     if (!currentTemplate) return [];
     const tags = new Set(currentTemplate.tags);
     return allTemplates
-      .filter(t => t.id !== currentTemplate.id)
-      .map(t => ({
-        template: t,
-        score: t.tags.filter(tag => tags.has(tag)).length
-            + (t.category === currentTemplate.category ? 1 : 0),
+      .filter(tpl => tpl.id !== currentTemplate.id)
+      .map(tpl => ({
+        template: tpl,
+        score: tpl.tags.filter(tag => tags.has(tag)).length
+            + (tpl.category === currentTemplate.category ? 1 : 0),
       }))
       .filter(x => x.score > 0)
       .sort((a, b) => b.score - a.score)

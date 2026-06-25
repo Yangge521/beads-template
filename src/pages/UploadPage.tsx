@@ -61,8 +61,8 @@ export default function UploadPage({
   // 像素化预览（实时随参数变化）
   const preview = useMemo(() => {
     if (!img) return null;
-    return pixelizeImage(img, options);
-  }, [img, options]);
+    return pixelizeImage(img, { ...options, colorNamePrefix: t('upload.build.colorNamePrefix') });
+  }, [img, options, t]);
 
   // 统计预览信息
   const previewStats = useMemo(() => {
@@ -118,7 +118,16 @@ export default function UploadPage({
     }
     setSaving(true);
     try {
-      const template = buildTemplateFromImage(img, name.trim() || t('upload.toast.defaultName'), options);
+      const template = buildTemplateFromImage(img, name.trim() || t('upload.toast.defaultName'), {
+        ...options,
+        labels: {
+          defaultName: t('upload.toast.defaultName'),
+          description: t('upload.build.description'),
+          tags: [t('upload.build.tagCustom'), t('upload.build.tagUpload')],
+          source: t('upload.build.source'),
+          colorNamePrefix: t('upload.build.colorNamePrefix'),
+        },
+      });
       const saved = onSaveTemplate(template);
       showToast(t('upload.toast.saved', { name: saved.name }), 'success');
       // 跳转到详情页查看

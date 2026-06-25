@@ -18,6 +18,8 @@ interface PixelizeOptions {
   dropBackground?: boolean;
   /** 背景判定阈值（亮度高于此值视为背景，0-255） */
   backgroundLuminance?: number;
+  /** 颜色名称前缀（本地化），生成形如「颜色 1」的占位名 */
+  colorNamePrefix?: string;
 }
 
 interface PixelizeResult {
@@ -74,6 +76,7 @@ export function pixelizeImage(
     colorThreshold = 0.08,
     dropBackground = true,
     backgroundLuminance = 235,
+    colorNamePrefix = 'Color',
   } = options;
 
   // 按原图比例缩放到 maxGridSize 内
@@ -108,7 +111,8 @@ export function pixelizeImage(
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
     const [h, s, l] = rgbToHsl(r, g, b);
-    const isBg = dropBackground && a < 128 || (dropBackground && l * 255 > backgroundLuminance && s < 0.15);
+    // 背景判定：透明像素 或（开启去背景且亮度过高且饱和度极低）
+    const isBg = a < 128 || (dropBackground && l * 255 > backgroundLuminance && s < 0.15);
     cells.push({ r, g, b, a, h, s, l, isBg });
   }
 
@@ -149,7 +153,7 @@ export function pixelizeImage(
     hex: rgbToHex(
       ...hslToRgb(p.h, p.s, p.l)
     ),
-    name: `颜色 ${idx + 1}`,
+    name: `${colorNamePrefix} ${idx + 1}`,
     count: 0,
   }));
 
@@ -222,13 +226,31 @@ export function loadImageFromFile(file: File): Promise<HTMLImageElement> {
   });
 }
 
+/** 构建模板时使用的本地化标签（由调用方通过 i18n 提供） */
+export interface BuildTemplateLabels {
+  /** 默认模板名（用户未输入名称时使用） */
+  defaultName: string;
+  /** 描述文案模板，支持 {cols} {rows} {colors} 占位 */
+  description: string;
+  /** 标签数组（语言相关） */
+  tags: string[];
+  /** 来源标注 */
+  source: string;
+  /** 颜色名称前缀，生成形如「颜色 1」 */
+  colorNamePrefix: string;
+}
+
 /** 根据上传图片生成完整的 BeadTemplate（不含 id，由调用方填充） */
 export function buildTemplateFromImage(
   img: HTMLImageElement,
   name: string,
-  options: PixelizeOptions = {}
+  options: PixelizeOptions & { labels?: BuildTemplateLabels } = {}
 ): Omit<BeadTemplate, 'id'> & { id?: string } {
-  const result = pixelizeImage(img, options);
+  const { labels, ...pixelizeOpts } = options;
+  const result = pixelizeImage(img, {
+    ...pixelizeOpts,
+    colorNamePrefix: labels?.colorNamePrefix,
+  });
   if (!result) {
     throw new Error('图片像素化失败');
   }
@@ -241,15 +263,21 @@ export function buildTemplateFromImage(
   const difficulty: BeadTemplate['difficulty'] =
     maxDim <= 16 ? 'easy' : maxDim <= 24 ? 'medium' : 'hard';
 
+  const descTemplate = labels?.description ?? 'Auto-generated · {cols}×{rows} · {colors} colors';
+  const description = descTemplate
+    .replace('{cols}', String(cols))
+    .replace('{rows}', String(rows))
+    .replace('{colors}', String(colors.length));
+
   return {
-    name: name || '自定义模板',
+    name: name || labels?.defaultName || 'Custom template',
     category: 'custom',
-    description: `上传图片自动生成 · ${cols}×${rows} · ${colors.length} 色`,
+    description,
     grid,
     colors,
     beadCount,
     difficulty,
-    tags: ['自定义', '上传'],
-    source: '用户上传',
+    tags: labels?.tags ?? ['custom', 'upload'],
+    source: labels?.source ?? 'User upload',
   };
 }
