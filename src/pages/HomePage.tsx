@@ -173,6 +173,13 @@ export default function HomePage({
       .sort((a, b) => a.hex.localeCompare(b.hex));
   }, [templates]);
 
+  // hero 区统计：总颗数与去重颜色数
+  const totalBeads = useMemo(
+    () => templates.reduce((sum, t) => sum + getBeadCount(t), 0),
+    [templates]
+  );
+  const totalColors = useMemo(() => availableColors.length, [availableColors]);
+
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const colorFilterRef = useRef<HTMLDivElement>(null);
 
@@ -226,10 +233,39 @@ export default function HomePage({
       <main id="main-content" className="home-page__content" tabIndex={-1}>
         {!searchQuery && activeCategory === 'all' && (
           <section className="hero">
-            <h1 className="hero__title">拼豆模板收集</h1>
+            <h1 className="hero__title"><span aria-hidden="true">🔴 </span>拼豆模板收集</h1>
             <p className="hero__subtitle">
-              共收录 {templates.length} 个模板 · {categories.length - 1} 个分类 · 点击卡片查看色卡与网格
+              收录动漫、游戏、明星等像素图案 · 内置三品牌色卡参考 · 让拼豆制作更简单
             </p>
+            <div className="hero__stats">
+              <div className="hero__stat">
+                <span className="hero__stat-value">{templates.length}</span>
+                <span className="hero__stat-label">模板</span>
+              </div>
+              <div className="hero__stat-divider" aria-hidden="true" />
+              <div className="hero__stat">
+                <span className="hero__stat-value">{categories.length - 1}</span>
+                <span className="hero__stat-label">分类</span>
+              </div>
+              <div className="hero__stat-divider" aria-hidden="true" />
+              <div className="hero__stat">
+                <span className="hero__stat-value">{totalBeads}</span>
+                <span className="hero__stat-label">总颗数</span>
+              </div>
+              <div className="hero__stat-divider" aria-hidden="true" />
+              <div className="hero__stat">
+                <span className="hero__stat-value">{totalColors}</span>
+                <span className="hero__stat-label">颜色</span>
+              </div>
+            </div>
+            <div className="hero__features">
+              <span className="hero__feature"><span aria-hidden="true">🔍 </span>即时搜索</span>
+              <span className="hero__feature"><span aria-hidden="true">🎨 </span>色卡参考</span>
+              <span className="hero__feature"><span aria-hidden="true">❤️ </span>一键收藏</span>
+              <span className="hero__feature"><span aria-hidden="true">🖨️ </span>用量清单</span>
+              <span className="hero__feature"><span aria-hidden="true">🌓 </span>明暗主题</span>
+              <span className="hero__feature"><span aria-hidden="true">⌨️ </span>快捷键</span>
+            </div>
           </section>
         )}
 
