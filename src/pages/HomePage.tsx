@@ -224,6 +224,7 @@ export default function HomePage({
         favoritesCount={favorites.length}
         onNavigateFavorites={onNavigateFavorites}
         onNavigateColorRef={onNavigateColorRef}
+        onNavigateUpload={onNavigateUpload}
         onNavigateHome={onNavigateHome}
         searchQuery={searchQuery}
       />

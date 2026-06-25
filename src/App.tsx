@@ -46,7 +46,7 @@ function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
   const { recentlyViewed, addRecentlyViewed } = useRecentlyViewed();
-  const { templates: customTemplates, addTemplate: addCustomTemplate } = useCustomTemplates();
+  const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
   const { t } = useTranslation();
 
@@ -153,17 +153,18 @@ function AppContent() {
         return;
       }
       const result = importUserData(payload, 'merge');
-      showToast(
-        result.success
-          ? t('app.toast.importSummary', {
-              message: result.message,
-              fav: result.counts.favorites,
-              recent: result.counts.recentlyViewed,
-              custom: result.counts.customTemplates,
-            })
-          : result.message,
-        result.success ? 'success' : 'error'
-      );
+      if (result.success) {
+        showToast(
+          t(result.messageKey, {
+            fav: result.counts.favorites,
+            recent: result.counts.recentlyViewed,
+            custom: result.counts.customTemplates,
+          }),
+          'success'
+        );
+      } else {
+        showToast(t(result.messageKey), 'error');
+      }
     };
     reader.onerror = () => showToast(t('app.toast.fileReadFailed'), 'error');
     reader.readAsText(file);
@@ -260,6 +261,7 @@ function AppContent() {
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}
         relatedTemplates={relatedTemplates}
+        onDeleteCustom={removeCustomTemplate}
       />
     );
   }

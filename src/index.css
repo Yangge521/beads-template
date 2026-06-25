@@ -426,6 +426,12 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   border-color: var(--accent);
 }
 
+.detail-page__delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
 .detail-page__body {
   padding: 24px 20px;
   max-width: 800px;

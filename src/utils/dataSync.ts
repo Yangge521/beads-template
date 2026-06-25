@@ -61,7 +61,8 @@ export function downloadBackupFile(): void {
 
 export interface ImportResult {
   success: boolean;
-  message: string;
+  /** 结果消息的翻译键，由调用方用 t() 翻译 */
+  messageKey: 'app.toast.importMerged' | 'app.toast.importReplaced' | 'app.toast.importFailed';
   counts: {
     favorites: number;
     recentlyViewed: number;
@@ -131,17 +132,17 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
 
     return {
       success: true,
-      message: mode === 'replace' ? '数据已替换' : '数据已合并',
+      messageKey: mode === 'replace' ? 'app.toast.importReplaced' : 'app.toast.importMerged',
       counts: {
         favorites: payload.favorites.length,
         recentlyViewed: payload.recentlyViewed.length,
         customTemplates: payload.customTemplates.length,
       },
     };
-  } catch (e) {
+  } catch {
     return {
       success: false,
-      message: `导入失败：${e instanceof Error ? e.message : '未知错误'}`,
+      messageKey: 'app.toast.importFailed',
       counts: { favorites: 0, recentlyViewed: 0, customTemplates: 0 },
     };
   }

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, Heart, Sun, Moon, X, Palette } from 'lucide-react';
+import { Search, Heart, Sun, Moon, X, Palette, Upload } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
 interface NavbarProps {
@@ -9,6 +9,7 @@ interface NavbarProps {
   favoritesCount: number;
   onNavigateFavorites: () => void;
   onNavigateColorRef: () => void;
+  onNavigateUpload: () => void;
   onNavigateHome: () => void;
   searchQuery: string;
 }
@@ -20,6 +21,7 @@ export default function Navbar({
   favoritesCount,
   onNavigateFavorites,
   onNavigateColorRef,
+  onNavigateUpload,
   onNavigateHome,
   searchQuery,
 }: NavbarProps) {
@@ -115,6 +117,16 @@ export default function Navbar({
       </div>
 
       <div className="navbar__actions">
+        <button
+          type="button"
+          className="navbar__action-btn"
+          onClick={onNavigateUpload}
+          aria-label={t('nav.upload.ariaLabel')}
+          title={t('nav.upload.title')}
+        >
+          <Upload size={20} />
+        </button>
+
         <button
           type="button"
           className="navbar__action-btn"

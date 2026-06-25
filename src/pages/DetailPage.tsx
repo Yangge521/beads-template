@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2 } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { useToast } from '../components/ToastContainer';
@@ -17,6 +17,7 @@ interface DetailPageProps {
   prevTemplate?: BeadTemplate | null;
   nextTemplate?: BeadTemplate | null;
   relatedTemplates?: BeadTemplate[];
+  onDeleteCustom?: (id: string) => void;
 }
 
 // 难度仅保留背景色，label 运行时通过 t(`difficulty.${difficulty}`) 解析
@@ -39,6 +40,7 @@ export default function DetailPage({
   prevTemplate,
   nextTemplate,
   relatedTemplates = [],
+  onDeleteCustom,
 }: DetailPageProps) {
   const [zoom, setZoom] = useState(1);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
@@ -241,6 +243,22 @@ export default function DetailPage({
             {copiedLink ? <Check size={20} /> : <Share2 size={20} />}
           </button>
           <FavoriteButton favorite={isFavorite} size={28} onClick={onToggleFavorite} />
+          {template.category === 'custom' && onDeleteCustom && (
+            <button
+              type="button"
+              className="detail-page__share-btn detail-page__delete-btn"
+              onClick={() => {
+                if (confirm(t('detail.deleteCustom.confirm', { name: template.name }))) {
+                  onDeleteCustom(template.id);
+                  onBack();
+                }
+              }}
+              aria-label={t('detail.deleteCustom.ariaLabel')}
+              title={t('detail.deleteCustom.title')}
+            >
+              <Trash2 size={20} />
+            </button>
+          )}
         </div>
       </header>
 

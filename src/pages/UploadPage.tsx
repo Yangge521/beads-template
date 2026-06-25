@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
@@ -138,13 +138,6 @@ export default function UploadPage({
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
-  // ESC 返回（与 App 全局一致，此处仅清空图片）
-  useEffect(() => {
-    return () => {
-      // 组件卸载清理
-    };
-  }, []);
-
   return (
     <div className="page upload-page">
       <Navbar
@@ -154,6 +147,7 @@ export default function UploadPage({
         favoritesCount={favoritesCount}
         onNavigateFavorites={onNavigateFavorites}
         onNavigateColorRef={onNavigateColorRef}
+        onNavigateUpload={() => {}}
         onNavigateHome={onNavigateHome}
         searchQuery={searchQuery}
       />

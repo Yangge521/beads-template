@@ -1,4 +1,5 @@
 import { Heart } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 
 interface FavoriteButtonProps {
   favorite: boolean;
@@ -11,12 +12,13 @@ export default function FavoriteButton({
   size = 20,
   onClick,
 }: FavoriteButtonProps) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       className={`favorite-btn ${favorite ? 'favorite-btn--active' : ''}`}
       onClick={onClick}
-      aria-label={favorite ? '取消收藏' : '加入收藏'}
+      aria-label={favorite ? t('common.favorite.remove') : t('common.favorite.add')}
       aria-pressed={favorite}
       style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >

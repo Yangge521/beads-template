@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useState, useRef, type ReactNode } from 'react';
 import { Check, Info, AlertCircle, X } from 'lucide-react';
+import { useTranslation } from '../context/LanguageContext';
 
 type ToastType = 'success' | 'info' | 'error';
 
@@ -34,6 +35,7 @@ export default function ToastContainer({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const idRef = useRef(0);
   const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const { t } = useTranslation();
 
   const dismiss = useCallback((id: number) => {
     setToasts(prev => prev.filter(t => t.id !== id));
@@ -69,18 +71,18 @@ export default function ToastContainer({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="toast-container" role="region" aria-label="通知" aria-live="polite">
-        {toasts.map(t => {
-          const Icon = icons[t.type];
+      <div className="toast-container" role="region" aria-label={t('common.toast.region')} aria-live="polite">
+        {toasts.map(toast => {
+          const Icon = icons[toast.type];
           return (
-            <div key={t.id} className={`toast toast--${t.type}`}>
+            <div key={toast.id} className={`toast toast--${toast.type}`}>
               <Icon size={16} className="toast__icon" />
-              <span className="toast__msg">{t.message}</span>
+              <span className="toast__msg">{toast.message}</span>
               <button
                 type="button"
                 className="toast__close"
-                onClick={() => dismiss(t.id)}
-                aria-label="关闭通知"
+                onClick={() => dismiss(toast.id)}
+                aria-label={t('common.close')}
               >
                 <X size={14} />
               </button>
