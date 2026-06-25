@@ -2,8 +2,9 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
+import { exportTemplateToPNG } from '../utils/exportPNG';
 import { useToast } from '../components/ToastContainer';
 
 interface DetailPageProps {
@@ -140,6 +141,17 @@ export default function DetailPage({
     setZoom(1);
     setTimeout(() => window.print(), 50);
   }, [template, showToast]);
+
+  // 导出 PNG：把 grid 渲染到 canvas 并下载
+  const handleExportPNG = useCallback(() => {
+    if (!template) return;
+    try {
+      exportTemplateToPNG(template, 24, showGridLines);
+      showToast('已导出 PNG 图片', 'success');
+    } catch {
+      showToast('导出失败', 'error');
+    }
+  }, [template, showGridLines, showToast]);
 
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
@@ -340,6 +352,16 @@ export default function DetailPage({
               >
                 <Printer size={14} />
                 <span>用量清单</span>
+              </button>
+              <button
+                type="button"
+                className="detail-page__copy-all"
+                onClick={handleExportPNG}
+                title="导出 PNG 图片"
+                aria-label="导出 PNG 图片"
+              >
+                <Download size={14} />
+                <span>导出图片</span>
               </button>
             </div>
           </div>

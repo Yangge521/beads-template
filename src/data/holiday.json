@@ -75,7 +75,8 @@
     "colors": [
       {"hex": "#FF8C00", "name": "南瓜橙", "count": 30},
       {"hex": "#228B22", "name": "绿茎", "count": 8},
-      {"hex": "#000000", "name": "黑", "count": 12}
+      {"hex": "#000000", "name": "黑", "count": 12},
+      {"hex": "#FFD700", "name": "黄", "count": 0}
     ],
     "beadCount": 50,
     "difficulty": "easy",

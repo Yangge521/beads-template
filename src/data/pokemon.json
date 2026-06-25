@@ -137,7 +137,8 @@
       {"hex": "#663399", "name": "紫色", "count": 30},
       {"hex": "#FFFFFF", "name": "白", "count": 12},
       {"hex": "#000000", "name": "黑", "count": 10},
-      {"hex": "#FF0000", "name": "红", "count": 8}
+      {"hex": "#FF0000", "name": "红", "count": 8},
+      {"hex": "#FFB6C1", "name": "粉", "count": 0}
     ],
     "beadCount": 60,
     "difficulty": "easy",

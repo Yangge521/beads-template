@@ -19,7 +19,9 @@
     "colors": [
       {"hex": "#FFA500", "name": "橘色", "count": 30},
       {"hex": "#FFDAB9", "name": "鼻粉", "count": 8},
-      {"hex": "#000000", "name": "黑", "count": 10}
+      {"hex": "#000000", "name": "黑", "count": 10},
+      {"hex": "#FFFFFF", "name": "白", "count": 0},
+      {"hex": "#FF0000", "name": "红", "count": 0}
     ],
     "beadCount": 48,
     "difficulty": "easy",
@@ -45,7 +47,8 @@
     "colors": [
       {"hex": "#000000", "name": "黑", "count": 25},
       {"hex": "#FFFFFF", "name": "白", "count": 30},
-      {"hex": "#FFB6C1", "name": "粉鼻", "count": 5}
+      {"hex": "#FFB6C1", "name": "粉鼻", "count": 5},
+      {"hex": "#FF0000", "name": "红", "count": 0}
     ],
     "beadCount": 60,
     "difficulty": "easy",
@@ -99,7 +102,8 @@
     "colors": [
       {"hex": "#FFFFFF", "name": "白", "count": 30},
       {"hex": "#FFB6C1", "name": "粉耳", "count": 15},
-      {"hex": "#000000", "name": "黑", "count": 8}
+      {"hex": "#000000", "name": "黑", "count": 8},
+      {"hex": "#FF0000", "name": "红", "count": 0}
     ],
     "beadCount": 53,
     "difficulty": "easy",
@@ -125,7 +129,8 @@
     "colors": [
       {"hex": "#FF8C00", "name": "橙狐", "count": 25},
       {"hex": "#FFFFFF", "name": "白", "count": 20},
-      {"hex": "#000000", "name": "黑", "count": 8}
+      {"hex": "#000000", "name": "黑", "count": 8},
+      {"hex": "#FF0000", "name": "红", "count": 0}
     ],
     "beadCount": 53,
     "difficulty": "easy",
@@ -151,7 +156,9 @@
     "colors": [
       {"hex": "#000000", "name": "黑", "count": 25},
       {"hex": "#FFFFFF", "name": "白", "count": 20},
-      {"hex": "#FFA500", "name": "橙喙", "count": 8}
+      {"hex": "#FFA500", "name": "橙喙", "count": 8},
+      {"hex": "#FFD700", "name": "黄", "count": 0},
+      {"hex": "#FFB6C1", "name": "粉", "count": 0}
     ],
     "beadCount": 53,
     "difficulty": "easy",

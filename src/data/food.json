@@ -99,7 +99,8 @@
     "colors": [
       {"hex": "#FFB6C1", "name": "粉", "count": 25},
       {"hex": "#FFFFFF", "name": "白", "count": 15},
-      {"hex": "#228B22", "name": "抹茶绿", "count": 12}
+      {"hex": "#228B22", "name": "抹茶绿", "count": 12},
+      {"hex": "#FF0000", "name": "红", "count": 0}
     ],
     "beadCount": 52,
     "difficulty": "easy",
