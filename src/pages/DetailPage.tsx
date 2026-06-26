@@ -2,10 +2,11 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
+import { exportPrintChart } from '../utils/exportPrintChart';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -176,6 +177,29 @@ export default function DetailPage({
     }
   }, [template, showGridLines, showToast, t]);
 
+  // 导出坐标网格图纸：带行列坐标 + 每 5 格加粗 + 格内色号 + 色卡图例，打印即可对照拼制
+  const handleExportChart = useCallback(() => {
+    if (!template) return;
+    try {
+      exportPrintChart(
+        template,
+        {
+          chartTitle: t('detail.chart.title'),
+          colLabel: t('detail.chart.col'),
+          rowLabel: t('detail.chart.row'),
+          legendTitle: t('detail.chart.legend'),
+          countLabel: t('detail.chart.count'),
+          totalLabel: t('detail.chart.total'),
+          beadUnit: t('common.beadsUnitShort', { count: '' }).trim(),
+        },
+        t('detail.chart.fileNameSuffix')
+      );
+      showToast(t('detail.toast.chartExported'), 'success');
+    } catch {
+      showToast(t('detail.toast.exportFailed'), 'error');
+    }
+  }, [template, showToast, t]);
+
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
     setZoom(1);
@@ -203,6 +227,8 @@ export default function DetailPage({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!onNavigateTemplate) return;
+      // 模态弹窗打开时让弹窗优先处理，不切换模板
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       // 忽略带修饰键的组合（如 Cmd+ArrowLeft 浏览器后退）
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const target = e.target as HTMLElement | null;
@@ -412,6 +438,16 @@ export default function DetailPage({
               >
                 <FileCode size={14} />
                 <span>{t('detail.palette.exportSvg.label')}</span>
+              </button>
+              <button
+                type="button"
+                className="detail-page__copy-all"
+                onClick={handleExportChart}
+                title={t('detail.palette.exportChart.title')}
+                aria-label={t('detail.palette.exportChart.ariaLabel')}
+              >
+                <Map size={14} />
+                <span>{t('detail.palette.exportChart.label')}</span>
               </button>
             </div>
           </div>

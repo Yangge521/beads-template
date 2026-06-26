@@ -102,6 +102,7 @@ export default function UploadPage({
   const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
+    e.target.value = '';
   }, [handleFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {

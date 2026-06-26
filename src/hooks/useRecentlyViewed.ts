@@ -7,8 +7,10 @@ function loadRecentlyViewed(): string[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data) {
-      const ids: string[] = JSON.parse(data);
-      return Array.isArray(ids) ? ids.slice(0, MAX_ITEMS) : [];
+      const ids = JSON.parse(data);
+      return Array.isArray(ids)
+        ? ids.filter((x: unknown): x is string => typeof x === 'string').slice(0, MAX_ITEMS)
+        : [];
     }
   } catch {}
   return [];

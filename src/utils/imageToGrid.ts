@@ -140,12 +140,11 @@ export function pixelizeImage(
 
   // 过滤掉占比极小的噪点色（< 1%）
   const totalNonBg = cells.filter(c => !c.isBg).length;
-  const filteredPalette = palette
-    .filter(p => p.count / Math.max(1, totalNonBg) > 0.01)
-    .sort((a, b) => b.count - a.count);
-
-  // 限制最多 16 色（避免太碎）
-  const finalPalette = filteredPalette.slice(0, 16);
+  const sortedPalette = palette.slice().sort((a, b) => b.count - a.count);
+  const filteredPalette = sortedPalette
+    .filter(p => p.count / Math.max(1, totalNonBg) > 0.01);
+  // 若噪点过滤后为空（色彩过于均匀），回退到按 count 排序的 top 16，避免后续崩溃
+  const finalPalette = (filteredPalette.length > 0 ? filteredPalette : sortedPalette).slice(0, 16);
 
   // 按最终 palette 重新映射每个格子到最近色
   // 生成 colors 数组（含运行时统计的 count）
