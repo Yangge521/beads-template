@@ -44,7 +44,7 @@ export default function CategoryFilter({
       el.removeEventListener('scroll', updateScrollState);
       window.removeEventListener('resize', updateScrollState);
     };
-  }, []);
+  }, [counts]);
 
   // 滚动到激活的分类，确保可见
   useEffect(() => {

@@ -5,22 +5,25 @@ import type { BeadTemplate } from '../types/bead';
  * @param template 拼豆模板
  * @param cellSize 每格像素大小（默认 24px）
  * @param withGridLines 是否绘制网格线
+ * @param fileNameSuffix 文件名后缀（i18n 文案，由调用方传入）
+ * @returns Promise<boolean>：true 表示成功生成并触发下载，false 表示失败
  */
 export function exportTemplateToPNG(
   template: BeadTemplate,
   cellSize = 24,
-  withGridLines = false
-): void {
-  const { grid, colors, name } = template;
+  withGridLines = false,
+  fileNameSuffix = 'pattern'
+): Promise<boolean> {
+  const { grid, colors, name, id } = template;
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
-  if (rows === 0 || cols === 0) return;
+  if (rows === 0 || cols === 0) return Promise.resolve(false);
 
   const canvas = document.createElement('canvas');
   canvas.width = cols * cellSize;
   canvas.height = rows * cellSize;
   const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+  if (!ctx) return Promise.resolve(false);
 
   // 透明背景（不填白底，保留透明）
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -54,20 +57,26 @@ export function exportTemplateToPNG(
     }
   }
 
-  // 触发下载
-  canvas.toBlob(
-    blob => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${name || template.id}-拼豆图案.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      // 延迟释放，避免下载未开始就被 revoke
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    },
-    'image/png'
-  );
+  // toBlob 是异步的，返回 Promise 让调用方据实反馈成功/失败
+  return new Promise<boolean>(resolve => {
+    canvas.toBlob(
+      blob => {
+        if (!blob) {
+          resolve(false);
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name || id}-${fileNameSuffix}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // 延迟释放，避免下载未开始就被 revoke
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        resolve(true);
+      },
+      'image/png'
+    );
+  });
 }

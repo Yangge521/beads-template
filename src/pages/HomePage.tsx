@@ -452,7 +452,7 @@ export default function HomePage({
           </div>
         ) : (
           <div className="empty-state">
-            <p className="empty-state__icon">🔍</p>
+            <p className="empty-state__icon" aria-hidden="true">🔍</p>
             <p className="empty-state__title">{t('home.empty.title')}</p>
             <p className="empty-state__desc">{t('home.empty.desc')}</p>
             {(searchQuery || activeCategory !== 'all' || difficulty !== 'all' || gridSize !== 'all' || colorFilter) && (

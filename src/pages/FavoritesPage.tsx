@@ -214,7 +214,7 @@ export default function FavoritesPage({
           </div>
         ) : (
           <div className="empty-state">
-            <p className="empty-state__icon">💔</p>
+            <p className="empty-state__icon" aria-hidden="true">💔</p>
             <p className="empty-state__title">{t('favorites.empty.title')}</p>
             <p className="empty-state__desc">{t('favorites.empty.desc')}</p>
             <button type="button" className="empty-state__action" onClick={onBack}>

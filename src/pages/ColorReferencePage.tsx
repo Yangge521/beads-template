@@ -15,8 +15,14 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
   const [activeBrands, setActiveBrands] = useState<Set<BrandKey>>(new Set());
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const { showToast } = useToast();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // 颜色名渲染：有 nameKey 时翻译；英文环境无 nameKey 时回退到 hex（色号仍是主标识）
+  const colorName = useCallback((c: { name: string; nameKey?: string; hex: string }) => {
+    if (c.nameKey) return t(c.nameKey);
+    return lang === 'en' ? c.hex : c.name;
+  }, [t, lang]);
 
   // 组件卸载时清理所有定时器
   useEffect(() => {
@@ -158,7 +164,7 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
           <div className="color-ref-page__groups">
             {filteredGroups.map(group => (
               <section key={group.name} className="color-ref-page__group">
-                <h2 className="color-ref-page__group-title">{group.name}</h2>
+                <h2 className="color-ref-page__group-title">{t(group.nameKey)}</h2>
                 <div className="color-ref-page__grid">
                   {group.colors.map(color => (
                     <button
@@ -167,7 +173,7 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
                       className="color-ref-card"
                       onClick={() => handleCopy(color.hex)}
                       title={t('colorRef.card.copyTitle', { hex: color.hex })}
-                      aria-label={t('colorRef.card.ariaLabel', { hex: color.hex, name: color.name })}
+                      aria-label={t('colorRef.card.ariaLabel', { hex: color.hex, name: colorName(color) })}
                     >
                       <div
                         className="color-ref-card__color"
@@ -178,7 +184,7 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
                         )}
                       </div>
                       <div className="color-ref-card__info">
-                        <span className="color-ref-card__name">{color.name}</span>
+                        <span className="color-ref-card__name">{colorName(color)}</span>
                         <span className="color-ref-card__hex">{color.hex}</span>
                         <div className="color-ref-card__brands">
                           {color.perler && (
@@ -201,7 +207,7 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
           </div>
         ) : (
           <div className="empty-state">
-            <p className="empty-state__icon">🎨</p>
+            <p className="empty-state__icon" aria-hidden="true">🎨</p>
             <p className="empty-state__title">{t('colorRef.empty.title')}</p>
             <p className="empty-state__desc">{t('colorRef.empty.desc')}</p>
           </div>

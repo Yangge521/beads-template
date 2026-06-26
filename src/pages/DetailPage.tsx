@@ -2,9 +2,10 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
+import { exportTemplateToSVG } from '../utils/exportSVG';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -144,15 +145,32 @@ export default function DetailPage({
     if (!template) return;
     showToast(t('detail.toast.preparingPrint'), 'info');
     setZoom(1);
-    setTimeout(() => window.print(), 50);
+    const timer = setTimeout(() => window.print(), 50);
+    timersRef.current.push(timer);
   }, [template, showToast, t]);
 
-  // 导出 PNG：把 grid 渲染到 canvas 并下载
-  const handleExportPNG = useCallback(() => {
+  // 导出 PNG：把 grid 渲染到 canvas 并下载（toBlob 异步，据实反馈）
+  const handleExportPNG = useCallback(async () => {
     if (!template) return;
     try {
-      exportTemplateToPNG(template, 24, showGridLines);
-      showToast(t('detail.toast.pngExported'), 'success');
+      const ok = await exportTemplateToPNG(
+        template,
+        24,
+        showGridLines,
+        t('detail.export.fileNameSuffix')
+      );
+      showToast(ok ? t('detail.toast.pngExported') : t('detail.toast.exportFailed'), ok ? 'success' : 'error');
+    } catch {
+      showToast(t('detail.toast.exportFailed'), 'error');
+    }
+  }, [template, showGridLines, showToast, t]);
+
+  // 导出 SVG：矢量格式，无限缩放不失真，文件体积小
+  const handleExportSVG = useCallback(() => {
+    if (!template) return;
+    try {
+      exportTemplateToSVG(template, 24, showGridLines, t('detail.export.fileNameSuffix'));
+      showToast(t('detail.toast.svgExported'), 'success');
     } catch {
       showToast(t('detail.toast.exportFailed'), 'error');
     }
@@ -206,7 +224,7 @@ export default function DetailPage({
     return (
       <div className="page detail-page">
         <main id="main-content" className="empty-state" tabIndex={-1}>
-          <p className="empty-state__icon">😕</p>
+          <p className="empty-state__icon" aria-hidden="true">😕</p>
           <p className="empty-state__title">{t('detail.empty.title')}</p>
           <p className="empty-state__desc">{t('detail.empty.desc')}</p>
           <button type="button" className="empty-state__action" onClick={onBack}>
@@ -384,6 +402,16 @@ export default function DetailPage({
               >
                 <Download size={14} />
                 <span>{t('detail.palette.export')}</span>
+              </button>
+              <button
+                type="button"
+                className="detail-page__copy-all"
+                onClick={handleExportSVG}
+                title={t('detail.palette.exportSvg.title')}
+                aria-label={t('detail.palette.exportSvg.ariaLabel')}
+              >
+                <FileCode size={14} />
+                <span>{t('detail.palette.exportSvg.label')}</span>
               </button>
             </div>
           </div>

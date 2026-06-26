@@ -338,7 +338,7 @@ export default function UploadPage({
               </>
             ) : (
               <div className="upload-page__empty">
-                <p className="upload-page__empty-icon">🎨</p>
+                <p className="upload-page__empty-icon" aria-hidden="true">🎨</p>
                 <p className="upload-page__empty-text">{t('upload.empty.text')}</p>
               </div>
             )}

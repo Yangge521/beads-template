@@ -43,6 +43,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // 当用户未手动设置过主题时，跟随系统主题变化
+  // 注意：onChange 内再次读取 localStorage，避免用户手动切换后
+  // 仍被系统主题变化覆盖（effect 仅挂载时注册一次监听）
   useEffect(() => {
     let hasUserPreference = false;
     try {
@@ -53,6 +55,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     const mql = window.matchMedia('(prefers-color-scheme: dark)');
     const onChange = (e: MediaQueryListEvent) => {
+      try {
+        if (localStorage.getItem(STORAGE_KEY) !== null) return;
+      } catch {}
       setTheme(e.matches ? 'dark' : 'light');
     };
     mql.addEventListener('change', onChange);

@@ -7,6 +7,8 @@
 export interface BeadColor {
   hex: string;
   name: string;
+  /** i18n 翻译键，未提供时英文环境回退到 hex */
+  nameKey?: string;
   perler?: string;
   artkal?: string;
   hama?: string;
@@ -14,12 +16,15 @@ export interface BeadColor {
 
 export interface ColorGroup {
   name: string;
+  /** i18n 翻译键，用于渲染色组标题 */
+  nameKey: string;
   colors: BeadColor[];
 }
 
 export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   {
     name: '白色系',
+    nameKey: 'colorGroup.white',
     colors: [
       { hex: '#FFFFFF', name: '纯白', perler: 'P-01', artkal: 'A-01', hama: 'H-01' },
       { hex: '#F5F5DC', name: '米白', perler: 'P-02', artkal: 'A-02', hama: 'H-02' },
@@ -29,6 +34,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '黑色系',
+    nameKey: 'colorGroup.black',
     colors: [
       { hex: '#000000', name: '纯黑', perler: 'P-12', artkal: 'A-12', hama: 'H-12' },
       { hex: '#1A1A1A', name: '墨黑', perler: 'P-13', artkal: 'A-13' },
@@ -41,6 +47,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '红色系',
+    nameKey: 'colorGroup.red',
     colors: [
       { hex: '#FF0000', name: '正红', perler: 'P-21', artkal: 'A-21', hama: 'H-21' },
       { hex: '#DC143C', name: '深红', perler: 'P-22', artkal: 'A-22' },
@@ -54,6 +61,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '粉色系',
+    nameKey: 'colorGroup.pink',
     colors: [
       { hex: '#FFC0CB', name: '浅粉', perler: 'P-31', artkal: 'A-31', hama: 'H-31' },
       { hex: '#FFB6C1', name: '亮粉', perler: 'P-32', artkal: 'A-32' },
@@ -66,6 +74,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '橙色系',
+    nameKey: 'colorGroup.orange',
     colors: [
       { hex: '#FFA500', name: '橙色', perler: 'P-41', artkal: 'A-41', hama: 'H-41' },
       { hex: '#FF8C00', name: '暗橙', perler: 'P-42', artkal: 'A-42' },
@@ -78,6 +87,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '黄色系',
+    nameKey: 'colorGroup.yellow',
     colors: [
       { hex: '#FFFF00', name: '亮黄', perler: 'P-51', artkal: 'A-51', hama: 'H-51' },
       { hex: '#FFD700', name: '金黄', perler: 'P-52', artkal: 'A-52' },
@@ -89,6 +99,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '绿色系',
+    nameKey: 'colorGroup.green',
     colors: [
       { hex: '#00FF00', name: '亮绿', perler: 'P-61', artkal: 'A-61', hama: 'H-61' },
       { hex: '#008000', name: '绿色', perler: 'P-62', artkal: 'A-62', hama: 'H-62' },
@@ -104,6 +115,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '青色系',
+    nameKey: 'colorGroup.cyan',
     colors: [
       { hex: '#00FFFF', name: '青色', perler: 'P-71', artkal: 'A-71', hama: 'H-71' },
       { hex: '#00CED1', name: '暗绿松石', perler: 'P-72', artkal: 'A-72' },
@@ -115,6 +127,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '蓝色系',
+    nameKey: 'colorGroup.blue',
     colors: [
       { hex: '#0000FF', name: '蓝色', perler: 'P-81', artkal: 'A-81', hama: 'H-81' },
       { hex: '#0000CD', name: '中蓝', perler: 'P-82', artkal: 'A-82' },
@@ -131,6 +144,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '紫色系',
+    nameKey: 'colorGroup.purple',
     colors: [
       { hex: '#800080', name: '紫色', perler: 'P-101', artkal: 'A-101', hama: 'H-101' },
       { hex: '#8B008B', name: '深紫', perler: 'P-102', artkal: 'A-102' },
@@ -144,6 +158,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '棕色系',
+    nameKey: 'colorGroup.brown',
     colors: [
       { hex: '#8B4513', name: '马鞍棕', perler: 'P-111', artkal: 'A-111' },
       { hex: '#A0522D', name: '赭色', perler: 'P-112', artkal: 'A-112', hama: 'H-112' },
@@ -159,6 +174,7 @@ export const BEAD_COLOR_GROUPS: ColorGroup[] = [
   },
   {
     name: '肤色系',
+    nameKey: 'colorGroup.skin',
     colors: [
       { hex: '#FFDAB9', name: '肤色', perler: 'P-121', artkal: 'A-121', hama: 'H-121' },
       { hex: '#FFE4C4', name: '浅肤色', perler: 'P-122', artkal: 'A-122' },

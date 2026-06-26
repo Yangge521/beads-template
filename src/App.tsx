@@ -219,7 +219,7 @@ function AppContent() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 4)
       .map(x => x.template);
-  }, [currentTemplate]);
+  }, [currentTemplate, allTemplates]);
 
   const handleNavigateTemplate = useCallback((id: string) => {
     window.location.hash = `template/${id}`;
@@ -316,7 +316,7 @@ function AppContent() {
     return (
       <div className="page">
         <main id="main-content" className="empty-state" tabIndex={-1}>
-          <p className="empty-state__icon">🧭</p>
+          <p className="empty-state__icon" aria-hidden="true">🧭</p>
           <p className="empty-state__title">{t('app.404.title')}</p>
           <p className="empty-state__desc">{t('app.404.desc')}</p>
           <button type="button" className="empty-state__action" onClick={goHome}>
