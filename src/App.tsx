@@ -358,17 +358,34 @@ function AppContent() {
   );
 }
 
+function SkipLink() {
+  const { t } = useTranslation();
+  const handleSkip = () => {
+    const el = document.getElementById('main-content');
+    if (el) {
+      el.focus();
+      el.scrollIntoView({ block: 'start' });
+    }
+  };
+  return (
+    <button type="button" className="skip-link" onClick={handleSkip}>
+      {t('common.skipToMain')}
+    </button>
+  );
+}
+
 export default function App() {
   return (
-    <ErrorBoundary>
-      <ThemeProvider>
-        <LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <ErrorBoundary>
+          <SkipLink />
           <ToastContainer>
             <AppContent />
             <ShortcutHelp />
           </ToastContainer>
-        </LanguageProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+        </ErrorBoundary>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }

@@ -1,4 +1,5 @@
 import type { ColorInfo } from '../types/bead';
+import { useTranslation } from '../context/LanguageContext';
 
 interface PixelGridProps {
   grid: number[][];
@@ -13,6 +14,7 @@ export default function PixelGrid({
   className = '',
   showGridLines = false,
 }: PixelGridProps) {
+  const { t } = useTranslation();
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
 
@@ -28,8 +30,8 @@ export default function PixelGrid({
         width: 'fit-content',
       }}
       role="img"
-      aria-label={`拼豆图案，共 ${totalBeads} 颗`}
-      title={`${cols}x${rows} | ${totalBeads} 颗`}
+      aria-label={t('pixelGrid.ariaLabel', { count: totalBeads })}
+      title={t('pixelGrid.title', { cols, rows, count: totalBeads })}
     >
       {grid.map((row, ri) =>
         row.map((cellValue, ci) => {
@@ -45,7 +47,7 @@ export default function PixelGrid({
                 outline: showGridLines ? '0.5px solid var(--pixel-line, rgba(0,0,0,0.15))' : 'none',
               }}
               title={
-                color ? `${color.name} (${color.hex})` : '空白'
+                color ? t('pixelGrid.cellTitle', { name: color.name, hex: color.hex }) : t('pixelGrid.empty')
               }
             />
           );

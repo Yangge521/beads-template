@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { useTranslation } from '../context/LanguageContext';
 
 interface Props {
   children: ReactNode;
@@ -8,6 +9,25 @@ interface Props {
 interface State {
   hasError: boolean;
   message?: string;
+}
+
+// 错误 UI 内部组件：可使用 useTranslation hook
+function ErrorFallback({ message, onReset }: { message?: string; onReset: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="page error-boundary">
+      <div className="empty-state">
+        <p className="empty-state__icon" aria-hidden="true">😵</p>
+        <p className="empty-state__title">{t('errorBoundary.title')}</p>
+        <p className="empty-state__desc">
+          {message || t('errorBoundary.unknown')}
+        </p>
+        <button type="button" className="empty-state__action" onClick={onReset}>
+          {t('errorBoundary.backHome')}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default class ErrorBoundary extends Component<Props, State> {
@@ -31,18 +51,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="page error-boundary">
-          <div className="empty-state">
-            <p className="empty-state__icon">😵</p>
-            <p className="empty-state__title">页面出错了</p>
-            <p className="empty-state__desc">
-              {this.state.message || '发生了未知错误'}
-            </p>
-            <button type="button" className="empty-state__action" onClick={this.handleReset}>
-              返回首页
-            </button>
-          </div>
-        </div>
+        <ErrorFallback message={this.state.message} onReset={this.handleReset} />
       );
     }
     return this.props.children;

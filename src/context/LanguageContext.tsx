@@ -64,6 +64,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
   }, [lang]);
 
+  // 同步 SEO meta 标签与文档语言一致（index.html 中的静态中文标签会被覆盖为当前语言）
+  useEffect(() => {
+    const setMeta = (selector: string, attr: string, value: string) => {
+      const el = document.head.querySelector(selector);
+      if (el) el.setAttribute(attr, value);
+    };
+    setMeta('meta[name="description"]', 'content', translate(lang, 'meta.description'));
+    setMeta('meta[name="keywords"]', 'content', translate(lang, 'meta.keywords'));
+    setMeta('meta[property="og:title"]', 'content', translate(lang, 'meta.ogTitle'));
+    setMeta('meta[property="og:description"]', 'content', translate(lang, 'meta.ogDescription'));
+  }, [lang]);
+
   // 跨标签页同步（与 ThemeContext 一致）
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {

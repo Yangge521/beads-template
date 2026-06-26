@@ -12,6 +12,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.cancel': '取消',
     'common.close': '关闭',
     'common.toast.region': '通知',
+    'common.skipToMain': '跳到主内容',
+
+    // ---- pixel grid ----
+    'pixelGrid.ariaLabel': '拼豆图案，共 {count} 颗',
+    'pixelGrid.title': '{cols}x{rows} | {count} 颗',
+    'pixelGrid.cellTitle': '{name} ({hex})',
+    'pixelGrid.empty': '空白',
     'common.clear': '清空',
     'common.clearFilters': '清除筛选条件',
     'common.sort': '排序',
@@ -40,6 +47,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'app.404.title': '页面不存在',
     'app.404.desc': '找不到该路径，可能链接已失效',
     'app.404.backHome': '返回首页',
+
+    // ---- error boundary ----
+    'errorBoundary.title': '页面出错了',
+    'errorBoundary.unknown': '发生了未知错误',
+    'errorBoundary.backHome': '返回首页',
     'app.toast.favorited': '已加入收藏',
     'app.toast.unfavorited': '已取消收藏',
     'app.toast.favoritesCleared': '已清空收藏',
@@ -56,6 +68,12 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- nav ----
     'nav.brand': '拼豆收集',
+
+    // ---- document meta（动态更新 index.html 中的 SEO/OG 标签）----
+    'meta.description': '拼豆模板收集 — 收录动漫、游戏、食物、动物、节日等分类的像素拼豆图案模板，提供色卡、网格预览、收藏与快捷搜索。',
+    'meta.keywords': '拼豆,Perler Bead,像素画,色卡,模板,拼豆图案',
+    'meta.ogTitle': '拼豆收集 - Perler Bead Templates',
+    'meta.ogDescription': '收录动漫、游戏、食物等分类的像素拼豆图案模板，提供色卡与网格预览。',
     'nav.search.placeholder': '搜索模板...',
     'nav.search.ariaLabel': '搜索模板',
     'nav.search.clear': '清除搜索',
@@ -308,6 +326,13 @@ export const translations: Record<Language, Record<string, string>> = {
     'common.cancel': 'Cancel',
     'common.close': 'Close',
     'common.toast.region': 'Notifications',
+    'common.skipToMain': 'Skip to main content',
+
+    // ---- pixel grid ----
+    'pixelGrid.ariaLabel': 'Perler bead pattern, {count} beads',
+    'pixelGrid.title': '{cols}x{rows} | {count} beads',
+    'pixelGrid.cellTitle': '{name} ({hex})',
+    'pixelGrid.empty': 'empty',
     'common.clear': 'Clear',
     'common.clearFilters': 'Clear all filters',
     'common.sort': 'Sort',
@@ -336,6 +361,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'app.404.title': 'Page Not Found',
     'app.404.desc': 'This path could not be found. The link may be broken.',
     'app.404.backHome': 'Back to home',
+
+    // ---- error boundary ----
+    'errorBoundary.title': 'Something went wrong',
+    'errorBoundary.unknown': 'An unknown error occurred',
+    'errorBoundary.backHome': 'Back to home',
     'app.toast.favorited': 'Added to favorites',
     'app.toast.unfavorited': 'Removed from favorites',
     'app.toast.favoritesCleared': 'Favorites cleared',
@@ -352,6 +382,12 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // ---- nav ----
     'nav.brand': 'Perler Beads',
+
+    // ---- document meta ----
+    'meta.description': 'Perler bead template collection — anime, game, food, animal, holiday pixel bead patterns with color reference, grid preview, favorites and quick search.',
+    'meta.keywords': 'perler bead,fuse bead,hama bead,pixel art,template,pattern,color chart',
+    'meta.ogTitle': 'Perler Bead Templates Collection',
+    'meta.ogDescription': 'A collection of pixel perler bead patterns across anime, game, food categories, with color reference and grid preview.',
     'nav.search.placeholder': 'Search templates...',
     'nav.search.ariaLabel': 'Search templates',
     'nav.search.clear': 'Clear search',
