@@ -1,13 +1,13 @@
 import { useRef, useState, useEffect } from 'react';
 import type { Category } from '../types/bead';
 import {
-  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star, Leaf, Upload,
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star, Leaf, Upload, Image,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
 const iconMap: Record<string, LucideIcon> = {
-  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star, Leaf, Upload,
+  Grid, Sparkles, Gamepad2, Coffee, Dog, PartyPopper, Heart, Box, Smile, Star, Leaf, Upload, Image,
 };
 
 interface CategoryFilterProps {

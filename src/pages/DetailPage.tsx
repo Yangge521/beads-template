@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map, Table, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map, Table, ThumbsUp, Star } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
@@ -18,6 +18,8 @@ interface DetailPageProps {
   onToggleFavorite: () => void;
   isLiked: boolean;
   onToggleLike: () => void;
+  rating: number;
+  onSetRating: (stars: number) => void;
   onNavigateTemplate?: (id: string) => void;
   prevTemplate?: BeadTemplate | null;
   nextTemplate?: BeadTemplate | null;
@@ -43,6 +45,8 @@ export default function DetailPage({
   onToggleFavorite,
   isLiked,
   onToggleLike,
+  rating,
+  onSetRating,
   onNavigateTemplate,
   prevTemplate,
   nextTemplate,
@@ -419,6 +423,38 @@ export default function DetailPage({
           <div className="detail-page__stat">
             <span className="detail-page__stat-value">{cols}×{rows}</span>
             <span className="detail-page__stat-label">{t('detail.stat.gridSize')}</span>
+          </div>
+        </div>
+
+        <div
+          className="detail-page__rating"
+          role="radiogroup"
+          aria-label={t('detail.rating.ariaLabel')}
+          title={t('detail.rating.title')}
+        >
+          <span className="detail-page__rating-label">{t('detail.rating.yourRating')}</span>
+          <div className="detail-page__stars">
+            {[1, 2, 3, 4, 5].map(star => {
+              const filled = rating >= star;
+              return (
+                <button
+                  key={star}
+                  type="button"
+                  className="detail-page__star-btn"
+                  onClick={() => onSetRating(star)}
+                  aria-label={t('detail.rating.star', { stars: star })}
+                  aria-checked={filled}
+                  role="radio"
+                  title={t('detail.rating.star', { stars: star })}
+                >
+                  <Star
+                    size={22}
+                    fill={filled ? '#f59e0b' : 'none'}
+                    color={filled ? '#f59e0b' : '#9ca3af'}
+                  />
+                </button>
+              );
+            })}
           </div>
         </div>
 

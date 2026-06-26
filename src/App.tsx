@@ -13,6 +13,7 @@ import { useFavorites } from './hooks/useFavorites';
 import { useRecentlyViewed } from './hooks/useRecentlyViewed';
 import { useCustomTemplates } from './hooks/useCustomTemplates';
 import { useLikes } from './hooks/useLikes';
+import { useRatings } from './hooks/useRatings';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
 import { downloadBackupFile, parseBackupFile, importUserData } from './utils/dataSync';
@@ -24,6 +25,7 @@ import animalsData from './data/animals.json';
 import holidayData from './data/holiday.json';
 import kawaiiData from './data/kawaii.json';
 import pixel3dData from './data/pixel3d.json';
+import pixelartData from './data/pixelart.json';
 import emojiData from './data/emoji.json';
 import seasonalData from './data/seasonal.json';
 import collabData from './data/collab.json';
@@ -38,6 +40,7 @@ const builtinTemplates: BeadTemplate[] = [
   ...holidayData,
   ...kawaiiData,
   ...pixel3dData,
+  ...pixelartData,
   ...emojiData,
   ...seasonalData,
   ...collabData,
@@ -47,6 +50,7 @@ function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
   const { isLiked, toggleLike } = useLikes();
+  const { getRating, setRating } = useRatings();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
@@ -69,6 +73,16 @@ function AppContent() {
     toggleLike(id);
     showToast(willAdd ? t('detail.toast.liked') : t('detail.toast.unliked'), willAdd ? 'success' : 'info');
   }, [isLiked, toggleLike, showToast, t]);
+
+  const handleSetRating = useCallback((id: string, stars: number) => {
+    const prev = getRating(id);
+    setRating(id, stars);
+    if (prev === stars) {
+      showToast(t('detail.toast.ratingCleared'), 'info');
+    } else {
+      showToast(t('detail.toast.rated', { stars }), 'success');
+    }
+  }, [getRating, setRating, showToast, t]);
 
   const handleClearFavoritesWithToast = useCallback(() => {
     clearFavorites();
@@ -176,6 +190,7 @@ function AppContent() {
             recent: result.counts.recentlyViewed,
             custom: result.counts.customTemplates,
             likes: result.counts.likes,
+            ratings: result.counts.ratings,
           }),
           'success'
         );
@@ -276,6 +291,8 @@ function AppContent() {
         onToggleFavorite={currentTemplate ? () => toggleFavorite(currentTemplate.id) : () => {}}
         isLiked={currentTemplate ? isLiked(currentTemplate.id) : false}
         onToggleLike={currentTemplate ? () => handleToggleLike(currentTemplate.id) : () => {}}
+        rating={currentTemplate ? getRating(currentTemplate.id) : 0}
+        onSetRating={currentTemplate ? (stars: number) => handleSetRating(currentTemplate.id, stars) : () => {}}
         onNavigateTemplate={handleNavigateTemplate}
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}

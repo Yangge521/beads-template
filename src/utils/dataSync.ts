@@ -11,6 +11,7 @@ const RECENT_KEY = 'beads-recently-viewed';
 const THEME_KEY = 'beads-theme';
 const CUSTOM_KEY = 'beads-custom-templates';
 const LIKES_KEY = 'beads-likes';
+const RATINGS_KEY = 'beads-ratings';
 
 export interface ExportPayload {
   __type: 'beads-template-backup';
@@ -20,6 +21,7 @@ export interface ExportPayload {
   recentlyViewed: string[];
   customTemplates: BeadTemplate[];
   likes: string[];
+  ratings: Record<string, number>;
   theme: string | null;
 }
 
@@ -42,6 +44,7 @@ export function exportUserData(): ExportPayload {
     recentlyViewed: readJson<string[]>(RECENT_KEY, []),
     customTemplates: readJson<BeadTemplate[]>(CUSTOM_KEY, []),
     likes: readJson<string[]>(LIKES_KEY, []),
+    ratings: readJson<Record<string, number>>(RATINGS_KEY, {}),
     theme: localStorage.getItem(THEME_KEY),
   };
 }
@@ -71,6 +74,7 @@ export interface ImportResult {
     recentlyViewed: number;
     customTemplates: number;
     likes: number;
+    ratings: number;
   };
 }
 
@@ -99,6 +103,13 @@ export function parseBackupFile(text: string): ExportPayload | null {
     const rawRecent = Array.isArray(parsed.recentlyViewed) ? parsed.recentlyViewed : [];
     const rawCustom = Array.isArray(parsed.customTemplates) ? parsed.customTemplates : [];
     const rawLikes = Array.isArray(parsed.likes) ? parsed.likes : [];
+    const rawRatings = (parsed.ratings && typeof parsed.ratings === 'object' && !Array.isArray(parsed.ratings)) ? parsed.ratings : {};
+    const cleanRatings: Record<string, number> = {};
+    for (const [k, v] of Object.entries(rawRatings)) {
+      if (typeof k === 'string' && typeof v === 'number' && v >= 1 && v <= 5) {
+        cleanRatings[k] = Math.floor(v);
+      }
+    }
     return {
       __type: 'beads-template-backup',
       __version: parsed.__version || 1,
@@ -107,6 +118,7 @@ export function parseBackupFile(text: string): ExportPayload | null {
       recentlyViewed: rawRecent.filter((r: unknown): r is string => typeof r === 'string'),
       customTemplates: rawCustom.filter(isValidTemplate),
       likes: rawLikes.filter((l: unknown): l is string => typeof l === 'string'),
+      ratings: cleanRatings,
       theme: typeof parsed.theme === 'string' ? parsed.theme : null,
     };
   } catch {
@@ -127,6 +139,7 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(payload.favorites));
       localStorage.setItem(RECENT_KEY, JSON.stringify(payload.recentlyViewed));
       localStorage.setItem(LIKES_KEY, JSON.stringify(payload.likes));
+      localStorage.setItem(RATINGS_KEY, JSON.stringify(payload.ratings));
     } else {
       // 合并：去重
       const existingCustom = readJson<BeadTemplate[]>(CUSTOM_KEY, []);
@@ -148,6 +161,11 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
       const likeSet = new Set(existingLikes);
       const mergedLikes = [...existingLikes, ...payload.likes.filter(l => !likeSet.has(l))];
       localStorage.setItem(LIKES_KEY, JSON.stringify(mergedLikes));
+
+      // 评分合并：导入的覆盖同 id 的旧评分
+      const existingRatings = readJson<Record<string, number>>(RATINGS_KEY, {});
+      const mergedRatings = { ...existingRatings, ...payload.ratings };
+      localStorage.setItem(RATINGS_KEY, JSON.stringify(mergedRatings));
     }
 
     if (payload.theme) {
@@ -155,7 +173,7 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
     }
 
     // 手动派发 storage 事件，触发同标签页的 hook 同步
-    [CUSTOM_KEY, FAVORITES_KEY, RECENT_KEY, LIKES_KEY, THEME_KEY].forEach(key => {
+    [CUSTOM_KEY, FAVORITES_KEY, RECENT_KEY, LIKES_KEY, RATINGS_KEY, THEME_KEY].forEach(key => {
       window.dispatchEvent(new StorageEvent('storage', { key, newValue: localStorage.getItem(key) }));
     });
 
@@ -164,6 +182,7 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
     const finalRecent = readJson<string[]>(RECENT_KEY, []);
     const finalCustom = readJson<BeadTemplate[]>(CUSTOM_KEY, []);
     const finalLikes = readJson<string[]>(LIKES_KEY, []);
+    const finalRatings = readJson<Record<string, number>>(RATINGS_KEY, {});
 
     return {
       success: true,
@@ -173,13 +192,14 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
         recentlyViewed: finalRecent.length,
         customTemplates: finalCustom.length,
         likes: finalLikes.length,
+        ratings: Object.keys(finalRatings).length,
       },
     };
   } catch {
     return {
       success: false,
       messageKey: 'app.toast.importFailed',
-      counts: { favorites: 0, recentlyViewed: 0, customTemplates: 0, likes: 0 },
+      counts: { favorites: 0, recentlyViewed: 0, customTemplates: 0, likes: 0, ratings: 0 },
     };
   }
 }
