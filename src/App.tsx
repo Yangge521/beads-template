@@ -45,7 +45,7 @@ const builtinTemplates: BeadTemplate[] = [
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
-  const { recentlyViewed, addRecentlyViewed } = useRecentlyViewed();
+  const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
   const { t } = useTranslation();
@@ -66,6 +66,14 @@ function AppContent() {
     clearFavorites();
     showToast(t('app.toast.favoritesCleared'), 'info');
   }, [clearFavorites, showToast, t]);
+
+  // 删除自定义模板时，同步清理收藏与最近浏览，避免悬空引用
+  const handleDeleteCustom = useCallback((id: string) => {
+    removeCustomTemplate(id);
+    if (isFavorite(id)) toggleFav(id);
+    removeRecentlyViewed(id);
+    showToast(t('app.toast.customDeleted'), 'info');
+  }, [removeCustomTemplate, isFavorite, toggleFav, removeRecentlyViewed, showToast, t]);
 
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -261,7 +269,7 @@ function AppContent() {
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}
         relatedTemplates={relatedTemplates}
-        onDeleteCustom={removeCustomTemplate}
+        onDeleteCustom={handleDeleteCustom}
       />
     );
   }

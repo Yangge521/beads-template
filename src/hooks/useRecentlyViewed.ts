@@ -42,5 +42,13 @@ export function useRecentlyViewed() {
     });
   }, []);
 
-  return { recentlyViewed, addRecentlyViewed };
+  const removeRecentlyViewed = useCallback((id: string) => {
+    setRecentlyViewed(prev => {
+      const next = prev.filter(v => v !== id);
+      saveRecentlyViewed(next);
+      return next;
+    });
+  }, []);
+
+  return { recentlyViewed, addRecentlyViewed, removeRecentlyViewed };
 }

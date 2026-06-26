@@ -97,7 +97,7 @@ export default function HomePage({
   colorFilter,
   onColorFilterChange,
 }: HomePageProps) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   // Map category id -> name for card labels（通过 t() 解析分类名）
   const categoryNameMap = useMemo(() => {
@@ -130,7 +130,7 @@ export default function HomePage({
     const sorted = [...list];
     switch (sortKey) {
       case 'name':
-        sorted.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
+        sorted.sort((a, b) => a.name.localeCompare(b.name, lang));
         break;
       case 'beads-asc':
         sorted.sort((a, b) => getBeadCount(a) - getBeadCount(b));
@@ -146,7 +146,7 @@ export default function HomePage({
         break;
     }
     return sorted;
-  }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize, colorFilter]);
+  }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize, colorFilter, lang]);
 
   // 最近浏览：仅在无任何筛选时显示，避免与下方筛选结果不一致造成混淆
   const recentTemplates = useMemo(() => {

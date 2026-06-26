@@ -41,13 +41,13 @@ export default function FavoritesPage({
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   const favoritedTemplates = useMemo(() => {
-    const list = templates.filter(t => favorites.includes(t.id));
+    const list = templates.filter(tpl => favorites.includes(tpl.id));
     switch (sortKey) {
       case 'name':
-        list.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
+        list.sort((a, b) => a.name.localeCompare(b.name, lang));
         break;
       case 'beads':
         list.sort((a, b) => getBeadCount(b) - getBeadCount(a));
@@ -59,7 +59,7 @@ export default function FavoritesPage({
         break;
     }
     return list;
-  }, [templates, favorites, sortKey]);
+  }, [templates, favorites, sortKey, lang]);
 
   const handleClearClick = () => {
     if (favoritedTemplates.length === 0) return;

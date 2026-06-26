@@ -51,7 +51,7 @@ export default function DetailPage({
   const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const { showToast } = useToast();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   // 所有 hooks 必须在提前 return 之前调用，避免违反 Rules of Hooks
   const beadCount = useMemo(() => (template ? getBeadCount(template) : 0), [template]);
@@ -67,7 +67,7 @@ export default function DetailPage({
     const list = [...correctedColors];
     switch (colorSort) {
       case 'name':
-        list.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
+        list.sort((a, b) => a.name.localeCompare(b.name, lang));
         break;
       case 'hex':
         list.sort((a, b) => a.hex.localeCompare(b.hex));
@@ -78,7 +78,7 @@ export default function DetailPage({
         break;
     }
     return list;
-  }, [correctedColors, colorSort]);
+  }, [correctedColors, colorSort, lang]);
 
   const scheduleReset = useCallback((setter: (v: boolean) => void) => {
     const t = setTimeout(() => setter(false), 1500);

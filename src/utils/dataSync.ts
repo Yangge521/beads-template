@@ -70,6 +70,20 @@ export interface ImportResult {
   };
 }
 
+/** 校验单个模板的最小结构完整性（与 useCustomTemplates.loadCustomTemplates 一致） */
+function isValidTemplate(t: unknown): t is BeadTemplate {
+  return !!t
+    && typeof t === 'object'
+    && typeof (t as BeadTemplate).id === 'string'
+    && Array.isArray((t as BeadTemplate).grid)
+    && Array.isArray((t as BeadTemplate).colors);
+}
+
+/** 校验收藏项结构 */
+function isValidFavoriteEntry(e: unknown): e is FavoriteEntry {
+  return !!e && typeof e === 'object' && typeof (e as FavoriteEntry).templateId === 'string';
+}
+
 /** 解析并校验导入的 JSON 文本 */
 export function parseBackupFile(text: string): ExportPayload | null {
   try {
@@ -77,13 +91,16 @@ export function parseBackupFile(text: string): ExportPayload | null {
     if (!parsed || typeof parsed !== 'object') return null;
     // 兼容：必须含 __type 标识或包含已知字段
     if (parsed.__type !== 'beads-template-backup' && !('favorites' in parsed)) return null;
+    const rawFavorites = Array.isArray(parsed.favorites) ? parsed.favorites : [];
+    const rawRecent = Array.isArray(parsed.recentlyViewed) ? parsed.recentlyViewed : [];
+    const rawCustom = Array.isArray(parsed.customTemplates) ? parsed.customTemplates : [];
     return {
       __type: 'beads-template-backup',
       __version: parsed.__version || 1,
       __exportedAt: parsed.__exportedAt || new Date().toISOString(),
-      favorites: Array.isArray(parsed.favorites) ? parsed.favorites : [],
-      recentlyViewed: Array.isArray(parsed.recentlyViewed) ? parsed.recentlyViewed : [],
-      customTemplates: Array.isArray(parsed.customTemplates) ? parsed.customTemplates : [],
+      favorites: rawFavorites.filter(isValidFavoriteEntry),
+      recentlyViewed: rawRecent.filter((r: unknown): r is string => typeof r === 'string'),
+      customTemplates: rawCustom.filter(isValidTemplate),
       theme: typeof parsed.theme === 'string' ? parsed.theme : null,
     };
   } catch {

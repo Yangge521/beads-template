@@ -128,6 +128,12 @@ export default function UploadPage({
           colorNamePrefix: t('upload.build.colorNamePrefix'),
         },
       });
+      // 边界：全透明/全白背景图可能像素化后无颜色，拒绝保存并提示调整参数
+      if (template.colors.length === 0 || template.beadCount === 0) {
+        showToast(t('upload.toast.noColors'), 'error');
+        setSaving(false);
+        return;
+      }
       const saved = onSaveTemplate(template);
       showToast(t('upload.toast.saved', { name: saved.name }), 'success');
       // 跳转到详情页查看
