@@ -3,13 +3,20 @@
  * 变换后的 grid 保持数值含义不变（颜色索引），仅改变排列。
  */
 
+/** 退化网格守卫：空网格或无列网格直接返回，避免 rotate 改变形状 */
+function isDegenerate(grid: number[][]): boolean {
+  return grid.length === 0 || (grid.length > 0 && grid[0].length === 0);
+}
+
 /** 水平镜像（左右翻转） */
 export function flipHorizontal(grid: number[][]): number[][] {
+  if (isDegenerate(grid)) return grid;
   return grid.map(row => [...row].reverse());
 }
 
 /** 垂直镜像（上下翻转） */
 export function flipVertical(grid: number[][]): number[][] {
+  if (isDegenerate(grid)) return grid;
   return [...grid].reverse();
 }
 
@@ -17,6 +24,7 @@ export function flipVertical(grid: number[][]): number[][] {
 export function rotate90(grid: number[][]): number[][] {
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
+  if (rows === 0 || cols === 0) return grid;
   const result: number[][] = [];
   for (let c = 0; c < cols; c++) {
     const newRow: number[] = [];
@@ -32,6 +40,7 @@ export function rotate90(grid: number[][]): number[][] {
 export function rotate270(grid: number[][]): number[][] {
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
+  if (rows === 0 || cols === 0) return grid;
   const result: number[][] = [];
   for (let c = cols - 1; c >= 0; c--) {
     const newRow: number[] = [];

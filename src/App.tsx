@@ -15,6 +15,7 @@ import { useCustomTemplates } from './hooks/useCustomTemplates';
 import { useLikes } from './hooks/useLikes';
 import { useRatings } from './hooks/useRatings';
 import { useProgress } from './hooks/useProgress';
+import { useInventory } from './hooks/useInventory';
 import { getBeadCount } from './utils/beadStats';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
@@ -53,7 +54,8 @@ function AppContent() {
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
   const { isLiked, toggleLike } = useLikes();
   const { getRating, setRating } = useRatings();
-  const { progress, getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
+  const { getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
+  const { inventory, addColor: addInventoryColor, removeColor: removeInventoryColor, clearInventory } = useInventory();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
@@ -255,9 +257,10 @@ function AppContent() {
   }, [currentTemplate, allTemplates]);
 
   // 缓存 completedCells 引用，避免 progress 未变时每次 render 产生新 Set 导致子组件重渲染
+  // getCompleted 内部依赖 progress，progress 变化时 getCompleted 引用更新即可触发重算
   const completedCells = useMemo(
     () => currentTemplate ? getCompleted(currentTemplate.id) : new Set<string>(),
-    [currentTemplate?.id, progress, getCompleted]
+    [currentTemplate?.id, getCompleted]
   );
 
   const handleNavigateTemplate = useCallback((id: string) => {
@@ -312,6 +315,10 @@ function AppContent() {
         onToggleCell={currentTemplate ? (row: number, col: number) => toggleCell(currentTemplate.id, row, col) : () => {}}
         onClearProgress={currentTemplate ? () => handleClearProgress(currentTemplate.id) : () => {}}
         progressPercent={currentTemplate ? getProgressPercent(currentTemplate.id, getBeadCount(currentTemplate)) : 0}
+        inventory={inventory}
+        onAddInventoryColor={addInventoryColor}
+        onRemoveInventoryColor={removeInventoryColor}
+        onClearInventory={clearInventory}
         onNavigateTemplate={handleNavigateTemplate}
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}

@@ -2,13 +2,16 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
 import { exportPrintChart } from '../utils/exportPrintChart';
 import { exportColorListCSV } from '../utils/exportCSV';
 import { applyTransform, type TransformType } from '../utils/transformGrid';
+import type { InventoryItem } from '../hooks/useInventory';
+import InventoryPanel from '../components/InventoryPanel';
+import { applyColorReplacements, type MissingColorInfo } from '../utils/colorReplacement';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -25,6 +28,10 @@ interface DetailPageProps {
   onToggleCell: (row: number, col: number) => void;
   onClearProgress: () => void;
   progressPercent: number;
+  inventory: InventoryItem[];
+  onAddInventoryColor: (hex: string, note?: string) => void;
+  onRemoveInventoryColor: (hex: string) => void;
+  onClearInventory: () => void;
   onNavigateTemplate?: (id: string) => void;
   prevTemplate?: BeadTemplate | null;
   nextTemplate?: BeadTemplate | null;
@@ -56,6 +63,10 @@ export default function DetailPage({
   onToggleCell,
   onClearProgress,
   progressPercent,
+  inventory,
+  onAddInventoryColor,
+  onRemoveInventoryColor,
+  onClearInventory,
   onNavigateTemplate,
   prevTemplate,
   nextTemplate,
@@ -72,6 +83,8 @@ export default function DetailPage({
   const [copiedLink, setCopiedLink] = useState(false);
   const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
   const [beadSize, setBeadSize] = useState<5 | 2.6>(5);
+  const [showInventory, setShowInventory] = useState(false);
+  const [replacedColors, setReplacedColors] = useState<MissingColorInfo[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const { showToast } = useToast();
   const { t, lang } = useTranslation();
@@ -82,23 +95,28 @@ export default function DetailPage({
     () => (template ? getCorrectedColors(template) : []),
     [template]
   );
+  // 应用库存颜色替换后的色卡（replacedColors 为空时与 correctedColors 相同）
+  const displayColors = useMemo(
+    () => replacedColors.length > 0 ? applyColorReplacements(correctedColors, replacedColors) : correctedColors,
+    [correctedColors, replacedColors]
+  );
   // 应用所有变换到 grid（变换不影响原始数据，仅影响视图）
   const displayGrid = useMemo(() => {
     if (!template) return [];
     return transforms.reduce((g, tf) => applyTransform(g, tf), template.grid);
   }, [template, transforms]);
-  // 导出用模板：用 displayGrid 替换 grid，实现所见即所得
+  // 导出用模板：用 displayGrid 替换 grid、displayColors 替换 colors，实现所见即所得
   // colors 的 count 由导出工具内部用 getCorrectedColors 重新计算，无需修正
   const exportTemplate = useMemo<BeadTemplate | null>(
-    () => (template ? { ...template, grid: displayGrid } : null),
-    [template, displayGrid]
+    () => (template ? { ...template, grid: displayGrid, colors: displayColors } : null),
+    [template, displayGrid, displayColors]
   );
   const maxColorCount = useMemo(
-    () => correctedColors.reduce((m, c) => Math.max(m, c.count), 0),
-    [correctedColors]
+    () => displayColors.reduce((m, c) => Math.max(m, c.count), 0),
+    [displayColors]
   );
   const sortedColors = useMemo(() => {
-    const list = [...correctedColors];
+    const list = [...displayColors];
     switch (colorSort) {
       case 'name':
         list.sort((a, b) => a.name.localeCompare(b.name, lang));
@@ -112,7 +130,7 @@ export default function DetailPage({
         break;
     }
     return list;
-  }, [correctedColors, colorSort, lang]);
+  }, [displayColors, colorSort, lang]);
 
   const scheduleReset = useCallback((setter: (v: boolean) => void) => {
     const t = setTimeout(() => setter(false), 1500);
@@ -255,11 +273,12 @@ export default function DetailPage({
     }
   }, [exportTemplate, showToast, t]);
 
-  // 切换模板时重置缩放、变换与进度模式，并滚动到顶部
+  // 切换模板时重置缩放、变换、进度模式与颜色替换，并滚动到顶部
   useEffect(() => {
     setZoom(1);
     setTransforms([]);
     setProgressMode(false);
+    setReplacedColors([]);
     window.scrollTo({ top: 0 });
   }, [template?.id]);
 
@@ -277,6 +296,25 @@ export default function DetailPage({
   const resetTransforms = useCallback(() => {
     setTransforms([]);
   }, []);
+
+  // 应用库存颜色替换：把替换映射转为 MissingColorInfo 并更新 state
+  const handleApplyReplacements = useCallback((replaced: { hex: string; replacement: string }[]) => {
+    setReplacedColors(prev => {
+      // 合并已有替换与新替换（新替换覆盖同 hex 的旧替换）
+      const map = new Map(prev.map(r => [r.hex.toLowerCase(), r]));
+      for (const r of replaced) {
+        map.set(r.hex.toLowerCase(), {
+          hex: r.hex,
+          name: r.hex,
+          count: 0,
+          replacement: r.replacement,
+          distance: 0,
+        });
+      }
+      return Array.from(map.values());
+    });
+    showToast(t('detail.inventory.applied'), 'success');
+  }, [showToast, t]);
 
   // 滚动监听，控制返回顶部按钮显示（rAF 节流）
   useEffect(() => {
@@ -360,6 +398,16 @@ export default function DetailPage({
           >
             {copiedLink ? <Check size={20} /> : <Share2 size={20} />}
           </button>
+          <button
+            type="button"
+            className={`detail-page__share-btn ${showInventory ? 'detail-page__share-btn--active' : ''}`}
+            onClick={() => setShowInventory(v => !v)}
+            aria-label={t('detail.inventory.toggleTitle')}
+            title={t('detail.inventory.toggleTitle')}
+            aria-pressed={showInventory}
+          >
+            <PaletteIcon size={20} />
+          </button>
           <FavoriteButton favorite={isFavorite} size={28} onClick={onToggleFavorite} />
           <button
             type="button"
@@ -391,6 +439,17 @@ export default function DetailPage({
       </header>
 
       <main id="main-content" className="detail-page__body" tabIndex={-1}>
+        {showInventory && (
+          <InventoryPanel
+            template={template}
+            inventory={inventory}
+            onAddColor={onAddInventoryColor}
+            onRemoveColor={onRemoveInventoryColor}
+            onClearInventory={onClearInventory}
+            onApplyReplacements={handleApplyReplacements}
+            onClose={() => setShowInventory(false)}
+          />
+        )}
         <h1 className="detail-page__title">{template.name}</h1>
 
         <div className="detail-page__tags">
@@ -538,7 +597,7 @@ export default function DetailPage({
             <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
               <PixelGrid
                 grid={displayGrid}
-                colors={correctedColors}
+                colors={displayColors}
                 showGridLines={showGridLines}
                 interactive={progressMode}
                 completedCells={completedCells}
@@ -554,7 +613,7 @@ export default function DetailPage({
             <span className="detail-page__stat-label">{t('detail.stat.totalBeads')}</span>
           </div>
           <div className="detail-page__stat">
-            <span className="detail-page__stat-value">{correctedColors.length}</span>
+            <span className="detail-page__stat-value">{displayColors.length}</span>
             <span className="detail-page__stat-label">{t('detail.stat.colors')}</span>
           </div>
           <div className="detail-page__stat">
@@ -691,7 +750,7 @@ export default function DetailPage({
                 title={t('detail.palette.exportChart.title')}
                 aria-label={t('detail.palette.exportChart.ariaLabel')}
               >
-                <Map size={14} />
+                <MapIcon size={14} />
                 <span>{t('detail.palette.exportChart.label')}</span>
               </button>
               <button
@@ -751,7 +810,7 @@ export default function DetailPage({
           <p className="detail-page__print-meta">
             {t('detail.print.meta', {
               beadCount,
-              colors: correctedColors.length,
+              colors: displayColors.length,
               cols,
               rows,
               difficulty: difficultyLabel,
@@ -790,7 +849,7 @@ export default function DetailPage({
               <tr>
                 <td colSpan={3}>{t('detail.print.total')}</td>
                 <td>{t('detail.print.totalBeads', { beadCount })}</td>
-                <td>{t('detail.print.colors', { count: correctedColors.length })}</td>
+                <td>{t('detail.print.colors', { count: displayColors.length })}</td>
               </tr>
             </tfoot>
           </table>
@@ -840,7 +899,13 @@ export default function DetailPage({
                   onClick={() => onNavigateTemplate?.(rt.id)}
                   title={rt.name}
                 >
-                  <PixelGrid grid={rt.grid.slice(0, 8).map(r => r.slice(0, 8))} colors={rt.colors} />
+                  <PixelGrid
+                    grid={rt.grid.slice(0, 8).map(r => r.slice(0, 8))}
+                    colors={rt.colors}
+                    ariaTotalBeads={getBeadCount(rt)}
+                    ariaCols={rt.grid[0]?.length ?? 0}
+                    ariaRows={rt.grid.length}
+                  />
                   <span className="detail-page__related-name">{rt.name}</span>
                   <span className="detail-page__related-beads">{t('detail.related.beads', { count: getBeadCount(rt) })}</span>
                 </button>

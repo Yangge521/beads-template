@@ -5,6 +5,9 @@ const STORAGE_KEY = 'beads-progress';
 /** 进度数据：templateId -> 已完成格子的坐标集合（"row-col" 格式） */
 type ProgressMap = Record<string, string[]>;
 
+/** 坐标 key 格式校验：必须为 "数字-数字" 格式 */
+const COORD_RE = /^\d+-\d+$/;
+
 function loadProgress(): ProgressMap {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -14,7 +17,10 @@ function loadProgress(): ProgressMap {
         const result: ProgressMap = {};
         for (const [k, v] of Object.entries(parsed)) {
           if (typeof k === 'string' && Array.isArray(v)) {
-            result[k] = v.filter((s: unknown): s is string => typeof s === 'string');
+            const cells = v.filter((s: unknown): s is string =>
+              typeof s === 'string' && COORD_RE.test(s)
+            );
+            if (cells.length > 0) result[k] = cells;
           }
         }
         return result;

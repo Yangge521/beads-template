@@ -14,6 +14,10 @@ interface PixelGridProps {
   completedCells?: Set<string>;
   /** 格子点击回调（仅 interactive 模式生效） */
   onCellClick?: (row: number, col: number) => void;
+  /** 缩略图模式：覆盖 aria-label/title 的总数与尺寸，避免切片导致误导 */
+  ariaTotalBeads?: number;
+  ariaCols?: number;
+  ariaRows?: number;
 }
 
 export default function PixelGrid({
@@ -24,13 +28,21 @@ export default function PixelGrid({
   interactive = false,
   completedCells,
   onCellClick,
+  ariaTotalBeads,
+  ariaCols,
+  ariaRows,
 }: PixelGridProps) {
   const { t } = useTranslation();
   const gridRef = useRef<HTMLDivElement>(null);
   const rows = grid.length;
-  const cols = rows > 0 ? grid[0].length : 0;
+  // 取最大行长度作为列数，兼容锯齿状网格（自定义导入可能产生）
+  const cols = Math.max(0, ...grid.map(r => r.length));
 
   const totalBeads = grid.flat().filter(v => v > 0).length;
+  // 缩略图模式下用真实总数/尺寸，避免切片导致 aria-label 误导
+  const ariaCount = ariaTotalBeads ?? totalBeads;
+  const ariaColsVal = ariaCols ?? cols;
+  const ariaRowsVal = ariaRows ?? rows;
 
   // 交互模式键盘导航：roving tabindex，仅 grid 容器 tabbable，cell 用方向键移动
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
@@ -58,7 +70,7 @@ export default function PixelGrid({
       case 'Enter':
       case ' ':
         e.preventDefault();
-        if (grid[r][c] > 0) onCellClick?.(r, c);
+        if ((grid[r]?.[c] ?? 0) > 0) onCellClick?.(r, c);
         return;
       default:
         return;
@@ -79,13 +91,14 @@ export default function PixelGrid({
         width: 'fit-content',
       }}
       role={interactive ? 'grid' : 'img'}
-      aria-label={t('pixelGrid.ariaLabel', { count: totalBeads })}
-      title={t('pixelGrid.title', { cols, rows, count: totalBeads })}
+      aria-label={t('pixelGrid.ariaLabel', { count: ariaCount })}
+      title={t('pixelGrid.title', { cols: ariaColsVal, rows: ariaRowsVal, count: ariaCount })}
       tabIndex={interactive ? 0 : undefined}
       onKeyDown={interactive ? handleKeyDown : undefined}
     >
-      {grid.map((row, ri) =>
-        row.map((cellValue, ci) => {
+      {Array.from({ length: rows }, (_, ri) =>
+        Array.from({ length: cols }, (_, ci) => {
+          const cellValue = grid[ri]?.[ci] ?? 0;
           const color = cellValue > 0 ? colors[cellValue - 1] : undefined;
           const cellKey = `${ri}-${ci}`;
           const isCompleted = completedCells?.has(cellKey);

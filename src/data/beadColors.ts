@@ -12,6 +12,12 @@ export interface BeadColor {
   perler?: string;
   artkal?: string;
   hama?: string;
+  /** 国内品牌：咪小窝 */
+  mixiaowo?: string;
+  /** 国内品牌：漫漫 */
+  manman?: string;
+  /** 国内品牌：COCO */
+  coco?: string;
 }
 
 export interface ColorGroup {

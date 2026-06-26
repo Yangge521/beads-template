@@ -8,7 +8,7 @@ interface ColorReferencePageProps {
   onBack: () => void;
 }
 
-type BrandKey = 'perler' | 'artkal' | 'hama';
+type BrandKey = 'perler' | 'artkal' | 'hama' | 'mixiaowo' | 'manman' | 'coco';
 
 export default function ColorReferencePage({ onBack }: ColorReferencePageProps) {
   const [query, setQuery] = useState('');
@@ -46,7 +46,10 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
           c.hex.toLowerCase().includes(q) ||
           (c.perler && c.perler.toLowerCase().includes(q)) ||
           (c.artkal && c.artkal.toLowerCase().includes(q)) ||
-          (c.hama && c.hama.toLowerCase().includes(q))
+          (c.hama && c.hama.toLowerCase().includes(q)) ||
+          (c.mixiaowo && c.mixiaowo.toLowerCase().includes(q)) ||
+          (c.manman && c.manman.toLowerCase().includes(q)) ||
+          (c.coco && c.coco.toLowerCase().includes(q))
         );
       }),
     })).filter(g => g.colors.length > 0);
@@ -83,10 +86,13 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
     }
   }, [showToast, t]);
 
-  const brandOptions: { key: BrandKey; labelKey: string }[] = [
-    { key: 'perler', labelKey: 'colorRef.brand.perler' },
-    { key: 'artkal', labelKey: 'colorRef.brand.artkal' },
-    { key: 'hama', labelKey: 'colorRef.brand.hama' },
+  const brandOptions: { key: BrandKey; labelKey: string; abbr: string }[] = [
+    { key: 'perler', labelKey: 'colorRef.brand.perler', abbr: 'P' },
+    { key: 'artkal', labelKey: 'colorRef.brand.artkal', abbr: 'A' },
+    { key: 'hama', labelKey: 'colorRef.brand.hama', abbr: 'H' },
+    { key: 'mixiaowo', labelKey: 'colorRef.brand.mixiaowo', abbr: 'M' },
+    { key: 'manman', labelKey: 'colorRef.brand.manman', abbr: 'MM' },
+    { key: 'coco', labelKey: 'colorRef.brand.coco', abbr: 'C' },
   ];
   const totalColorCount = useMemo(
     () => BEAD_COLOR_GROUPS.reduce((s, g) => s + g.colors.length, 0),
@@ -187,15 +193,14 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
                         <span className="color-ref-card__name">{colorName(color)}</span>
                         <span className="color-ref-card__hex">{color.hex}</span>
                         <div className="color-ref-card__brands">
-                          {color.perler && (
-                            <span className="color-ref-card__brand" title="Perler">P: {color.perler}</span>
-                          )}
-                          {color.artkal && (
-                            <span className="color-ref-card__brand" title="Artkal">A: {color.artkal}</span>
-                          )}
-                          {color.hama && (
-                            <span className="color-ref-card__brand" title="Hama">H: {color.hama}</span>
-                          )}
+                          {brandOptions.map(b => {
+                            const v = color[b.key];
+                            return v ? (
+                              <span key={b.key} className="color-ref-card__brand" title={t(b.labelKey)}>
+                                {b.abbr}: {v}
+                              </span>
+                            ) : null;
+                          })}
                         </div>
                       </div>
                       <Copy size={14} className="color-ref-card__copy" />
@@ -216,9 +221,9 @@ export default function ColorReferencePage({ onBack }: ColorReferencePageProps) 
         <div className="color-ref-page__legend">
           <h3 className="color-ref-page__legend-title">{t('colorRef.legend.title')}</h3>
           <ul className="color-ref-page__legend-list">
-            <li><strong>P:</strong> {t('colorRef.legend.perler')}</li>
-            <li><strong>A:</strong> {t('colorRef.legend.artkal')}</li>
-            <li><strong>H:</strong> {t('colorRef.legend.hama')}</li>
+            {brandOptions.map(b => (
+              <li key={b.key}><strong>{b.abbr}:</strong> {t(b.labelKey)}</li>
+            ))}
           </ul>
           <p className="color-ref-page__note">
             {t('colorRef.legend.note')}
