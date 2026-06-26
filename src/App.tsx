@@ -12,6 +12,7 @@ import { LanguageProvider, useTranslation } from './context/LanguageContext';
 import { useFavorites } from './hooks/useFavorites';
 import { useRecentlyViewed } from './hooks/useRecentlyViewed';
 import { useCustomTemplates } from './hooks/useCustomTemplates';
+import { useLikes } from './hooks/useLikes';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
 import { downloadBackupFile, parseBackupFile, importUserData } from './utils/dataSync';
@@ -45,6 +46,7 @@ const builtinTemplates: BeadTemplate[] = [
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
+  const { isLiked, toggleLike } = useLikes();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
@@ -61,6 +63,12 @@ function AppContent() {
     toggleFav(id);
     showToast(willAdd ? t('app.toast.favorited') : t('app.toast.unfavorited'), willAdd ? 'success' : 'info');
   }, [isFavorite, toggleFav, showToast, t]);
+
+  const handleToggleLike = useCallback((id: string) => {
+    const willAdd = !isLiked(id);
+    toggleLike(id);
+    showToast(willAdd ? t('detail.toast.liked') : t('detail.toast.unliked'), willAdd ? 'success' : 'info');
+  }, [isLiked, toggleLike, showToast, t]);
 
   const handleClearFavoritesWithToast = useCallback(() => {
     clearFavorites();
@@ -167,6 +175,7 @@ function AppContent() {
             fav: result.counts.favorites,
             recent: result.counts.recentlyViewed,
             custom: result.counts.customTemplates,
+            likes: result.counts.likes,
           }),
           'success'
         );
@@ -265,6 +274,8 @@ function AppContent() {
         onBack={goHome}
         isFavorite={currentTemplate ? isFavorite(currentTemplate.id) : false}
         onToggleFavorite={currentTemplate ? () => toggleFavorite(currentTemplate.id) : () => {}}
+        isLiked={currentTemplate ? isLiked(currentTemplate.id) : false}
+        onToggleLike={currentTemplate ? () => handleToggleLike(currentTemplate.id) : () => {}}
         onNavigateTemplate={handleNavigateTemplate}
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}

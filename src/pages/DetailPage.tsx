@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map, Table, ThumbsUp } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
 import { exportPrintChart } from '../utils/exportPrintChart';
+import { exportColorListCSV } from '../utils/exportCSV';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -15,6 +16,8 @@ interface DetailPageProps {
   onBack: () => void;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  isLiked: boolean;
+  onToggleLike: () => void;
   onNavigateTemplate?: (id: string) => void;
   prevTemplate?: BeadTemplate | null;
   nextTemplate?: BeadTemplate | null;
@@ -38,6 +41,8 @@ export default function DetailPage({
   onBack,
   isFavorite,
   onToggleFavorite,
+  isLiked,
+  onToggleLike,
   onNavigateTemplate,
   prevTemplate,
   nextTemplate,
@@ -200,6 +205,29 @@ export default function DetailPage({
     }
   }, [template, showToast, t]);
 
+  // 导出 CSV 色号清单：Excel 兼容，含行列坐标 + 色号 + 数量，竞品 PixelBeads 核心功能
+  const handleExportCSV = useCallback(() => {
+    if (!template) return;
+    try {
+      const ok = exportColorListCSV(
+        template,
+        {
+          headerNo: t('detail.csv.headerNo'),
+          headerHex: t('detail.csv.headerHex'),
+          headerName: t('detail.csv.headerName'),
+          headerCount: t('detail.csv.headerCount'),
+          headerRatio: t('detail.csv.headerRatio'),
+          headerPositions: t('detail.csv.headerPositions'),
+          totalLabel: t('detail.csv.totalLabel'),
+        },
+        t('detail.csv.fileNameSuffix')
+      );
+      showToast(ok ? t('detail.toast.csvExported') : t('detail.toast.exportFailed'), ok ? 'success' : 'error');
+    } catch {
+      showToast(t('detail.toast.exportFailed'), 'error');
+    }
+  }, [template, showToast, t]);
+
   // 切换模板时重置缩放并滚动到顶部
   useEffect(() => {
     setZoom(1);
@@ -287,6 +315,16 @@ export default function DetailPage({
             {copiedLink ? <Check size={20} /> : <Share2 size={20} />}
           </button>
           <FavoriteButton favorite={isFavorite} size={28} onClick={onToggleFavorite} />
+          <button
+            type="button"
+            className={`detail-page__share-btn ${isLiked ? 'detail-page__like-btn--active' : ''}`}
+            onClick={onToggleLike}
+            aria-label={isLiked ? t('detail.like.ariaLabelActive') : t('detail.like.ariaLabel')}
+            title={isLiked ? t('detail.like.titleActive') : t('detail.like.title')}
+            aria-pressed={isLiked}
+          >
+            <ThumbsUp size={20} fill={isLiked ? 'currentColor' : 'none'} />
+          </button>
           {template.category === 'custom' && onDeleteCustom && (
             <button
               type="button"
@@ -448,6 +486,16 @@ export default function DetailPage({
               >
                 <Map size={14} />
                 <span>{t('detail.palette.exportChart.label')}</span>
+              </button>
+              <button
+                type="button"
+                className="detail-page__copy-all"
+                onClick={handleExportCSV}
+                title={t('detail.palette.exportCsv.title')}
+                aria-label={t('detail.palette.exportCsv.ariaLabel')}
+              >
+                <Table size={14} />
+                <span>{t('detail.palette.exportCsv.label')}</span>
               </button>
             </div>
           </div>

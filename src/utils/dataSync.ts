@@ -10,6 +10,7 @@ const FAVORITES_KEY = 'beads-favorites';
 const RECENT_KEY = 'beads-recently-viewed';
 const THEME_KEY = 'beads-theme';
 const CUSTOM_KEY = 'beads-custom-templates';
+const LIKES_KEY = 'beads-likes';
 
 export interface ExportPayload {
   __type: 'beads-template-backup';
@@ -18,6 +19,7 @@ export interface ExportPayload {
   favorites: FavoriteEntry[];
   recentlyViewed: string[];
   customTemplates: BeadTemplate[];
+  likes: string[];
   theme: string | null;
 }
 
@@ -39,6 +41,7 @@ export function exportUserData(): ExportPayload {
     favorites: readJson<FavoriteEntry[]>(FAVORITES_KEY, []),
     recentlyViewed: readJson<string[]>(RECENT_KEY, []),
     customTemplates: readJson<BeadTemplate[]>(CUSTOM_KEY, []),
+    likes: readJson<string[]>(LIKES_KEY, []),
     theme: localStorage.getItem(THEME_KEY),
   };
 }
@@ -67,6 +70,7 @@ export interface ImportResult {
     favorites: number;
     recentlyViewed: number;
     customTemplates: number;
+    likes: number;
   };
 }
 
@@ -94,6 +98,7 @@ export function parseBackupFile(text: string): ExportPayload | null {
     const rawFavorites = Array.isArray(parsed.favorites) ? parsed.favorites : [];
     const rawRecent = Array.isArray(parsed.recentlyViewed) ? parsed.recentlyViewed : [];
     const rawCustom = Array.isArray(parsed.customTemplates) ? parsed.customTemplates : [];
+    const rawLikes = Array.isArray(parsed.likes) ? parsed.likes : [];
     return {
       __type: 'beads-template-backup',
       __version: parsed.__version || 1,
@@ -101,6 +106,7 @@ export function parseBackupFile(text: string): ExportPayload | null {
       favorites: rawFavorites.filter(isValidFavoriteEntry),
       recentlyViewed: rawRecent.filter((r: unknown): r is string => typeof r === 'string'),
       customTemplates: rawCustom.filter(isValidTemplate),
+      likes: rawLikes.filter((l: unknown): l is string => typeof l === 'string'),
       theme: typeof parsed.theme === 'string' ? parsed.theme : null,
     };
   } catch {
@@ -120,6 +126,7 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
       localStorage.setItem(CUSTOM_KEY, JSON.stringify(payload.customTemplates));
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(payload.favorites));
       localStorage.setItem(RECENT_KEY, JSON.stringify(payload.recentlyViewed));
+      localStorage.setItem(LIKES_KEY, JSON.stringify(payload.likes));
     } else {
       // 合并：去重
       const existingCustom = readJson<BeadTemplate[]>(CUSTOM_KEY, []);
@@ -136,6 +143,11 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
       const recentSet = new Set(existingRecent);
       const mergedRecent = [...existingRecent, ...payload.recentlyViewed.filter(r => !recentSet.has(r))];
       localStorage.setItem(RECENT_KEY, JSON.stringify(mergedRecent));
+
+      const existingLikes = readJson<string[]>(LIKES_KEY, []);
+      const likeSet = new Set(existingLikes);
+      const mergedLikes = [...existingLikes, ...payload.likes.filter(l => !likeSet.has(l))];
+      localStorage.setItem(LIKES_KEY, JSON.stringify(mergedLikes));
     }
 
     if (payload.theme) {
@@ -143,24 +155,31 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
     }
 
     // 手动派发 storage 事件，触发同标签页的 hook 同步
-    [CUSTOM_KEY, FAVORITES_KEY, RECENT_KEY, THEME_KEY].forEach(key => {
+    [CUSTOM_KEY, FAVORITES_KEY, RECENT_KEY, LIKES_KEY, THEME_KEY].forEach(key => {
       window.dispatchEvent(new StorageEvent('storage', { key, newValue: localStorage.getItem(key) }));
     });
+
+    // 读取合并后的实际数量，确保 toast 文案准确
+    const finalFav = readJson<FavoriteEntry[]>(FAVORITES_KEY, []);
+    const finalRecent = readJson<string[]>(RECENT_KEY, []);
+    const finalCustom = readJson<BeadTemplate[]>(CUSTOM_KEY, []);
+    const finalLikes = readJson<string[]>(LIKES_KEY, []);
 
     return {
       success: true,
       messageKey: mode === 'replace' ? 'app.toast.importReplaced' : 'app.toast.importMerged',
       counts: {
-        favorites: payload.favorites.length,
-        recentlyViewed: payload.recentlyViewed.length,
-        customTemplates: payload.customTemplates.length,
+        favorites: finalFav.length,
+        recentlyViewed: finalRecent.length,
+        customTemplates: finalCustom.length,
+        likes: finalLikes.length,
       },
     };
   } catch {
     return {
       success: false,
       messageKey: 'app.toast.importFailed',
-      counts: { favorites: 0, recentlyViewed: 0, customTemplates: 0 },
+      counts: { favorites: 0, recentlyViewed: 0, customTemplates: 0, likes: 0 },
     };
   }
 }
