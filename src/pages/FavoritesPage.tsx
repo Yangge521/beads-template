@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import TemplateCard from '../components/TemplateCard';
-import { ArrowLeft, Trash2, Download, Upload } from 'lucide-react';
+import { ArrowLeft, Trash2, Download, Upload, ClipboardList, Table } from 'lucide-react';
 import { getBeadCount } from '../utils/beadStats';
+import { aggregateMaterials, getTotalBeads } from '../utils/aggregateMaterials';
+import { exportMaterialListCSV } from '../utils/exportMaterialCSV';
+import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
 
 interface FavoritesPageProps {
@@ -37,10 +40,12 @@ export default function FavoritesPage({
 }: FavoritesPageProps) {
   const [confirming, setConfirming] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('recent');
+  const [showSummary, setShowSummary] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const cancelBtnRef = useRef<HTMLButtonElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
   const { t, lang } = useTranslation();
 
   const favoritedTemplates = useMemo(() => {
@@ -60,6 +65,38 @@ export default function FavoritesPage({
     }
     return list;
   }, [templates, favorites, sortKey, lang]);
+
+  // 跨模板材料汇总：按 hex 聚合所有收藏模板的颜色用量
+  const materialSummary = useMemo(
+    () => aggregateMaterials(favoritedTemplates),
+    [favoritedTemplates]
+  );
+  const materialTotalBeads = useMemo(
+    () => getTotalBeads(materialSummary),
+    [materialSummary]
+  );
+
+  const handleExportMaterial = useCallback(() => {
+    if (materialSummary.length === 0) return;
+    try {
+      const ok = exportMaterialListCSV(
+        materialSummary,
+        {
+          headerNo: t('favorites.material.colNo'),
+          headerHex: t('favorites.material.colHex'),
+          headerName: t('favorites.material.colName'),
+          headerCount: t('favorites.material.colCount'),
+          headerRatio: t('favorites.material.colRatio'),
+          headerTemplates: t('favorites.material.colTemplates'),
+          totalLabel: t('favorites.material.totalLabel'),
+        },
+        t('favorites.material.summary')
+      );
+      showToast(ok ? t('favorites.material.exported') : t('detail.toast.exportFailed'), ok ? 'success' : 'error');
+    } catch {
+      showToast(t('detail.toast.exportFailed'), 'error');
+    }
+  }, [materialSummary, showToast, t]);
 
   const handleClearClick = () => {
     if (favoritedTemplates.length === 0) return;
@@ -169,6 +206,17 @@ export default function FavoritesPage({
             </div>
             {favoritedTemplates.length > 0 && (
               <>
+                <button
+                  type="button"
+                  className={`favorites-page__sync-btn ${showSummary ? 'favorites-page__sync-btn--active' : ''}`}
+                  onClick={() => setShowSummary(v => !v)}
+                  aria-label={t('favorites.material.toggleTitle')}
+                  title={t('favorites.material.toggleTitle')}
+                  aria-pressed={showSummary}
+                >
+                  <ClipboardList size={16} />
+                  <span>{t('favorites.material.toggle')}</span>
+                </button>
                 <label className="favorites-page__sort">
                   <span className="favorites-page__sort-label">{t('favorites.sortLabel')}</span>
                   <select
@@ -200,7 +248,86 @@ export default function FavoritesPage({
       </header>
 
       <main id="main-content" className="favorites-page__content" tabIndex={-1}>
-        {favoritedTemplates.length > 0 ? (
+        {favoritedTemplates.length === 0 ? (
+          <div className="empty-state">
+            <p className="empty-state__icon" aria-hidden="true">💔</p>
+            <p className="empty-state__title">{t('favorites.empty.title')}</p>
+            <p className="empty-state__desc">{t('favorites.empty.desc')}</p>
+            <button type="button" className="empty-state__action" onClick={onBack}>
+              {t('favorites.empty.action')}
+            </button>
+          </div>
+        ) : showSummary ? (
+          <div className="material-summary">
+            <div className="material-summary__header">
+              <h2 className="material-summary__title">{t('favorites.material.summaryTitle')}</h2>
+              <button
+                type="button"
+                className="favorites-page__sync-btn"
+                onClick={handleExportMaterial}
+                aria-label={t('favorites.material.exportTitle')}
+                title={t('favorites.material.exportTitle')}
+              >
+                <Table size={16} />
+                <span>{t('favorites.material.export')}</span>
+              </button>
+            </div>
+            <div className="material-summary__stats">
+              <div className="material-summary__stat">
+                <span className="material-summary__stat-value">{materialSummary.length}</span>
+                <span className="material-summary__stat-label">{t('favorites.material.totalColors')}</span>
+              </div>
+              <div className="material-summary__stat">
+                <span className="material-summary__stat-value">{materialTotalBeads}</span>
+                <span className="material-summary__stat-label">{t('favorites.material.totalBeads')}</span>
+              </div>
+              <div className="material-summary__stat">
+                <span className="material-summary__stat-value">{favoritedTemplates.length}</span>
+                <span className="material-summary__stat-label">{t('favorites.material.colTemplates')}</span>
+              </div>
+            </div>
+            <div className="material-summary__table-wrap">
+              <table className="material-summary__table">
+                <thead>
+                  <tr>
+                    <th>{t('favorites.material.colNo')}</th>
+                    <th>{t('favorites.material.colHex')}</th>
+                    <th>{t('favorites.material.colName')}</th>
+                    <th>{t('favorites.material.colCount')}</th>
+                    <th>{t('favorites.material.colRatio')}</th>
+                    <th>{t('favorites.material.colTemplates')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materialSummary.map((item, i) => {
+                    const ratio = materialTotalBeads > 0 ? ((item.count / materialTotalBeads) * 100).toFixed(1) : '0';
+                    return (
+                      <tr key={item.hex}>
+                        <td>{i + 1}</td>
+                        <td>
+                          <span className="material-summary__swatch" style={{ backgroundColor: item.hex }} aria-hidden="true" />
+                          {item.hex}
+                        </td>
+                        <td>{item.name}</td>
+                        <td>{item.count}</td>
+                        <td>{ratio}%</td>
+                        <td>{item.templateCount}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={3}>{t('favorites.material.totalLabel')}</td>
+                    <td>{materialTotalBeads}</td>
+                    <td>100%</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        ) : (
           <div className="template-grid">
             {favoritedTemplates.map(template => (
               <TemplateCard
@@ -211,15 +338,6 @@ export default function FavoritesPage({
                 onClick={() => onNavigate(`template/${template.id}`)}
               />
             ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <p className="empty-state__icon" aria-hidden="true">💔</p>
-            <p className="empty-state__title">{t('favorites.empty.title')}</p>
-            <p className="empty-state__desc">{t('favorites.empty.desc')}</p>
-            <button type="button" className="empty-state__action" onClick={onBack}>
-              {t('favorites.empty.action')}
-            </button>
           </div>
         )}
       </main>

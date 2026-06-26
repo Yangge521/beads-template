@@ -71,6 +71,7 @@ export default function DetailPage({
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
+  const [beadSize, setBeadSize] = useState<5 | 2.6>(5);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const { showToast } = useToast();
   const { t, lang } = useTranslation();
@@ -86,6 +87,12 @@ export default function DetailPage({
     if (!template) return [];
     return transforms.reduce((g, tf) => applyTransform(g, tf), template.grid);
   }, [template, transforms]);
+  // 导出用模板：用 displayGrid 替换 grid，实现所见即所得
+  // colors 的 count 由导出工具内部用 getCorrectedColors 重新计算，无需修正
+  const exportTemplate = useMemo<BeadTemplate | null>(
+    () => (template ? { ...template, grid: displayGrid } : null),
+    [template, displayGrid]
+  );
   const maxColorCount = useMemo(
     () => correctedColors.reduce((m, c) => Math.max(m, c.count), 0),
     [correctedColors]
@@ -177,10 +184,10 @@ export default function DetailPage({
 
   // 导出 PNG：把 grid 渲染到 canvas 并下载（toBlob 异步，据实反馈）
   const handleExportPNG = useCallback(async () => {
-    if (!template) return;
+    if (!exportTemplate) return;
     try {
       const ok = await exportTemplateToPNG(
-        template,
+        exportTemplate,
         24,
         showGridLines,
         t('detail.export.fileNameSuffix')
@@ -189,25 +196,25 @@ export default function DetailPage({
     } catch {
       showToast(t('detail.toast.exportFailed'), 'error');
     }
-  }, [template, showGridLines, showToast, t]);
+  }, [exportTemplate, showGridLines, showToast, t]);
 
   // 导出 SVG：矢量格式，无限缩放不失真，文件体积小
   const handleExportSVG = useCallback(() => {
-    if (!template) return;
+    if (!exportTemplate) return;
     try {
-      exportTemplateToSVG(template, 24, showGridLines, t('detail.export.fileNameSuffix'));
+      exportTemplateToSVG(exportTemplate, 24, showGridLines, t('detail.export.fileNameSuffix'));
       showToast(t('detail.toast.svgExported'), 'success');
     } catch {
       showToast(t('detail.toast.exportFailed'), 'error');
     }
-  }, [template, showGridLines, showToast, t]);
+  }, [exportTemplate, showGridLines, showToast, t]);
 
   // 导出坐标网格图纸：带行列坐标 + 每 5 格加粗 + 格内色号 + 色卡图例，打印即可对照拼制
   const handleExportChart = useCallback(() => {
-    if (!template) return;
+    if (!exportTemplate) return;
     try {
       exportPrintChart(
-        template,
+        exportTemplate,
         {
           chartTitle: t('detail.chart.title'),
           colLabel: t('detail.chart.col'),
@@ -223,14 +230,14 @@ export default function DetailPage({
     } catch {
       showToast(t('detail.toast.exportFailed'), 'error');
     }
-  }, [template, showToast, t]);
+  }, [exportTemplate, showToast, t]);
 
   // 导出 CSV 色号清单：Excel 兼容，含行列坐标 + 色号 + 数量，竞品 PixelBeads 核心功能
   const handleExportCSV = useCallback(() => {
-    if (!template) return;
+    if (!exportTemplate) return;
     try {
       const ok = exportColorListCSV(
-        template,
+        exportTemplate,
         {
           headerNo: t('detail.csv.headerNo'),
           headerHex: t('detail.csv.headerHex'),
@@ -246,7 +253,7 @@ export default function DetailPage({
     } catch {
       showToast(t('detail.toast.exportFailed'), 'error');
     }
-  }, [template, showToast, t]);
+  }, [exportTemplate, showToast, t]);
 
   // 切换模板时重置缩放、变换与进度模式，并滚动到顶部
   useEffect(() => {
@@ -441,7 +448,11 @@ export default function DetailPage({
             <button
               type="button"
               className={`detail-page__zoom-btn ${progressMode ? 'detail-page__zoom-btn--active' : ''}`}
-              onClick={() => setProgressMode(v => !v)}
+              onClick={() => setProgressMode(v => {
+                // 进入进度模式时强制清空变换，避免变换后坐标与原始 grid 错位
+                if (!v) setTransforms([]);
+                return !v;
+              })}
               aria-label={t('detail.progress.ariaLabel')}
               aria-pressed={progressMode}
               title={t('detail.progress.toggleTitle')}
@@ -549,6 +560,40 @@ export default function DetailPage({
           <div className="detail-page__stat">
             <span className="detail-page__stat-value">{cols}×{rows}</span>
             <span className="detail-page__stat-label">{t('detail.stat.gridSize')}</span>
+          </div>
+        </div>
+
+        <div className="detail-page__sizer" role="region" aria-label={t('detail.sizer.title')}>
+          <span className="detail-page__sizer-label">{t('detail.sizer.beadSize')}</span>
+          <div className="detail-page__sizer-toggle" role="radiogroup" aria-label={t('detail.sizer.beadSize')}>
+            <button
+              type="button"
+              className={`detail-page__sizer-btn ${beadSize === 5 ? 'detail-page__sizer-btn--active' : ''}`}
+              onClick={() => setBeadSize(5)}
+              role="radio"
+              aria-checked={beadSize === 5}
+            >
+              {t('detail.sizer.standard')}
+            </button>
+            <button
+              type="button"
+              className={`detail-page__sizer-btn ${beadSize === 2.6 ? 'detail-page__sizer-btn--active' : ''}`}
+              onClick={() => setBeadSize(2.6)}
+              role="radio"
+              aria-checked={beadSize === 2.6}
+            >
+              {t('detail.sizer.mini')}
+            </button>
+          </div>
+          <div className="detail-page__sizer-result">
+            <span className="detail-page__sizer-dim">
+              {t('detail.sizer.width')} {(cols * beadSize / 10).toFixed(1)}cm
+              <span className="detail-page__sizer-sep">×</span>
+              {t('detail.sizer.height')} {(rows * beadSize / 10).toFixed(1)}cm
+            </span>
+            <span className="detail-page__sizer-boards" title={t('detail.sizer.boards')}>
+              {t('detail.sizer.boardsHint', { boards: Math.ceil(cols / 29) * Math.ceil(rows / 29) })}
+            </span>
           </div>
         </div>
 

@@ -1,3 +1,5 @@
+import { useCallback, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 import type { ColorInfo } from '../types/bead';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -24,13 +26,51 @@ export default function PixelGrid({
   onCellClick,
 }: PixelGridProps) {
   const { t } = useTranslation();
+  const gridRef = useRef<HTMLDivElement>(null);
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
 
   const totalBeads = grid.flat().filter(v => v > 0).length;
 
+  // 交互模式键盘导航：roving tabindex，仅 grid 容器 tabbable，cell 用方向键移动
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (!interactive) return;
+    const target = e.target as HTMLElement;
+    const cellEl = target.closest('[data-cell]') as HTMLElement | null;
+    // 焦点在 grid 容器上：方向键移到首个非空格子
+    if (!cellEl) {
+      if (['ArrowDown', 'ArrowRight', 'Enter', ' '].includes(e.key)) {
+        const first = gridRef.current?.querySelector('[data-cell][data-filled="true"]') as HTMLElement | null;
+        first?.focus();
+        e.preventDefault();
+      }
+      return;
+    }
+    const r = Number(cellEl.dataset.r);
+    const c = Number(cellEl.dataset.c);
+    let nr = r;
+    let nc = c;
+    switch (e.key) {
+      case 'ArrowUp': nr = Math.max(0, r - 1); break;
+      case 'ArrowDown': nr = Math.min(rows - 1, r + 1); break;
+      case 'ArrowLeft': nc = Math.max(0, c - 1); break;
+      case 'ArrowRight': nc = Math.min(cols - 1, c + 1); break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (grid[r][c] > 0) onCellClick?.(r, c);
+        return;
+      default:
+        return;
+    }
+    e.preventDefault();
+    const next = gridRef.current?.querySelector(`[data-cell="${nr}-${nc}"]`) as HTMLElement | null;
+    next?.focus();
+  }, [interactive, rows, cols, grid, onCellClick]);
+
   return (
     <div
+      ref={gridRef}
       className={`pixel-grid ${className} ${showGridLines ? 'pixel-grid--lined' : ''} ${interactive ? 'pixel-grid--interactive' : ''}`}
       style={{
         display: 'grid',
@@ -41,6 +81,8 @@ export default function PixelGrid({
       role={interactive ? 'grid' : 'img'}
       aria-label={t('pixelGrid.ariaLabel', { count: totalBeads })}
       title={t('pixelGrid.title', { cols, rows, count: totalBeads })}
+      tabIndex={interactive ? 0 : undefined}
+      onKeyDown={interactive ? handleKeyDown : undefined}
     >
       {grid.map((row, ri) =>
         row.map((cellValue, ci) => {
@@ -51,6 +93,10 @@ export default function PixelGrid({
           return (
             <div
               key={cellKey}
+              data-cell={`${ri}-${ci}`}
+              data-r={ri}
+              data-c={ci}
+              data-filled={isEmpty ? 'false' : 'true'}
               className={`pixel-cell ${isCompleted ? 'pixel-cell--completed' : ''}`}
               style={{
                 backgroundColor: color ? color.hex : 'transparent',
@@ -65,15 +111,11 @@ export default function PixelGrid({
                 color ? t('pixelGrid.cellTitle', { name: color.name, hex: color.hex }) : t('pixelGrid.empty')
               }
               onClick={interactive && !isEmpty ? () => onCellClick?.(ri, ci) : undefined}
-              role={interactive && !isEmpty ? 'button' : undefined}
-              tabIndex={interactive && !isEmpty ? 0 : undefined}
+              role={interactive && !isEmpty ? 'gridcell' : undefined}
+              tabIndex={interactive && !isEmpty ? -1 : undefined}
+              aria-rowindex={interactive ? ri + 1 : undefined}
+              aria-colindex={interactive ? ci + 1 : undefined}
               aria-label={isCompleted ? t('pixelGrid.completed') : color ? t('pixelGrid.cellTitle', { name: color.name, hex: color.hex }) : undefined}
-              onKeyDown={interactive && !isEmpty ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onCellClick?.(ri, ci);
-                }
-              } : undefined}
             >
               {isCompleted && (
                 <span className="pixel-cell__check" aria-hidden="true">✓</span>

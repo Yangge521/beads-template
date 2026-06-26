@@ -53,7 +53,7 @@ function AppContent() {
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
   const { isLiked, toggleLike } = useLikes();
   const { getRating, setRating } = useRatings();
-  const { getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
+  const { progress, getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
@@ -254,6 +254,12 @@ function AppContent() {
       .map(x => x.template);
   }, [currentTemplate, allTemplates]);
 
+  // 缓存 completedCells 引用，避免 progress 未变时每次 render 产生新 Set 导致子组件重渲染
+  const completedCells = useMemo(
+    () => currentTemplate ? getCompleted(currentTemplate.id) : new Set<string>(),
+    [currentTemplate?.id, progress, getCompleted]
+  );
+
   const handleNavigateTemplate = useCallback((id: string) => {
     window.location.hash = `template/${id}`;
   }, []);
@@ -302,7 +308,7 @@ function AppContent() {
         onToggleLike={currentTemplate ? () => handleToggleLike(currentTemplate.id) : () => {}}
         rating={currentTemplate ? getRating(currentTemplate.id) : 0}
         onSetRating={currentTemplate ? (stars: number) => handleSetRating(currentTemplate.id, stars) : () => {}}
-        completedCells={currentTemplate ? getCompleted(currentTemplate.id) : new Set<string>()}
+        completedCells={completedCells}
         onToggleCell={currentTemplate ? (row: number, col: number) => toggleCell(currentTemplate.id, row, col) : () => {}}
         onClearProgress={currentTemplate ? () => handleClearProgress(currentTemplate.id) : () => {}}
         progressPercent={currentTemplate ? getProgressPercent(currentTemplate.id, getBeadCount(currentTemplate)) : 0}
