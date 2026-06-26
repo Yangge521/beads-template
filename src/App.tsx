@@ -14,6 +14,8 @@ import { useRecentlyViewed } from './hooks/useRecentlyViewed';
 import { useCustomTemplates } from './hooks/useCustomTemplates';
 import { useLikes } from './hooks/useLikes';
 import { useRatings } from './hooks/useRatings';
+import { useProgress } from './hooks/useProgress';
+import { getBeadCount } from './utils/beadStats';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
 import { downloadBackupFile, parseBackupFile, importUserData } from './utils/dataSync';
@@ -51,6 +53,7 @@ function AppContent() {
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
   const { isLiked, toggleLike } = useLikes();
   const { getRating, setRating } = useRatings();
+  const { getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
@@ -83,6 +86,11 @@ function AppContent() {
       showToast(t('detail.toast.rated', { stars }), 'success');
     }
   }, [getRating, setRating, showToast, t]);
+
+  const handleClearProgress = useCallback((id: string) => {
+    clearProgress(id);
+    showToast(t('detail.toast.progressCleared'), 'info');
+  }, [clearProgress, showToast, t]);
 
   const handleClearFavoritesWithToast = useCallback(() => {
     clearFavorites();
@@ -191,6 +199,7 @@ function AppContent() {
             custom: result.counts.customTemplates,
             likes: result.counts.likes,
             ratings: result.counts.ratings,
+            progress: result.counts.progress,
           }),
           'success'
         );
@@ -293,6 +302,10 @@ function AppContent() {
         onToggleLike={currentTemplate ? () => handleToggleLike(currentTemplate.id) : () => {}}
         rating={currentTemplate ? getRating(currentTemplate.id) : 0}
         onSetRating={currentTemplate ? (stars: number) => handleSetRating(currentTemplate.id, stars) : () => {}}
+        completedCells={currentTemplate ? getCompleted(currentTemplate.id) : new Set<string>()}
+        onToggleCell={currentTemplate ? (row: number, col: number) => toggleCell(currentTemplate.id, row, col) : () => {}}
+        onClearProgress={currentTemplate ? () => handleClearProgress(currentTemplate.id) : () => {}}
+        progressPercent={currentTemplate ? getProgressPercent(currentTemplate.id, getBeadCount(currentTemplate)) : 0}
         onNavigateTemplate={handleNavigateTemplate}
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}

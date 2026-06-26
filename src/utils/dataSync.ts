@@ -12,6 +12,7 @@ const THEME_KEY = 'beads-theme';
 const CUSTOM_KEY = 'beads-custom-templates';
 const LIKES_KEY = 'beads-likes';
 const RATINGS_KEY = 'beads-ratings';
+const PROGRESS_KEY = 'beads-progress';
 
 export interface ExportPayload {
   __type: 'beads-template-backup';
@@ -22,6 +23,7 @@ export interface ExportPayload {
   customTemplates: BeadTemplate[];
   likes: string[];
   ratings: Record<string, number>;
+  progress: Record<string, string[]>;
   theme: string | null;
 }
 
@@ -45,6 +47,7 @@ export function exportUserData(): ExportPayload {
     customTemplates: readJson<BeadTemplate[]>(CUSTOM_KEY, []),
     likes: readJson<string[]>(LIKES_KEY, []),
     ratings: readJson<Record<string, number>>(RATINGS_KEY, {}),
+    progress: readJson<Record<string, string[]>>(PROGRESS_KEY, {}),
     theme: localStorage.getItem(THEME_KEY),
   };
 }
@@ -75,6 +78,7 @@ export interface ImportResult {
     customTemplates: number;
     likes: number;
     ratings: number;
+    progress: number;
   };
 }
 
@@ -110,6 +114,14 @@ export function parseBackupFile(text: string): ExportPayload | null {
         cleanRatings[k] = Math.floor(v);
       }
     }
+    const rawProgress = (parsed.progress && typeof parsed.progress === 'object' && !Array.isArray(parsed.progress)) ? parsed.progress : {};
+    const cleanProgress: Record<string, string[]> = {};
+    for (const [k, v] of Object.entries(rawProgress)) {
+      if (typeof k === 'string' && Array.isArray(v)) {
+        const cells = v.filter((s: unknown): s is string => typeof s === 'string');
+        if (cells.length > 0) cleanProgress[k] = cells;
+      }
+    }
     return {
       __type: 'beads-template-backup',
       __version: parsed.__version || 1,
@@ -119,6 +131,7 @@ export function parseBackupFile(text: string): ExportPayload | null {
       customTemplates: rawCustom.filter(isValidTemplate),
       likes: rawLikes.filter((l: unknown): l is string => typeof l === 'string'),
       ratings: cleanRatings,
+      progress: cleanProgress,
       theme: typeof parsed.theme === 'string' ? parsed.theme : null,
     };
   } catch {
@@ -140,6 +153,7 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
       localStorage.setItem(RECENT_KEY, JSON.stringify(payload.recentlyViewed));
       localStorage.setItem(LIKES_KEY, JSON.stringify(payload.likes));
       localStorage.setItem(RATINGS_KEY, JSON.stringify(payload.ratings));
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(payload.progress));
     } else {
       // 合并：去重
       const existingCustom = readJson<BeadTemplate[]>(CUSTOM_KEY, []);
@@ -166,6 +180,16 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
       const existingRatings = readJson<Record<string, number>>(RATINGS_KEY, {});
       const mergedRatings = { ...existingRatings, ...payload.ratings };
       localStorage.setItem(RATINGS_KEY, JSON.stringify(mergedRatings));
+
+      // 进度合并：同 id 模板进度取并集（两台设备的完成格子合并）
+      const existingProgress = readJson<Record<string, string[]>>(PROGRESS_KEY, {});
+      const mergedProgress: Record<string, string[]> = { ...existingProgress };
+      for (const [tplId, cells] of Object.entries(payload.progress)) {
+        const set = new Set(mergedProgress[tplId] || []);
+        cells.forEach(c => set.add(c));
+        mergedProgress[tplId] = Array.from(set);
+      }
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(mergedProgress));
     }
 
     if (payload.theme) {
@@ -173,7 +197,7 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
     }
 
     // 手动派发 storage 事件，触发同标签页的 hook 同步
-    [CUSTOM_KEY, FAVORITES_KEY, RECENT_KEY, LIKES_KEY, RATINGS_KEY, THEME_KEY].forEach(key => {
+    [CUSTOM_KEY, FAVORITES_KEY, RECENT_KEY, LIKES_KEY, RATINGS_KEY, PROGRESS_KEY, THEME_KEY].forEach(key => {
       window.dispatchEvent(new StorageEvent('storage', { key, newValue: localStorage.getItem(key) }));
     });
 
@@ -183,6 +207,7 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
     const finalCustom = readJson<BeadTemplate[]>(CUSTOM_KEY, []);
     const finalLikes = readJson<string[]>(LIKES_KEY, []);
     const finalRatings = readJson<Record<string, number>>(RATINGS_KEY, {});
+    const finalProgress = readJson<Record<string, string[]>>(PROGRESS_KEY, {});
 
     return {
       success: true,
@@ -193,13 +218,14 @@ export function importUserData(payload: ExportPayload, mode: 'merge' | 'replace'
         customTemplates: finalCustom.length,
         likes: finalLikes.length,
         ratings: Object.keys(finalRatings).length,
+        progress: Object.keys(finalProgress).length,
       },
     };
   } catch {
     return {
       success: false,
       messageKey: 'app.toast.importFailed',
-      counts: { favorites: 0, recentlyViewed: 0, customTemplates: 0, likes: 0, ratings: 0 },
+      counts: { favorites: 0, recentlyViewed: 0, customTemplates: 0, likes: 0, ratings: 0, progress: 0 },
     };
   }
 }

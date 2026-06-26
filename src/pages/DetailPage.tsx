@@ -2,12 +2,13 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map, Table, ThumbsUp, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
 import { exportPrintChart } from '../utils/exportPrintChart';
 import { exportColorListCSV } from '../utils/exportCSV';
+import { applyTransform, type TransformType } from '../utils/transformGrid';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -20,6 +21,10 @@ interface DetailPageProps {
   onToggleLike: () => void;
   rating: number;
   onSetRating: (stars: number) => void;
+  completedCells: Set<string>;
+  onToggleCell: (row: number, col: number) => void;
+  onClearProgress: () => void;
+  progressPercent: number;
   onNavigateTemplate?: (id: string) => void;
   prevTemplate?: BeadTemplate | null;
   nextTemplate?: BeadTemplate | null;
@@ -47,6 +52,10 @@ export default function DetailPage({
   onToggleLike,
   rating,
   onSetRating,
+  completedCells,
+  onToggleCell,
+  onClearProgress,
+  progressPercent,
   onNavigateTemplate,
   prevTemplate,
   nextTemplate,
@@ -57,6 +66,8 @@ export default function DetailPage({
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [showTop, setShowTop] = useState(false);
   const [showGridLines, setShowGridLines] = useState(false);
+  const [progressMode, setProgressMode] = useState(false);
+  const [transforms, setTransforms] = useState<TransformType[]>([]);
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
@@ -70,6 +81,11 @@ export default function DetailPage({
     () => (template ? getCorrectedColors(template) : []),
     [template]
   );
+  // 应用所有变换到 grid（变换不影响原始数据，仅影响视图）
+  const displayGrid = useMemo(() => {
+    if (!template) return [];
+    return transforms.reduce((g, tf) => applyTransform(g, tf), template.grid);
+  }, [template, transforms]);
   const maxColorCount = useMemo(
     () => correctedColors.reduce((m, c) => Math.max(m, c.count), 0),
     [correctedColors]
@@ -232,11 +248,28 @@ export default function DetailPage({
     }
   }, [template, showToast, t]);
 
-  // 切换模板时重置缩放并滚动到顶部
+  // 切换模板时重置缩放、变换与进度模式，并滚动到顶部
   useEffect(() => {
     setZoom(1);
+    setTransforms([]);
+    setProgressMode(false);
     window.scrollTo({ top: 0 });
   }, [template?.id]);
+
+  const handleClearProgressConfirm = useCallback(() => {
+    if (!template) return;
+    if (confirm(t('detail.progress.clearConfirm'))) {
+      onClearProgress();
+    }
+  }, [template, onClearProgress, t]);
+
+  const addTransform = useCallback((tf: TransformType) => {
+    setTransforms(prev => [...prev, tf]);
+  }, []);
+
+  const resetTransforms = useCallback(() => {
+    setTransforms([]);
+  }, []);
 
   // 滚动监听，控制返回顶部按钮显示（rAF 节流）
   useEffect(() => {
@@ -295,8 +328,10 @@ export default function DetailPage({
 
   const diffStyle = difficultyStyles[template.difficulty] || difficultyStyles.medium;
   const difficultyLabel = t(`difficulty.${template.difficulty}`);
-  const rows = template.grid.length;
-  const cols = rows > 0 ? template.grid[0].length : 0;
+  // 使用变换后的 grid 计算行列，旋转后行列会互换
+  const rows = displayGrid.length;
+  const cols = rows > 0 ? displayGrid[0].length : 0;
+  const completedCount = completedCells.size;
   const zoomIn = () => setZoom(z => Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)));
   const zoomOut = () => setZoom(z => Math.max(MIN_ZOOM, +(z - ZOOM_STEP).toFixed(2)));
   const zoomReset = () => setZoom(1);
@@ -403,10 +438,101 @@ export default function DetailPage({
             >
               <Grid3x3 size={16} />
             </button>
+            <button
+              type="button"
+              className={`detail-page__zoom-btn ${progressMode ? 'detail-page__zoom-btn--active' : ''}`}
+              onClick={() => setProgressMode(v => !v)}
+              aria-label={t('detail.progress.ariaLabel')}
+              aria-pressed={progressMode}
+              title={t('detail.progress.toggleTitle')}
+            >
+              <CheckSquare size={16} />
+            </button>
+            <div className="detail-page__transform-group" role="group" aria-label={t('detail.transform.ariaLabel')}>
+              <button
+                type="button"
+                className="detail-page__zoom-btn"
+                onClick={() => addTransform('flipH')}
+                disabled={progressMode}
+                aria-label={t('detail.transform.flipH.ariaLabel')}
+                title={t('detail.transform.flipH.title')}
+              >
+                <FlipHorizontal size={16} />
+              </button>
+              <button
+                type="button"
+                className="detail-page__zoom-btn"
+                onClick={() => addTransform('flipV')}
+                disabled={progressMode}
+                aria-label={t('detail.transform.flipV.ariaLabel')}
+                title={t('detail.transform.flipV.title')}
+              >
+                <FlipVertical size={16} />
+              </button>
+              <button
+                type="button"
+                className="detail-page__zoom-btn"
+                onClick={() => addTransform('rotate90')}
+                disabled={progressMode}
+                aria-label={t('detail.transform.rotate90.ariaLabel')}
+                title={t('detail.transform.rotate90.title')}
+              >
+                <RotateCw size={16} />
+              </button>
+              <button
+                type="button"
+                className="detail-page__zoom-btn"
+                onClick={() => addTransform('rotate270')}
+                disabled={progressMode}
+                aria-label={t('detail.transform.rotate270.ariaLabel')}
+                title={t('detail.transform.rotate270.title')}
+              >
+                <RotateCcw size={16} />
+              </button>
+              <button
+                type="button"
+                className="detail-page__zoom-btn"
+                onClick={resetTransforms}
+                disabled={transforms.length === 0 || progressMode}
+                aria-label={t('detail.transform.reset.ariaLabel')}
+                title={t('detail.transform.reset.title')}
+              >
+                <RefreshCw size={16} />
+              </button>
+            </div>
           </div>
+
+          {progressMode && (
+            <div className="detail-page__progress-bar" role="region" aria-label={t('detail.progress.title')}>
+              <div className="detail-page__progress-info">
+                <span className="detail-page__progress-percent">{t('detail.progress.percent', { percent: progressPercent })}</span>
+                <span className="detail-page__progress-completed">
+                  {t('detail.progress.completed', { completed: completedCount, total: beadCount })}
+                </span>
+              </div>
+              <div className="detail-page__progress-track" aria-hidden="true">
+                <div className="detail-page__progress-fill" style={{ width: `${progressPercent}%` }} />
+              </div>
+              <button
+                type="button"
+                className="detail-page__progress-clear"
+                onClick={handleClearProgressConfirm}
+                disabled={completedCount === 0}
+              >
+                {t('detail.progress.clear')}
+              </button>
+            </div>
+          )}
           <div className="detail-page__pixel" style={{ overflow: 'auto' }}>
             <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-              <PixelGrid grid={template.grid} colors={correctedColors} showGridLines={showGridLines} />
+              <PixelGrid
+                grid={displayGrid}
+                colors={correctedColors}
+                showGridLines={showGridLines}
+                interactive={progressMode}
+                completedCells={completedCells}
+                onCellClick={onToggleCell}
+              />
             </div>
           </div>
         </div>
