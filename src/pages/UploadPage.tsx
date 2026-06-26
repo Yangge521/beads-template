@@ -4,7 +4,9 @@ import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
 import { useToast } from '../components/ToastContainer';
 import { ArrowLeft, Upload, Image as ImageIcon, Save, RefreshCw } from 'lucide-react';
-import { loadImageFromFile, buildTemplateFromImage, pixelizeImage } from '../utils/imageToGrid';
+import { loadImageFromFile, buildTemplateFromImage } from '../utils/imageToGrid';
+import { pixelizeImageEnhanced } from '../utils/imageToGridEnhanced';
+import type { DitherAlgorithm } from '../utils/imageToGridEnhanced';
 import { useTranslation } from '../context/LanguageContext';
 
 interface UploadPageProps {
@@ -16,6 +18,8 @@ interface UploadPageProps {
   favoritesCount: number;
   onNavigateFavorites: () => void;
   onNavigateColorRef: () => void;
+  onNavigateUpload: () => void;
+  onNavigateEditor: () => void;
   onNavigateHome: () => void;
   searchQuery: string;
   onSaveTemplate: (template: Omit<BeadTemplate, 'id'>) => BeadTemplate;
@@ -26,6 +30,10 @@ interface PreviewOptions {
   colorThreshold: number;
   dropBackground: boolean;
   backgroundLuminance: number;
+  dither: DitherAlgorithm;
+  edgeEnhance: boolean;
+  edgeStrength: number;
+  maxColors: number;
 }
 
 const DEFAULT_OPTIONS: PreviewOptions = {
@@ -33,6 +41,10 @@ const DEFAULT_OPTIONS: PreviewOptions = {
   colorThreshold: 0.08,
   dropBackground: true,
   backgroundLuminance: 235,
+  dither: 'none',
+  edgeEnhance: false,
+  edgeStrength: 0.5,
+  maxColors: 16,
 };
 
 export default function UploadPage({
@@ -44,6 +56,7 @@ export default function UploadPage({
   favoritesCount,
   onNavigateFavorites,
   onNavigateColorRef,
+  onNavigateEditor,
   onNavigateHome,
   searchQuery,
   onSaveTemplate,
@@ -58,10 +71,20 @@ export default function UploadPage({
   const { showToast } = useToast();
   const { t } = useTranslation();
 
-  // 像素化预览（实时随参数变化）
+  // 像素化预览（实时随参数变化，使用增强算法）
   const preview = useMemo(() => {
     if (!img) return null;
-    return pixelizeImage(img, { ...options, colorNamePrefix: t('upload.build.colorNamePrefix') });
+    return pixelizeImageEnhanced(img, {
+      maxGridSize: options.maxGridSize,
+      colorThreshold: options.colorThreshold,
+      dropBackground: options.dropBackground,
+      backgroundLuminance: options.backgroundLuminance,
+      colorNamePrefix: t('upload.build.colorNamePrefix'),
+      dither: options.dither,
+      edgeEnhance: options.edgeEnhance,
+      edgeStrength: options.edgeStrength,
+      maxColors: options.maxColors,
+    });
   }, [img, options, t]);
 
   // 统计预览信息
@@ -164,6 +187,7 @@ export default function UploadPage({
         onNavigateFavorites={onNavigateFavorites}
         onNavigateColorRef={onNavigateColorRef}
         onNavigateUpload={() => {}}
+        onNavigateEditor={onNavigateEditor}
         onNavigateHome={onNavigateHome}
         searchQuery={searchQuery}
       />
@@ -275,6 +299,47 @@ export default function UploadPage({
                     <span className="upload-page__option-hint">{t('upload.options.bgThreshold.hint')}</span>
                   </label>
                 )}
+                <label className="upload-page__option">
+                  <span className="upload-page__option-label">{t('upload.algorithm.label')}</span>
+                  <select
+                    value={options.dither}
+                    onChange={(e) => setOptions(o => ({ ...o, dither: e.target.value as DitherAlgorithm }))}
+                  >
+                    <option value="none">{t('upload.algorithm.none')}</option>
+                    <option value="floyd-steinberg">{t('upload.algorithm.floyd-steinberg')}</option>
+                  </select>
+                </label>
+                <label className="upload-page__option upload-page__option--row">
+                  <input
+                    type="checkbox"
+                    checked={options.edgeEnhance}
+                    onChange={(e) => setOptions(o => ({ ...o, edgeEnhance: e.target.checked }))}
+                  />
+                  <span>{t('upload.algorithm.edgeEnhance')}</span>
+                </label>
+                {options.edgeEnhance && (
+                  <label className="upload-page__option">
+                    <span className="upload-page__option-label">{t('upload.algorithm.edgeStrength', )} ({Math.round(options.edgeStrength * 100)}%)</span>
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={Math.round(options.edgeStrength * 100)}
+                      onChange={(e) => setOptions(o => ({ ...o, edgeStrength: Number(e.target.value) / 100 }))}
+                    />
+                  </label>
+                )}
+                <label className="upload-page__option">
+                  <span className="upload-page__option-label">{t('upload.maxColors')}: {options.maxColors}</span>
+                  <input
+                    type="range"
+                    min="4"
+                    max="30"
+                    value={options.maxColors}
+                    onChange={(e) => setOptions(o => ({ ...o, maxColors: Number(e.target.value) }))}
+                  />
+                </label>
+                <p className="upload-page__option-hint">{t('upload.algorithm.hint')}</p>
               </div>
             )}
           </section>

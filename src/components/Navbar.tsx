@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, Heart, Sun, Moon, X, Palette, Upload, Clock, Trash2 } from 'lucide-react';
+import { Search, Heart, Sun, Moon, X, Palette, Upload, Clock, Trash2, Pencil } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { useSearchHistory } from '../hooks/useSearchHistory';
 
@@ -11,6 +11,7 @@ interface NavbarProps {
   onNavigateFavorites: () => void;
   onNavigateColorRef: () => void;
   onNavigateUpload: () => void;
+  onNavigateEditor: () => void;
   onNavigateHome: () => void;
   searchQuery: string;
 }
@@ -23,6 +24,7 @@ export default function Navbar({
   onNavigateFavorites,
   onNavigateColorRef,
   onNavigateUpload,
+  onNavigateEditor,
   onNavigateHome,
   searchQuery,
 }: NavbarProps) {
@@ -200,6 +202,16 @@ export default function Navbar({
       </div>
 
       <div className="navbar__actions">
+        <button
+          type="button"
+          className="navbar__action-btn"
+          onClick={onNavigateEditor}
+          aria-label={t('nav.editor.ariaLabel')}
+          title={t('nav.editor.title')}
+        >
+          <Pencil size={20} />
+        </button>
+
         <button
           type="button"
           className="navbar__action-btn"

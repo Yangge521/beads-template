@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
@@ -11,6 +11,9 @@ import { exportColorListCSV } from '../utils/exportCSV';
 import { applyTransform, type TransformType } from '../utils/transformGrid';
 import type { InventoryItem } from '../hooks/useInventory';
 import InventoryPanel from '../components/InventoryPanel';
+import StepGuidePanel from '../components/StepGuidePanel';
+import { useStepGuide } from '../hooks/useStepGuide';
+import { useTouchGesture } from '../hooks/useTouchGesture';
 import { applyColorReplacements, type MissingColorInfo } from '../utils/colorReplacement';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
@@ -84,6 +87,8 @@ export default function DetailPage({
   const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
   const [beadSize, setBeadSize] = useState<5 | 2.6>(5);
   const [showInventory, setShowInventory] = useState(false);
+  const stepGuide = useStepGuide(template?.id);
+  const touch = useTouchGesture(true);
   const [replacedColors, setReplacedColors] = useState<MissingColorInfo[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const { showToast } = useToast();
@@ -400,6 +405,16 @@ export default function DetailPage({
           </button>
           <button
             type="button"
+            className={`detail-page__share-btn ${stepGuide.enabled ? 'detail-page__share-btn--active' : ''}`}
+            onClick={stepGuide.toggle}
+            aria-label={t('stepGuide.toggle')}
+            title={t('stepGuide.toggleTitle')}
+            aria-pressed={stepGuide.enabled}
+          >
+            <ListOrdered size={20} />
+          </button>
+          <button
+            type="button"
             className={`detail-page__share-btn ${showInventory ? 'detail-page__share-btn--active' : ''}`}
             onClick={() => setShowInventory(v => !v)}
             aria-label={t('detail.inventory.toggleTitle')}
@@ -439,6 +454,22 @@ export default function DetailPage({
       </header>
 
       <main id="main-content" className="detail-page__body" tabIndex={-1}>
+        {stepGuide.enabled && (
+          <StepGuidePanel
+            grid={displayGrid}
+            colors={displayColors}
+            enabled={stepGuide.enabled}
+            currentStep={stepGuide.currentStep}
+            completedSteps={stepGuide.completedSteps}
+            onToggle={stepGuide.toggle}
+            onNext={stepGuide.nextStep}
+            onPrev={stepGuide.prevStep}
+            onGoTo={stepGuide.goToStep}
+            onMarkComplete={stepGuide.markStepComplete}
+            onReset={stepGuide.reset}
+          />
+        )}
+
         {showInventory && (
           <InventoryPanel
             template={template}
@@ -593,8 +624,15 @@ export default function DetailPage({
               </button>
             </div>
           )}
-          <div className="detail-page__pixel" style={{ overflow: 'auto' }}>
-            <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
+          <div
+            className="detail-page__pixel"
+            style={{ overflow: 'auto' }}
+            onTouchStart={touch.onTouchStart}
+            onTouchMove={touch.onTouchMove}
+            onTouchEnd={touch.onTouchEnd}
+            onWheel={touch.onWheel}
+          >
+            <div style={{ transform: `scale(${zoom * touch.scale}) translate(${touch.offsetX}px, ${touch.offsetY}px)`, transformOrigin: 'top center', touchAction: 'none' }}>
               <PixelGrid
                 grid={displayGrid}
                 colors={displayColors}

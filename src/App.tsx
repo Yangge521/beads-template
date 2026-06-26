@@ -4,6 +4,7 @@ import DetailPage from './pages/DetailPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ColorReferencePage from './pages/ColorReferencePage';
 import UploadPage from './pages/UploadPage';
+import EditorPage from './pages/EditorPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer, { useToast } from './components/ToastContainer';
 import ShortcutHelp from './components/ShortcutHelp';
@@ -172,6 +173,10 @@ function AppContent() {
     window.location.hash = 'upload';
   }, []);
 
+  const handleNavigateEditor = useCallback(() => {
+    window.location.hash = 'editor';
+  }, []);
+
   // 数据导出：下载 JSON 备份文件
   const handleExportData = useCallback(() => {
     try {
@@ -284,6 +289,8 @@ function AppContent() {
       document.title = t('app.title.colorRef');
     } else if (routeParts[0] === 'upload') {
       document.title = t('app.title.upload');
+    } else if (routeParts[0] === 'editor') {
+      document.title = t('editor.title');
     } else if (routeParts[0] === 'template') {
       document.title = t('app.title.notFound');
     } else {
@@ -358,6 +365,8 @@ function AppContent() {
         favoritesCount={favorites.length}
         onNavigateFavorites={handleNavigateFavorites}
         onNavigateColorRef={handleNavigateColorRef}
+        onNavigateUpload={handleNavigateUpload}
+        onNavigateEditor={handleNavigateEditor}
         onNavigateHome={goHome}
         searchQuery={searchQuery}
         onSaveTemplate={addCustomTemplate}
@@ -365,8 +374,21 @@ function AppContent() {
     );
   }
 
+  if (routeParts[0] === 'editor') {
+    // 编辑器可基于已有模板编辑（routeParts[1] = 模板 id），或空白新建
+    const editBase = routeParts[1] ? allTemplates.find(t => t.id === routeParts[1]) : undefined;
+    return (
+      <EditorPage
+        initialTemplate={editBase}
+        onBack={goHome}
+        onSave={addCustomTemplate}
+        onNavigate={handleNavigate}
+      />
+    );
+  }
+
   // 未知路由：显示 404 空状态
-  if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload'].includes(routeParts[0])) {
+  if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload', 'editor'].includes(routeParts[0])) {
     return (
       <div className="page">
         <main id="main-content" className="empty-state" tabIndex={-1}>
@@ -395,6 +417,7 @@ function AppContent() {
       onNavigateColorRef={handleNavigateColorRef}
       onNavigateHome={goHome}
       onNavigateUpload={handleNavigateUpload}
+      onNavigateEditor={handleNavigateEditor}
       theme={theme}
       onToggleTheme={toggleTheme}
       recentlyViewed={recentlyViewed}
