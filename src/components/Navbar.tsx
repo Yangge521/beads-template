@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, Heart, Sun, Moon, X, Palette, Upload, Clock, Trash2, Pencil } from 'lucide-react';
+import { Search, Heart, Sun, Moon, X, Palette, Upload, Clock, Trash2, Pencil, Sparkles, Share2 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { useSearchHistory } from '../hooks/useSearchHistory';
 
@@ -12,6 +12,8 @@ interface NavbarProps {
   onNavigateColorRef: () => void;
   onNavigateUpload: () => void;
   onNavigateEditor: () => void;
+  onNavigateAi: () => void;
+  onNavigateCommunity: () => void;
   onNavigateHome: () => void;
   searchQuery: string;
 }
@@ -25,6 +27,8 @@ export default function Navbar({
   onNavigateColorRef,
   onNavigateUpload,
   onNavigateEditor,
+  onNavigateAi,
+  onNavigateCommunity,
   onNavigateHome,
   searchQuery,
 }: NavbarProps) {
@@ -202,6 +206,26 @@ export default function Navbar({
       </div>
 
       <div className="navbar__actions">
+        <button
+          type="button"
+          className="navbar__action-btn"
+          onClick={onNavigateAi}
+          aria-label={t('nav.ai.ariaLabel')}
+          title={t('nav.ai.title')}
+        >
+          <Sparkles size={20} />
+        </button>
+
+        <button
+          type="button"
+          className="navbar__action-btn"
+          onClick={onNavigateCommunity}
+          aria-label={t('nav.community.ariaLabel')}
+          title={t('nav.community.title')}
+        >
+          <Share2 size={20} />
+        </button>
+
         <button
           type="button"
           className="navbar__action-btn"

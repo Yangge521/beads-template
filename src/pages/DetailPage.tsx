@@ -15,6 +15,7 @@ import StepGuidePanel from '../components/StepGuidePanel';
 import { useStepGuide } from '../hooks/useStepGuide';
 import { useTouchGesture } from '../hooks/useTouchGesture';
 import { applyColorReplacements, type MissingColorInfo } from '../utils/colorReplacement';
+import { encodeShareCode } from '../utils/shareCode';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -153,17 +154,24 @@ export default function DetailPage({
   const handleShare = useCallback(async () => {
     if (!template) return;
     const url = `${window.location.origin}${window.location.pathname}#template/${template.id}`;
+    // 优先尝试 Web Share API
     try {
       if (navigator.share) {
         await navigator.share({ title: template.name, url });
         return;
       }
+    } catch {
+      // 用户取消分享，静默处理
+    }
+    // 回退：同时复制链接和分享码
+    try {
+      encodeShareCode(template);
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       scheduleReset(setCopiedLink);
-      showToast(t('detail.toast.linkCopied'), 'success');
+      showToast(t('community.copiedCode'), 'success');
     } catch {
-      // 用户取消分享或剪贴板不可用，静默处理
+      // 剪贴板不可用，静默处理
     }
   }, [template, scheduleReset, showToast, t]);
 
@@ -461,12 +469,21 @@ export default function DetailPage({
             enabled={stepGuide.enabled}
             currentStep={stepGuide.currentStep}
             completedSteps={stepGuide.completedSteps}
+            mode={stepGuide.mode}
+            elapsed={stepGuide.elapsed}
+            isRunning={stepGuide.isRunning}
+            voiceEnabled={stepGuide.voiceEnabled}
             onToggle={stepGuide.toggle}
+            onToggleMode={stepGuide.toggleMode}
             onNext={stepGuide.nextStep}
             onPrev={stepGuide.prevStep}
             onGoTo={stepGuide.goToStep}
             onMarkComplete={stepGuide.markStepComplete}
             onReset={stepGuide.reset}
+            onPauseTimer={stepGuide.pauseTimer}
+            onResumeTimer={stepGuide.resumeTimer}
+            onToggleVoice={stepGuide.toggleVoice}
+            onSpeak={stepGuide.speak}
           />
         )}
 

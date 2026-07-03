@@ -1,12 +1,16 @@
 /**
- * 拼豆收集 - Service Worker
+ * 拼豆收集 - Service Worker (增强版)
+ *
  * 策略：
  * - 静态资源 (JS/CSS/SVG/PNG/manifest)：缓存优先，后台更新（stale-while-revalidate）
  * - HTML 导航请求：网络优先，失败回退到缓存
- * - 其他跨域请求：直接放行（不缓存）
+ * - 模板数据请求：缓存优先（离线可用）
+ * - 后台同步：离线编辑数据在恢复网络后同步
+ * - 离线编辑：IndexedDB 存储，重新连接后同步到 localStorage
  */
 
-const CACHE_VERSION = 'beads-v1';
+const CACHE_VERSION = 'beads-v2';
+const DATA_CACHE_VERSION = 'beads-data-v2';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -21,7 +25,6 @@ const PRECACHE_URLS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) =>
-      // 用 addAll 容错：单个资源失败不影响整体安装
       Promise.allSettled(PRECACHE_URLS.map((u) => cache.add(u)))
     ).then(() => self.skipWaiting())
   );
@@ -31,7 +34,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_VERSION && k !== DATA_CACHE_VERSION)
+          .map((k) => caches.delete(k))
+      )
     ).then(() => self.clients.claim())
   );
 });
@@ -64,7 +71,6 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request)
         .then((res) => {
-          // 仅缓存成功响应
           if (res && res.status === 200 && res.type === 'basic') {
             const copy = res.clone();
             caches.open(CACHE_VERSION).then((c) => c.put(request, copy)).catch(() => {});
@@ -77,7 +83,103 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// 接收 SKIP_WAITING 消息（用于强制更新）
+// 接收消息
 self.addEventListener('message', (event) => {
-  if (event.data === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+  // 离线编辑保存请求
+  if (event.data && event.data.type === 'OFFLINE_SAVE') {
+    // 存入 IndexedDB 供后续同步
+    saveOfflineData(event.data.key, event.data.value)
+      .then(() => {
+        // 注册后台同步
+        if ('sync' in self) {
+          return (self).registration.sync.register('beads-sync');
+        }
+        // 不支持后台同步时，立即通知客户端同步
+        notifyClientsSync();
+      })
+      .catch(() => {});
+  }
 });
+
+// 后台同步事件
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'beads-sync') {
+    event.waitUntil(syncOfflineData());
+  }
+});
+
+// IndexedDB 操作
+const DB_NAME = 'beads-offline-db';
+const DB_VERSION = 1;
+const STORE_NAME = 'pending-changes';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveOfflineData(key, value) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put({ key, value, timestamp: Date.now() });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getAllOfflineData() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const req = tx.objectStore(STORE_NAME).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function clearOfflineData() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// 同步离线数据到客户端（客户端通过 message 接收并写入 localStorage）
+async function syncOfflineData() {
+  const allData = await getAllOfflineData();
+  if (allData.length === 0) return;
+  // 通知所有客户端应用离线变更
+  const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+  for (const client of clients) {
+    client.postMessage({
+      type: 'APPLY_OFFLINE_CHANGES',
+      changes: allData,
+    });
+  }
+  await clearOfflineData();
+}
+
+// 不支持后台同步时，通知客户端立即同步
+async function notifyClientsSync() {
+  const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+  for (const client of clients) {
+    client.postMessage({ type: 'SYNC_REQUEST' });
+  }
+}

@@ -56,6 +56,8 @@ interface HomePageProps {
   onNavigateHome: () => void;
   onNavigateUpload: () => void;
   onNavigateEditor: () => void;
+  onNavigateAi: () => void;
+  onNavigateCommunity: () => void;
   theme: string;
   onToggleTheme: () => void;
   recentlyViewed: string[];
@@ -85,6 +87,8 @@ export default function HomePage({
   onNavigateHome,
   onNavigateUpload,
   onNavigateEditor,
+  onNavigateAi,
+  onNavigateCommunity,
   theme,
   onToggleTheme,
   recentlyViewed,
@@ -228,6 +232,8 @@ export default function HomePage({
         onNavigateColorRef={onNavigateColorRef}
         onNavigateUpload={onNavigateUpload}
         onNavigateEditor={onNavigateEditor}
+        onNavigateAi={onNavigateAi}
+        onNavigateCommunity={onNavigateCommunity}
         onNavigateHome={onNavigateHome}
         searchQuery={searchQuery}
       />

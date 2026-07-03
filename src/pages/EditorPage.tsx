@@ -2,7 +2,9 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import {
   ArrowLeft, Brush, Eraser, PaintBucket, Pipette, Undo2, Redo2,
-  Trash2, Save, Plus, Minus, Grid3x3, Check, X
+  Trash2, Save, Plus, Minus, Grid3x3, Check, X,
+  Minus as LineIcon, Square, Circle, SquareDashed, CircleDashed,
+  FlipHorizontal, FlipVertical, Grid2x2, Image as ImageIcon
 } from 'lucide-react';
 import type { BeadTemplate, ColorInfo } from '../types/bead';
 import { BEAD_COLOR_GROUPS } from '../data/beadColors';
@@ -10,8 +12,10 @@ import { useEditorHistory } from '../hooks/useEditorHistory';
 import { useTranslation } from '../context/LanguageContext';
 import { useToast } from '../components/ToastContainer';
 import { floodFill, resizeGrid, compactColors, countColorUsage } from '../utils/gridEdit';
+import { drawShapeWithSymmetry, paintWithSymmetry } from '../utils/shapeEdit';
+import type { ShapeTool, SymmetryMode } from '../utils/shapeEdit';
 
-type ToolMode = 'paint' | 'erase' | 'fill' | 'picker';
+type ToolMode = 'paint' | 'erase' | 'fill' | 'picker' | 'line' | 'rect' | 'rectFill' | 'circle' | 'circleFill';
 
 interface EditorPageProps {
   /** 基于现有模板编辑（不传则为空白新建） */
@@ -42,10 +46,20 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
   const [templateName, setTemplateName] = useState(initialTemplate?.name ?? '');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  // 对称模式
+  const [symmetry, setSymmetry] = useState<SymmetryMode>('none');
+  // 参考底图
+  const [referenceImg, setReferenceImg] = useState<string | null>(null);
+  const [showReference, setShowReference] = useState(false);
 
   // 拖拽绘制状态
   const isDrawing = useRef(false);
   const lastCell = useRef<string>('');
+  // 形状绘制起点（用于直线/矩形/圆拖拽）
+  const shapeStart = useRef<[number, number] | null>(null);
+  // 形状预览网格（拖拽中临时显示）
+  const [shapePreview, setShapePreview] = useState<number[][] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
@@ -54,23 +68,42 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
   // 标记脏状态
   const markDirty = useCallback(() => setIsDirty(true), []);
 
-  // 绘制单个格子
+  // 绘制单个格子（支持对称）
   const paintCell = useCallback((r: number, c: number) => {
     if (r < 0 || r >= rows || c < 0 || c >= cols) return;
-    const next = grid.map(row => [...row]);
+    let next: number[][];
     let newValue: number;
     if (toolMode === 'erase') {
       newValue = 0;
     } else if (toolMode === 'paint') {
       newValue = selectedColorIdx;
     } else {
-      return; // fill/picker 不在此处理
+      return; // fill/picker/shape 不在此处理
     }
-    if (next[r][c] === newValue) return;
-    next[r][c] = newValue;
+    if (symmetry === 'none') {
+      next = grid.map(row => [...row]);
+      if (next[r][c] === newValue) return;
+      next[r][c] = newValue;
+    } else {
+      next = paintWithSymmetry(grid, r, c, newValue, symmetry);
+      if (next === grid) return;
+    }
     commit(next);
     markDirty();
-  }, [grid, rows, cols, toolMode, selectedColorIdx, commit, markDirty]);
+  }, [grid, rows, cols, toolMode, selectedColorIdx, symmetry, commit, markDirty]);
+
+  // 形状工具是否激活
+  const isShapeTool = toolMode === 'line' || toolMode === 'rect' || toolMode === 'rectFill' || toolMode === 'circle' || toolMode === 'circleFill';
+
+  // 形状预览：拖拽中实时计算
+  const updateShapePreview = useCallback((r1: number, c1: number) => {
+    const start = shapeStart.current;
+    if (!start) return;
+    const [r0, c0] = start;
+    const shape = toolMode as ShapeTool;
+    const preview = drawShapeWithSymmetry(grid, r0, c0, r1, c1, selectedColorIdx, shape, symmetry);
+    setShapePreview(preview);
+  }, [grid, toolMode, selectedColorIdx, symmetry]);
 
   // 填充工具
   const handleFill = useCallback((r: number, c: number) => {
@@ -100,24 +133,52 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
       handlePick(r, c);
       return;
     }
+    if (isShapeTool) {
+      // 形状工具：记录起点
+      shapeStart.current = [r, c];
+      isDrawing.current = true;
+      return;
+    }
     // paint / erase
     isDrawing.current = true;
     lastCell.current = `${r}-${c}`;
     paintCell(r, c);
-  }, [toolMode, handleFill, handlePick, paintCell]);
+  }, [toolMode, isShapeTool, handleFill, handlePick, paintCell]);
 
   const handleCellEnter = useCallback((r: number, c: number) => {
     if (!isDrawing.current) return;
+    if (isShapeTool) {
+      // 形状拖拽中：更新预览
+      updateShapePreview(r, c);
+      return;
+    }
     const key = `${r}-${c}`;
     if (lastCell.current === key) return;
     lastCell.current = key;
     paintCell(r, c);
-  }, [paintCell]);
+  }, [isShapeTool, updateShapePreview, paintCell]);
 
   const handleMouseUp = useCallback(() => {
+    if (isShapeTool && isDrawing.current) {
+      // 形状工具松手：提交形状
+      // 使用最后预览的终点（通过 shapePreview 反推或用 shapeStart 之外的值）
+      // 简化：如果还在拖拽，从 shapePreview 推断终点不可靠，直接用 start 作为单点
+      // 更好的方式：在 mouseenter 时记录最后坐标
+      const start = shapeStart.current;
+      if (start) {
+        // 用最后预览网格与当前 grid 比较，找出差异点作为终点
+        // 简化方案：直接提交当前 shapePreview
+        if (shapePreview) {
+          commit(shapePreview);
+          markDirty();
+        }
+        shapeStart.current = null;
+        setShapePreview(null);
+      }
+    }
     isDrawing.current = false;
     lastCell.current = '';
-  }, []);
+  }, [isShapeTool, shapePreview, commit, markDirty]);
 
   // 全局 mouseup 监听（离开网格时也能停止）
   useEffect(() => {
@@ -236,7 +297,35 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
     { mode: 'erase', icon: Eraser, labelKey: 'editor.tool.erase', key: 'e' },
     { mode: 'fill', icon: PaintBucket, labelKey: 'editor.tool.fill', key: 'f' },
     { mode: 'picker', icon: Pipette, labelKey: 'editor.tool.picker', key: 'i' },
+    { mode: 'line', icon: LineIcon, labelKey: 'editor.tool.line', key: 'l' },
+    { mode: 'rect', icon: SquareDashed, labelKey: 'editor.tool.rect', key: 'r' },
+    { mode: 'rectFill', icon: Square, labelKey: 'editor.tool.rectFill', key: 'R' },
+    { mode: 'circle', icon: CircleDashed, labelKey: 'editor.tool.circle', key: 'c' },
+    { mode: 'circleFill', icon: Circle, labelKey: 'editor.tool.circleFill', key: 'C' },
   ];
+
+  // 对称模式切换
+  const symmetryOptions: { mode: SymmetryMode; icon: typeof Brush; labelKey: string }[] = [
+    { mode: 'none', icon: X, labelKey: 'editor.symmetry.none' },
+    { mode: 'horizontal', icon: FlipHorizontal, labelKey: 'editor.symmetry.horizontal' },
+    { mode: 'vertical', icon: FlipVertical, labelKey: 'editor.symmetry.vertical' },
+    { mode: 'both', icon: Grid2x2, labelKey: 'editor.symmetry.both' },
+  ];
+
+  // 导入参考底图
+  const handleRefImage = useCallback((file: File) => {
+    if (!file.type.startsWith('image/')) {
+      showToast(t('editor.ref.invalidImage'), 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setReferenceImg(reader.result as string);
+      setShowReference(true);
+      showToast(t('editor.ref.loaded'), 'success');
+    };
+    reader.readAsDataURL(file);
+  }, [showToast, t]);
 
   return (
     <div className="page editor-page" onMouseUp={handleMouseUp}>
@@ -312,6 +401,61 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
               <span className="editor-page__tool-label">{t(tool.labelKey)}</span>
             </button>
           ))}
+          <div className="editor-page__toolbar-divider" aria-hidden="true" />
+          {/* 对称模式 */}
+          <div className="editor-page__symmetry-group" role="group" aria-label={t('editor.symmetry.label')}>
+            {symmetryOptions.map(opt => (
+              <button
+                key={opt.mode}
+                type="button"
+                className={`editor-page__tool ${symmetry === opt.mode ? 'editor-page__tool--active' : ''}`}
+                onClick={() => setSymmetry(opt.mode)}
+                title={t(opt.labelKey)}
+                aria-pressed={symmetry === opt.mode}
+                aria-label={t(opt.labelKey)}
+              >
+                <opt.icon size={18} />
+              </button>
+            ))}
+          </div>
+          <div className="editor-page__toolbar-divider" aria-hidden="true" />
+          {/* 参考底图 */}
+          <button
+            type="button"
+            className={`editor-page__btn editor-page__btn--ghost ${showReference ? 'editor-page__btn--active' : ''}`}
+            onClick={() => {
+              if (!referenceImg) {
+                fileInputRef.current?.click();
+              } else {
+                setShowReference(v => !v);
+              }
+            }}
+            title={t('editor.ref.toggle')}
+            aria-label={t('editor.ref.toggle')}
+            aria-pressed={showReference}
+          >
+            <ImageIcon size={18} />
+          </button>
+          {referenceImg && (
+            <button
+              type="button"
+              className="editor-page__btn editor-page__btn--ghost"
+              onClick={() => { setReferenceImg(null); setShowReference(false); }}
+              title={t('editor.ref.clear')}
+              aria-label={t('editor.ref.clear')}
+            >
+              <X size={18} />
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="editor-page__file-input"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleRefImage(f); e.target.value = ''; }}
+            aria-hidden="true"
+            tabIndex={-1}
+          />
           <div className="editor-page__toolbar-divider" aria-hidden="true" />
           <button
             type="button"
@@ -404,17 +548,37 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
             </div>
 
             {/* 绘制网格 */}
-            <div className="editor-page__grid-wrap">
+            <div className="editor-page__grid-wrap" style={{ position: 'relative' }}>
+              {showReference && referenceImg && (
+                <img
+                  src={referenceImg}
+                  alt=""
+                  aria-hidden="true"
+                  className="editor-page__reference-img"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    opacity: 0.35,
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                  }}
+                />
+              )}
               <div
                 className="editor-page__grid"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                  position: 'relative',
+                  zIndex: 1,
                 }}
                 role="img"
                 aria-label={t('pixelGrid.ariaLabel', { count: totalBeads })}
               >
-                {grid.map((row, ri) =>
+                {(shapePreview ?? grid).map((row, ri) =>
                   row.map((cellValue, ci) => {
                     const color = cellValue > 0 ? palette[cellValue - 1] : undefined;
                     return (

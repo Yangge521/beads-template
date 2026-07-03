@@ -20,6 +20,8 @@ interface UploadPageProps {
   onNavigateColorRef: () => void;
   onNavigateUpload: () => void;
   onNavigateEditor: () => void;
+  onNavigateAi: () => void;
+  onNavigateCommunity: () => void;
   onNavigateHome: () => void;
   searchQuery: string;
   onSaveTemplate: (template: Omit<BeadTemplate, 'id'>) => BeadTemplate;
@@ -57,6 +59,8 @@ export default function UploadPage({
   onNavigateFavorites,
   onNavigateColorRef,
   onNavigateEditor,
+  onNavigateAi,
+  onNavigateCommunity,
   onNavigateHome,
   searchQuery,
   onSaveTemplate,
@@ -188,6 +192,8 @@ export default function UploadPage({
         onNavigateColorRef={onNavigateColorRef}
         onNavigateUpload={() => {}}
         onNavigateEditor={onNavigateEditor}
+        onNavigateAi={onNavigateAi}
+        onNavigateCommunity={onNavigateCommunity}
         onNavigateHome={onNavigateHome}
         searchQuery={searchQuery}
       />
