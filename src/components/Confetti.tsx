@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ConfettiProps {
   /** 触发庆祝的唯一 key（变化时触发一次） */
