@@ -1,0 +1,69 @@
+{
+  "name": "拼豆收集 - Perler Bead Templates",
+  "short_name": "拼豆收集",
+  "description": "收录动漫、游戏、食物、动物、节日等分类的像素拼豆图案模板，提供色卡、网格预览、收藏与快捷搜索。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#ef4444",
+  "lang": "zh-CN",
+  "categories": ["productivity", "lifestyle", "graphics"],
+  "icons": [
+    {
+      "src": "./icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-maskable.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI 生成图纸",
+      "short_name": "AI 生成",
+      "url": "./#/ai",
+      "description": "通过文字提示词生成拼豆模板"
+    },
+    {
+      "name": "模板编辑器",
+      "short_name": "编辑器",
+      "url": "./#editor",
+      "description": "绘制自定义拼豆模板"
+    },
+    {
+      "name": "社区分享",
+      "short_name": "社区",
+      "url": "./#community",
+      "description": "分享和导入社区模板"
+    },
+    {
+      "name": "收藏夹",
+      "short_name": "收藏",
+      "url": "./#favorites",
+      "description": "查看收藏的模板"
+    }
+  ],
+  "share_target": {
+    "action": "./share-target/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

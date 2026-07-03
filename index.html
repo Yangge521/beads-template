@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./icon-192.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="拼豆模板收集 — 收录动漫、游戏、食物、动物、节日等分类的像素拼豆图案模板，提供色卡、网格预览、收藏与快捷搜索。" />
+    <meta name="keywords" content="拼豆,Perler Bead,像素画,色卡,模板,拼豆图案" />
+    <meta name="theme-color" content="#ef4444" />
+    <meta property="og:title" content="拼豆收集 - Perler Bead Templates" />
+    <meta property="og:description" content="收录动漫、游戏、食物等分类的像素拼豆图案模板，提供色卡与网格预览。" />
+    <meta property="og:type" content="website" />
+    <title>拼豆收集 - Perler Bead Templates</title>
+    <script>
+      // 在 React 渲染前应用主题，避免首屏闪烁（FOUC）
+      (function () {
+        try {
+          var stored = localStorage.getItem('beads-theme');
+          var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/beads-template/assets/index-BtANZ_9i.js"></script>
+    <link rel="stylesheet" crossorigin href="/beads-template/assets/index-DkupPa5e.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
