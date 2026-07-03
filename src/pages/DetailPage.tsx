@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered, GitCompare } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
@@ -18,6 +18,11 @@ import { applyColorReplacements, type MissingColorInfo } from '../utils/colorRep
 import { encodeShareCode } from '../utils/shareCode';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
+import Confetti from '../components/Confetti';
+import AchievementBadges from '../components/AchievementBadges';
+import { useAchievements } from '../hooks/useAchievements';
+import CommentsSection from '../components/CommentsSection';
+import { useComments } from '../hooks/useComments';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
@@ -41,6 +46,10 @@ interface DetailPageProps {
   nextTemplate?: BeadTemplate | null;
   relatedTemplates?: BeadTemplate[];
   onDeleteCustom?: (id: string) => void;
+  isInCompare?: boolean;
+  onToggleCompare?: () => void;
+  onNavigateCompare?: () => void;
+  compareCount?: number;
 }
 
 // 难度仅保留背景色，label 运行时通过 t(`difficulty.${difficulty}`) 解析
@@ -76,6 +85,10 @@ export default function DetailPage({
   nextTemplate,
   relatedTemplates = [],
   onDeleteCustom,
+  isInCompare = false,
+  onToggleCompare,
+  onNavigateCompare,
+  compareCount = 0,
 }: DetailPageProps) {
   const [zoom, setZoom] = useState(1);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
@@ -94,6 +107,41 @@ export default function DetailPage({
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const { showToast } = useToast();
   const { t, lang } = useTranslation();
+  // 成就系统 + 完成庆祝
+  const { badges, unlockedCount, recordCompletion, resetAchievements } = useAchievements();
+  const [confettiTrigger, setConfettiTrigger] = useState<string | null>(null);
+  const [newlyUnlocked, setNewlyUnlocked] = useState<string[]>([]);
+  // 进度模式开始时间戳（用于计算完成速度）
+  const startTimeRef = useRef<number | null>(null);
+  // 上一次进度百分比（用于检测跨过 100% 的瞬间）
+  const prevProgressRef = useRef(progressPercent);
+  // 当前模板是否已庆祝过（切换模板后重置，避免反复触发）
+  const celebratedRef = useRef(false);
+  // 社区评论
+  const {
+    getByTemplate,
+    getAverageRating,
+    getCount,
+    addComment,
+    deleteComment,
+    clearByTemplate,
+  } = useComments();
+  const templateComments = useMemo(
+    () => (template ? getByTemplate(template.id) : []),
+    // getByTemplate 依赖 comments 状态，通过 template?.id 触发重新计算
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [template?.id, getByTemplate]
+  );
+  const commentAvg = useMemo(
+    () => (template ? getAverageRating(template.id) : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [template?.id, getAverageRating]
+  );
+  const commentCount = useMemo(
+    () => (template ? getCount(template.id) : 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [template?.id, getCount]
+  );
 
   // 所有 hooks 必须在提前 return 之前调用，避免违反 Rules of Hooks
   const beadCount = useMemo(() => (template ? getBeadCount(template) : 0), [template]);
@@ -292,13 +340,52 @@ export default function DetailPage({
     setTransforms([]);
     setProgressMode(false);
     setReplacedColors([]);
+    startTimeRef.current = null;
+    celebratedRef.current = false;
+    setNewlyUnlocked([]);
+    prevProgressRef.current = 0;
     window.scrollTo({ top: 0 });
   }, [template?.id]);
+
+  // 进入进度模式时记录开始时间；退出时清空
+  useEffect(() => {
+    if (progressMode && startTimeRef.current === null) {
+      startTimeRef.current = Date.now();
+    } else if (!progressMode) {
+      startTimeRef.current = null;
+    }
+  }, [progressMode]);
+
+  // 检测进度跨过 100% 的瞬间，触发庆祝 + 记录成就
+  useEffect(() => {
+    if (!template) return;
+    const prev = prevProgressRef.current;
+    const now = progressPercent;
+    // 仅在从 <100 跨到 ==100 且本模板尚未庆祝过时触发
+    if (prev < 100 && now >= 100 && !celebratedRef.current) {
+      celebratedRef.current = true;
+      setConfettiTrigger(`${template.id}-${Date.now()}`);
+      const seconds = startTimeRef.current
+        ? (Date.now() - startTimeRef.current) / 1000
+        : 0;
+      const newBadges = recordCompletion(template.id, seconds);
+      if (newBadges.length > 0) {
+        setNewlyUnlocked(newBadges);
+        showToast(t('achievement.unlocked', { count: newBadges.length }), 'success');
+      } else {
+        showToast(t('detail.achievement.completed'), 'success');
+      }
+    }
+    prevProgressRef.current = now;
+  }, [progressPercent, template, recordCompletion, showToast, t]);
 
   const handleClearProgressConfirm = useCallback(() => {
     if (!template) return;
     if (confirm(t('detail.progress.clearConfirm'))) {
       onClearProgress();
+      // 清空进度后重置庆祝标记，允许再次完成时庆祝
+      celebratedRef.current = false;
+      startTimeRef.current = Date.now();
     }
   }, [template, onClearProgress, t]);
 
@@ -442,6 +529,30 @@ export default function DetailPage({
           >
             <ThumbsUp size={20} fill={isLiked ? 'currentColor' : 'none'} />
           </button>
+          {onToggleCompare && (
+            <button
+              type="button"
+              className={`detail-page__share-btn ${isInCompare ? 'detail-page__like-btn--active' : ''}`}
+              onClick={onToggleCompare}
+              aria-label={isInCompare ? t('compare.removeAria') : t('compare.addAria')}
+              title={isInCompare ? t('compare.removeAria') : t('compare.addAria')}
+              aria-pressed={isInCompare}
+            >
+              <GitCompare size={20} />
+            </button>
+          )}
+          {compareCount > 0 && onNavigateCompare && (
+            <button
+              type="button"
+              className="detail-page__compare-badge"
+              onClick={onNavigateCompare}
+              aria-label={t('compare.viewCount', { count: compareCount })}
+              title={t('compare.viewCount', { count: compareCount })}
+            >
+              <GitCompare size={14} />
+              <span className="detail-page__compare-badge-count">{compareCount}</span>
+            </button>
+          )}
           {template.category === 'custom' && onDeleteCustom && (
             <button
               type="button"
@@ -676,6 +787,25 @@ export default function DetailPage({
             <span className="detail-page__stat-label">{t('detail.stat.gridSize')}</span>
           </div>
         </div>
+
+        <AchievementBadges
+          badges={badges}
+          unlockedCount={unlockedCount}
+          newlyUnlocked={newlyUnlocked}
+          onReset={resetAchievements}
+        />
+
+        {template && (
+          <CommentsSection
+            templateId={template.id}
+            comments={templateComments}
+            averageRating={commentAvg}
+            count={commentCount}
+            onAdd={(author, text, stars) => addComment(template.id, author, text, stars)}
+            onDelete={deleteComment}
+            onClearAll={() => clearByTemplate(template.id)}
+          />
+        )}
 
         <div className="detail-page__sizer" role="region" aria-label={t('detail.sizer.title')}>
           <span className="detail-page__sizer-label">{t('detail.sizer.beadSize')}</span>
@@ -986,6 +1116,8 @@ export default function DetailPage({
           ↑
         </button>
       )}
+
+      <Confetti trigger={confettiTrigger} />
     </div>
   );
 }

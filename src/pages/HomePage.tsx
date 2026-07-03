@@ -3,6 +3,8 @@ import type { BeadTemplate, Category } from '../types/bead';
 import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
 import TemplateCard from '../components/TemplateCard';
+import HeroBackground from '../components/HeroBackground';
+import { useCountUp } from '../hooks/useCountUp';
 import { getBeadCount } from '../utils/beadStats';
 import { ChevronDown, X, Check, Upload } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
@@ -191,6 +193,12 @@ export default function HomePage({
   );
   const totalColors = useMemo(() => availableColors.length, [availableColors]);
 
+  // Hero 统计数字滚动动画
+  const animTemplates = useCountUp(templates.length);
+  const animCategories = useCountUp(Math.max(0, categories.length - 1));
+  const animBeads = useCountUp(totalBeads);
+  const animColors = useCountUp(totalColors);
+
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const colorFilterRef = useRef<HTMLDivElement>(null);
 
@@ -247,48 +255,51 @@ export default function HomePage({
 
       <main id="main-content" className="home-page__content" tabIndex={-1}>
         {!searchQuery && activeCategory === 'all' && (
-          <section className="hero">
-            <h1 className="hero__title"><span aria-hidden="true">🔴 </span>{t('home.hero.title')}</h1>
-            <p className="hero__subtitle">
-              {t('home.hero.subtitle')}
-            </p>
-            <div className="hero__stats">
-              <div className="hero__stat">
-                <span className="hero__stat-value">{templates.length}</span>
-                <span className="hero__stat-label">{t('home.hero.stat.templates')}</span>
+          <section className="hero hero--animated">
+            <HeroBackground />
+            <div className="hero__content">
+              <h1 className="hero__title"><span aria-hidden="true">🔴 </span>{t('home.hero.title')}</h1>
+              <p className="hero__subtitle">
+                {t('home.hero.subtitle')}
+              </p>
+              <div className="hero__stats">
+                <div className="hero__stat">
+                  <span className="hero__stat-value">{animTemplates}</span>
+                  <span className="hero__stat-label">{t('home.hero.stat.templates')}</span>
+                </div>
+                <div className="hero__stat-divider" aria-hidden="true" />
+                <div className="hero__stat">
+                  <span className="hero__stat-value">{animCategories}</span>
+                  <span className="hero__stat-label">{t('home.hero.stat.categories')}</span>
+                </div>
+                <div className="hero__stat-divider" aria-hidden="true" />
+                <div className="hero__stat">
+                  <span className="hero__stat-value">{animBeads}</span>
+                  <span className="hero__stat-label">{t('home.hero.stat.totalBeads')}</span>
+                </div>
+                <div className="hero__stat-divider" aria-hidden="true" />
+                <div className="hero__stat">
+                  <span className="hero__stat-value">{animColors}</span>
+                  <span className="hero__stat-label">{t('home.hero.stat.colors')}</span>
+                </div>
               </div>
-              <div className="hero__stat-divider" aria-hidden="true" />
-              <div className="hero__stat">
-                <span className="hero__stat-value">{categories.length - 1}</span>
-                <span className="hero__stat-label">{t('home.hero.stat.categories')}</span>
+              <div className="hero__features">
+                <span className="hero__feature"><span aria-hidden="true">🔍 </span>{t('home.hero.feature.search')}</span>
+                <span className="hero__feature"><span aria-hidden="true">🎨 </span>{t('home.hero.feature.colorRef')}</span>
+                <span className="hero__feature"><span aria-hidden="true">❤️ </span>{t('home.hero.feature.favorites')}</span>
+                <span className="hero__feature"><span aria-hidden="true">🖨️ </span>{t('home.hero.feature.materialList')}</span>
+                <span className="hero__feature"><span aria-hidden="true">🌓 </span>{t('home.hero.feature.theme')}</span>
+                <span className="hero__feature"><span aria-hidden="true">⌨️ </span>{t('home.hero.feature.shortcuts')}</span>
               </div>
-              <div className="hero__stat-divider" aria-hidden="true" />
-              <div className="hero__stat">
-                <span className="hero__stat-value">{totalBeads}</span>
-                <span className="hero__stat-label">{t('home.hero.stat.totalBeads')}</span>
-              </div>
-              <div className="hero__stat-divider" aria-hidden="true" />
-              <div className="hero__stat">
-                <span className="hero__stat-value">{totalColors}</span>
-                <span className="hero__stat-label">{t('home.hero.stat.colors')}</span>
-              </div>
+              <button
+                type="button"
+                className="hero__upload-btn"
+                onClick={onNavigateUpload}
+              >
+                <Upload size={18} />
+                <span>{t('home.hero.upload')}</span>
+              </button>
             </div>
-            <div className="hero__features">
-              <span className="hero__feature"><span aria-hidden="true">🔍 </span>{t('home.hero.feature.search')}</span>
-              <span className="hero__feature"><span aria-hidden="true">🎨 </span>{t('home.hero.feature.colorRef')}</span>
-              <span className="hero__feature"><span aria-hidden="true">❤️ </span>{t('home.hero.feature.favorites')}</span>
-              <span className="hero__feature"><span aria-hidden="true">🖨️ </span>{t('home.hero.feature.materialList')}</span>
-              <span className="hero__feature"><span aria-hidden="true">🌓 </span>{t('home.hero.feature.theme')}</span>
-              <span className="hero__feature"><span aria-hidden="true">⌨️ </span>{t('home.hero.feature.shortcuts')}</span>
-            </div>
-            <button
-              type="button"
-              className="hero__upload-btn"
-              onClick={onNavigateUpload}
-            >
-              <Upload size={18} />
-              <span>{t('home.hero.upload')}</span>
-            </button>
           </section>
         )}
 

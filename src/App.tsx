@@ -7,9 +7,12 @@ import UploadPage from './pages/UploadPage';
 import EditorPage from './pages/EditorPage';
 import AIGeneratePage from './pages/AIGeneratePage';
 import CommunityPage from './pages/CommunityPage';
+import ComparePage from './pages/ComparePage';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer, { useToast } from './components/ToastContainer';
 import ShortcutHelp from './components/ShortcutHelp';
+import PageTransition from './components/PageTransition';
+import CommandPalette from './components/CommandPalette';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider, useTranslation } from './context/LanguageContext';
 import { useFavorites } from './hooks/useFavorites';
@@ -19,6 +22,7 @@ import { useLikes } from './hooks/useLikes';
 import { useRatings } from './hooks/useRatings';
 import { useProgress } from './hooks/useProgress';
 import { useInventory } from './hooks/useInventory';
+import { useCompare } from './hooks/useCompare';
 import { getBeadCount } from './utils/beadStats';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
@@ -59,6 +63,7 @@ function AppContent() {
   const { getRating, setRating } = useRatings();
   const { getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
   const { inventory, addColor: addInventoryColor, removeColor: removeInventoryColor, clearInventory } = useInventory();
+  const { compareIds, addToCompare, removeFromCompare, clearCompare, isInCompare } = useCompare();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
   const { showToast } = useToast();
@@ -187,6 +192,10 @@ function AppContent() {
     window.location.hash = 'community';
   }, []);
 
+  const handleNavigateCompare = useCallback(() => {
+    window.location.hash = 'compare';
+  }, []);
+
   // 数据导出：下载 JSON 备份文件
   const handleExportData = useCallback(() => {
     try {
@@ -305,6 +314,8 @@ function AppContent() {
       document.title = t('ai.title');
     } else if (routeParts[0] === 'community') {
       document.title = t('community.title');
+    } else if (routeParts[0] === 'compare') {
+      document.title = t('compare.title');
     } else if (routeParts[0] === 'template') {
       document.title = t('app.title.notFound');
     } else {
@@ -321,8 +332,33 @@ function AppContent() {
     return () => window.removeEventListener('sw:update-available', onSWUpdate);
   }, [showToast, t]);
 
+  // 命令面板开关
+  const [cmdOpen, setCmdOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + K 打开命令面板
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setCmdOpen(o => !o);
+        return;
+      }
+      // ESC 关闭命令面板
+      if (e.key === 'Escape' && cmdOpen) {
+        e.stopPropagation();
+        setCmdOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [cmdOpen]);
+
+  const { toggleLang } = useTranslation();
+
+  // 路由分发：所有页面通过 page 变量统一返回，外层用 PageTransition + CommandPalette 包裹
+  let page: React.ReactNode;
+
   if (routeParts[0] === 'template' && routeParts[1]) {
-    return (
+    page = (
       <DetailPage
         template={currentTemplate}
         onBack={goHome}
@@ -345,12 +381,22 @@ function AppContent() {
         nextTemplate={nextTemplate}
         relatedTemplates={relatedTemplates}
         onDeleteCustom={handleDeleteCustom}
+        isInCompare={currentTemplate ? isInCompare(currentTemplate.id) : false}
+        onToggleCompare={currentTemplate ? () => {
+          if (isInCompare(currentTemplate.id)) {
+            removeFromCompare(currentTemplate.id);
+            showToast(t('compare.removed'), 'info');
+          } else {
+            addToCompare(currentTemplate.id);
+            showToast(t('compare.added'), 'success');
+          }
+        } : () => {}}
+        onNavigateCompare={handleNavigateCompare}
+        compareCount={compareIds.length}
       />
     );
-  }
-
-  if (routeParts[0] === 'favorites') {
-    return (
+  } else if (routeParts[0] === 'favorites') {
+    page = (
       <FavoritesPage
         templates={allTemplates}
         favorites={favorites}
@@ -362,14 +408,10 @@ function AppContent() {
         onImportData={handleImportData}
       />
     );
-  }
-
-  if (routeParts[0] === 'colors') {
-    return <ColorReferencePage onBack={goHome} />;
-  }
-
-  if (routeParts[0] === 'upload') {
-    return (
+  } else if (routeParts[0] === 'colors') {
+    page = <ColorReferencePage onBack={goHome} />;
+  } else if (routeParts[0] === 'upload') {
+    page = (
       <UploadPage
         onBack={goHome}
         onNavigate={handleNavigate}
@@ -388,9 +430,7 @@ function AppContent() {
         onSaveTemplate={addCustomTemplate}
       />
     );
-  }
-
-  if (routeParts[0] === 'editor') {
+  } else if (routeParts[0] === 'editor') {
     // 编辑器可基于已有模板编辑（routeParts[1] = 模板 id），或空白新建
     const editBase = routeParts[1] ? allTemplates.find(t => t.id === routeParts[1]) : undefined;
     // 支持 AI 生成后通过 sessionStorage 传入草稿
@@ -404,7 +444,7 @@ function AppContent() {
         // ignore parse error
       }
     }
-    return (
+    page = (
       <EditorPage
         initialTemplate={editBase ?? draftTemplate}
         onBack={goHome}
@@ -412,10 +452,8 @@ function AppContent() {
         onNavigate={handleNavigate}
       />
     );
-  }
-
-  if (routeParts[0] === 'ai') {
-    return (
+  } else if (routeParts[0] === 'ai') {
+    page = (
       <AIGeneratePage
         onBack={goHome}
         onNavigate={handleNavigate}
@@ -435,10 +473,8 @@ function AppContent() {
         onSaveTemplate={addCustomTemplate}
       />
     );
-  }
-
-  if (routeParts[0] === 'community') {
-    return (
+  } else if (routeParts[0] === 'community') {
+    page = (
       <CommunityPage
         onBack={goHome}
         onNavigate={handleNavigate}
@@ -458,11 +494,33 @@ function AppContent() {
         onSaveTemplate={addCustomTemplate}
       />
     );
-  }
-
-  // 未知路由：显示 404 空状态
-  if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload', 'editor', 'ai', 'community'].includes(routeParts[0])) {
-    return (
+  } else if (routeParts[0] === 'compare') {
+    page = (
+      <ComparePage
+        templates={allTemplates}
+        compareIds={compareIds}
+        onRemove={removeFromCompare}
+        onClear={clearCompare}
+        onBack={goHome}
+        onNavigate={handleNavigate}
+        onNavigateTemplate={handleNavigateTemplate}
+        onNavigateHome={goHome}
+        onNavigateFavorites={handleNavigateFavorites}
+        onNavigateColorRef={handleNavigateColorRef}
+        onNavigateUpload={handleNavigateUpload}
+        onNavigateEditor={handleNavigateEditor}
+        onNavigateAi={handleNavigateAi}
+        onNavigateCommunity={handleNavigateCommunity}
+        onSearch={handleSearch}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        favoritesCount={favorites.length}
+        searchQuery={searchQuery}
+      />
+    );
+  } else if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload', 'editor', 'ai', 'community', 'compare'].includes(routeParts[0])) {
+    // 未知路由：显示 404 空状态
+    page = (
       <div className="page">
         <main id="main-content" className="empty-state" tabIndex={-1}>
           <p className="empty-state__icon" aria-hidden="true">🧭</p>
@@ -474,39 +532,63 @@ function AppContent() {
         </main>
       </div>
     );
+  } else {
+    page = (
+      <HomePage
+        templates={allTemplates}
+        categories={CATEGORIES}
+        onCategorySelect={handleCategorySelect}
+        activeCategory={activeCategory}
+        searchQuery={searchQuery}
+        onSearch={handleSearch}
+        favorites={favorites}
+        onToggleFavorite={toggleFavorite}
+        onNavigateFavorites={handleNavigateFavorites}
+        onNavigateColorRef={handleNavigateColorRef}
+        onNavigateHome={goHome}
+        onNavigateUpload={handleNavigateUpload}
+        onNavigateEditor={handleNavigateEditor}
+        onNavigateAi={handleNavigateAi}
+        onNavigateCommunity={handleNavigateCommunity}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        recentlyViewed={recentlyViewed}
+        onNavigate={handleNavigate}
+        onClearFilters={handleClearFilters}
+        sortKey={sortKey}
+        onSortKeyChange={setSortKey}
+        difficulty={difficulty}
+        onDifficultyChange={setDifficulty}
+        gridSize={gridSize}
+        onGridSizeChange={setGridSize}
+        colorFilter={colorFilter}
+        onColorFilterChange={setColorFilter}
+      />
+    );
   }
 
   return (
-    <HomePage
-      templates={allTemplates}
-      categories={CATEGORIES}
-      onCategorySelect={handleCategorySelect}
-      activeCategory={activeCategory}
-      searchQuery={searchQuery}
-      onSearch={handleSearch}
-      favorites={favorites}
-      onToggleFavorite={toggleFavorite}
-      onNavigateFavorites={handleNavigateFavorites}
-      onNavigateColorRef={handleNavigateColorRef}
-      onNavigateHome={goHome}
-      onNavigateUpload={handleNavigateUpload}
-      onNavigateEditor={handleNavigateEditor}
-      onNavigateAi={handleNavigateAi}
-      onNavigateCommunity={handleNavigateCommunity}
-      theme={theme}
-      onToggleTheme={toggleTheme}
-      recentlyViewed={recentlyViewed}
-      onNavigate={handleNavigate}
-      onClearFilters={handleClearFilters}
-      sortKey={sortKey}
-      onSortKeyChange={setSortKey}
-      difficulty={difficulty}
-      onDifficultyChange={setDifficulty}
-      gridSize={gridSize}
-      onGridSizeChange={setGridSize}
-      colorFilter={colorFilter}
-      onColorFilterChange={setColorFilter}
-    />
+    <>
+      <PageTransition pageKey={hash}>{page}</PageTransition>
+      <button
+        type="button"
+        className="cmd-fab"
+        onClick={() => setCmdOpen(true)}
+        aria-label={t('cmd.title')}
+        title={`${t('cmd.title')} (Ctrl+K)`}
+      >
+        <kbd className="cmd-fab__kbd">⌘K</kbd>
+      </button>
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        templates={allTemplates}
+        onNavigate={handleNavigate}
+        onToggleTheme={toggleTheme}
+        onToggleLanguage={toggleLang}
+        onSearch={handleSearch}
+      />
+    </>
   );
 }
 

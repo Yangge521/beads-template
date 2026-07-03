@@ -9,11 +9,15 @@ import {
 import type { BeadTemplate, ColorInfo } from '../types/bead';
 import { BEAD_COLOR_GROUPS } from '../data/beadColors';
 import { useEditorHistory } from '../hooks/useEditorHistory';
+import { useSnapshots } from '../hooks/useSnapshots';
 import { useTranslation } from '../context/LanguageContext';
 import { useToast } from '../components/ToastContainer';
+import EditorHistoryPanel from '../components/EditorHistoryPanel';
+import ShapeLibraryPanel from '../components/ShapeLibraryPanel';
 import { floodFill, resizeGrid, compactColors, countColorUsage } from '../utils/gridEdit';
 import { drawShapeWithSymmetry, paintWithSymmetry } from '../utils/shapeEdit';
 import type { ShapeTool, SymmetryMode } from '../utils/shapeEdit';
+import { getPresetShapeById, stampShapeCenter } from '../utils/presetShapes';
 
 type ToolMode = 'paint' | 'erase' | 'fill' | 'picker' | 'line' | 'rect' | 'rectFill' | 'circle' | 'circleFill';
 
@@ -39,7 +43,8 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
   const initialGrid = initialTemplate?.grid ?? Array.from({ length: DEFAULT_ROWS }, () => Array(DEFAULT_COLS).fill(0));
   const initialColors = initialTemplate?.colors ?? [];
 
-  const { grid, commit, undo, redo, canUndo, canRedo, clearHistory } = useEditorHistory(initialGrid);
+  const { grid, commit, undo, redo, canUndo, canRedo, clearHistory, undoCount, redoCount } = useEditorHistory(initialGrid);
+  const { snapshots, addSnapshot, removeSnapshot, clearSnapshots } = useSnapshots();
   const [palette, setPalette] = useState<ColorInfo[]>(initialColors);
   const [selectedColorIdx, setSelectedColorIdx] = useState(1); // 1-based，0 = 空白
   const [toolMode, setToolMode] = useState<ToolMode>('paint');
@@ -247,6 +252,20 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
     setShowColorPicker(false);
   }, [palette, showToast, t]);
 
+  // 形状库：盖印预设形状到网格中央
+  const handleStampShape = useCallback((shapeId: string) => {
+    const shape = getPresetShapeById(shapeId);
+    if (!shape) return;
+    if (palette.length === 0) {
+      showToast(t('editor.shapeLib.needColor'), 'info');
+      return;
+    }
+    const next = stampShapeCenter(grid, shape.bitmap, selectedColorIdx);
+    commit(next);
+    markDirty();
+    showToast(t('editor.shapeLib.stamped', { name: t(shape.nameKey) }), 'success');
+  }, [grid, palette, selectedColorIdx, commit, markDirty, showToast, t]);
+
   // 保存模板
   const handleSave = useCallback(() => {
     const name = templateName.trim() || t('editor.untitled');
@@ -326,6 +345,19 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
     };
     reader.readAsDataURL(file);
   }, [showToast, t]);
+
+  // 保存快照
+  const handleAddSnapshot = useCallback(() => {
+    const snap = addSnapshot(grid);
+    showToast(t('editor.panel.snapshotSaved', { name: snap.name }), 'success');
+  }, [grid, addSnapshot, showToast, t]);
+
+  // 恢复快照（产生一条历史记录，可撤销）
+  const handleRestoreSnapshot = useCallback((snap: { grid: number[][]; name: string }) => {
+    commit(snap.grid.map(row => [...row]));
+    markDirty();
+    showToast(t('editor.panel.snapshotRestored', { name: snap.name }), 'success');
+  }, [commit, markDirty, showToast, t]);
 
   return (
     <div className="page editor-page" onMouseUp={handleMouseUp}>
@@ -523,6 +555,26 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
             {showColorPicker && (
               <ColorAddPanel onAdd={handleAddColor} />
             )}
+
+            {/* 历史/快照面板 */}
+            <EditorHistoryPanel
+              undoCount={undoCount}
+              redoCount={redoCount}
+              snapshots={snapshots}
+              onUndo={undo}
+              onRedo={redo}
+              onAddSnapshot={handleAddSnapshot}
+              onRestoreSnapshot={handleRestoreSnapshot}
+              onRemoveSnapshot={removeSnapshot}
+              onClearSnapshots={clearSnapshots}
+            />
+
+            {/* 预设形状库 */}
+            <ShapeLibraryPanel
+              selectedColorIdx={selectedColorIdx}
+              colors={palette}
+              onStamp={handleStampShape}
+            />
           </aside>
 
           {/* 中央画布 */}

@@ -1,12 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
 import { useToast } from '../components/ToastContainer';
-import { ArrowLeft, Sparkles, Wand2, Check, Shuffle } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wand2, Check, Shuffle, Layers, Image as ImageIcon, Upload } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { matchTemplatesByPrompt, matchPresetShape, generatePresetShape, extractGridSize } from '../utils/aiGenerate';
 import type { PresetShape } from '../utils/aiGenerate';
+import { analyzeImage } from '../utils/imageToGrid';
 
 interface AIGeneratePageProps {
   onBack: () => void;
@@ -65,12 +66,33 @@ export default function AIGeneratePage({
 }: AIGeneratePageProps) {
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [mode, setMode] = useState<'preset' | 'match'>('preset');
+  const [mode, setMode] = useState<'preset' | 'match' | 'image'>('preset');
   const [result, setResult] = useState<{ grid: number[][]; colors: BeadTemplate['colors']; shape?: PresetShape } | null>(null);
   const [matchedTemplates, setMatchedTemplates] = useState<BeadTemplate[]>([]);
   const [presetSize, setPresetSize] = useState(16);
+  const [selectedShape, setSelectedShape] = useState<PresetShape | null>(null);
+  const [compareList, setCompareList] = useState<{ grid: number[][]; colors: BeadTemplate['colors']; label: string }[]>([]);
+  // 图生图状态
+  const [imageSize, setImageSize] = useState(24);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const debounceRef = useRef<number | null>(null);
+
+  // 实时预览：preset 模式下，size 滑块变化时自动重新生成（debounce 200ms）
+  useEffect(() => {
+    if (mode !== 'preset' || !selectedShape) return;
+    if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => {
+      const r = generatePresetShape(selectedShape, presetSize);
+      setResult({ grid: r.grid, colors: r.colors, shape: r.shape });
+    }, 200);
+    return () => {
+      if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+    };
+  }, [presetSize, selectedShape, mode]);
 
   const handleGenerate = useCallback(() => {
     if (!prompt.trim()) {
@@ -86,6 +108,7 @@ export default function AIGeneratePage({
           const size = extractGridSize(prompt, presetSize);
           const r = generatePresetShape(shape, size);
           setResult({ grid: r.grid, colors: r.colors, shape: r.shape });
+          setSelectedShape(shape);
           setMatchedTemplates([]);
           showToast(t('ai.generated.preset'), 'success');
         } else {
@@ -95,12 +118,14 @@ export default function AIGeneratePage({
           if (matches.length > 0) {
             const top = matches[0].template;
             setResult({ grid: top.grid, colors: top.colors });
+            setSelectedShape(null);
             showToast(t('ai.generated.match', { n: matches.length }), 'success');
           } else {
             // 无匹配时，根据形状兜底
             if (shape) {
               const r = generatePresetShape(shape, extractGridSize(prompt, presetSize));
               setResult({ grid: r.grid, colors: r.colors, shape: r.shape });
+              setSelectedShape(shape);
               showToast(t('ai.generated.fallback'), 'info');
             } else {
               setResult(null);
@@ -117,6 +142,7 @@ export default function AIGeneratePage({
   }, [prompt, mode, templates, presetSize, showToast, t]);
 
   const handlePresetClick = useCallback((shape: PresetShape) => {
+    setSelectedShape(shape);
     setGenerating(true);
     setTimeout(() => {
       const r = generatePresetShape(shape, presetSize);
@@ -126,6 +152,24 @@ export default function AIGeneratePage({
       showToast(t('ai.generated.preset'), 'success');
     }, 300);
   }, [presetSize, showToast, t]);
+
+  // 加入对比栏
+  const handleAddToCompare = useCallback(() => {
+    if (!result) return;
+    const label = result.shape ? t(`ai.shape.${result.shape}`) : `${result.grid.length}×${result.grid[0]?.length || 0}`;
+    setCompareList(prev => {
+      // 去重（按 label + grid 内容）
+      const exists = prev.some(c => c.label === label && c.grid.length === result.grid.length);
+      if (exists) return prev;
+      return [...prev, { grid: result.grid, colors: result.colors, label }].slice(-4);
+    });
+    showToast(t('ai.compare.added', { label }), 'success');
+  }, [result, showToast, t]);
+
+  // 清空对比
+  const handleClearCompare = useCallback(() => {
+    setCompareList([]);
+  }, []);
 
   const handleSave = useCallback(() => {
     if (!result) return;
@@ -173,6 +217,46 @@ export default function AIGeneratePage({
     setPresetSize(randomSize);
     handlePresetClick(random);
   }, [handlePresetClick]);
+
+  // 图生图：上传图片分析
+  const handleImageFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      showToast(t('ai.image.invalidType'), 'error');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast(t('ai.image.tooLarge'), 'error');
+      return;
+    }
+    setAnalyzing(true);
+    // 预览
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(previewUrl);
+    try {
+      const langCode = lang === 'en' ? 'en' : 'zh';
+      const r = await analyzeImage(file, imageSize, langCode);
+      setResult({ grid: r.grid, colors: r.colors });
+      setPrompt(r.prompt);
+      setSelectedShape(null);
+      setMatchedTemplates([]);
+      showToast(t('ai.image.analyzed', { w: r.grid[0]?.length ?? 0, h: r.grid.length }), 'success');
+    } catch {
+      showToast(t('ai.image.failed'), 'error');
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [imageSize, lang, showToast, t]);
+
+  // 拖拽上传
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleImageFile(file);
+  }, [handleImageFile]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
 
   const resultRows = result?.grid.length || 0;
   const resultCols = resultRows > 0 ? (result?.grid[0]?.length || 0) : 0;
@@ -252,8 +336,63 @@ export default function AIGeneratePage({
                 >
                   {t('ai.mode.match')}
                 </button>
+                <button
+                  type="button"
+                  className={`ai-page__mode-tab ${mode === 'image' ? 'active' : ''}`}
+                  onClick={() => setMode('image')}
+                  aria-pressed={mode === 'image'}
+                >
+                  <ImageIcon size={14} aria-hidden="true" />
+                  {t('ai.mode.image')}
+                </button>
               </div>
             </div>
+
+            {mode === 'image' && (
+              <div className="ai-page__image-upload">
+                <label className="ai-page__label">
+                  {t('ai.size.label')}: {imageSize}×{imageSize}
+                </label>
+                <input
+                  type="range"
+                  min="8"
+                  max="40"
+                  value={imageSize}
+                  onChange={(e) => setImageSize(Number(e.target.value))}
+                  aria-label={t('ai.size.label')}
+                />
+                <div
+                  className={`ai-page__drop-zone ${analyzing ? 'ai-page__drop-zone--analyzing' : ''}`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onClick={() => imageInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); imageInputRef.current?.click(); } }}
+                  aria-label={t('ai.image.dropHint')}
+                >
+                  {imagePreviewUrl ? (
+                    <img src={imagePreviewUrl} alt="" className="ai-page__drop-preview" aria-hidden="true" />
+                  ) : (
+                    <>
+                      <Upload size={32} aria-hidden="true" />
+                      <span className="ai-page__drop-text">{t('ai.image.dropHint')}</span>
+                      <span className="ai-page__drop-sub">{t('ai.image.dropSub')}</span>
+                    </>
+                  )}
+                  {analyzing && <div className="ai-page__analyzing-overlay"><div className="ai-page__spinner" /><span>{t('ai.image.analyzing')}</span></div>}
+                </div>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="ai-page__file-input"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); e.target.value = ''; }}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
+              </div>
+            )}
 
             {mode === 'preset' && (
               <div className="ai-page__presets">
@@ -361,6 +500,46 @@ export default function AIGeneratePage({
                   >
                     {t('ai.toEditor')}
                   </button>
+                  <button
+                    type="button"
+                    className="ai-page__btn ai-page__btn--ghost"
+                    onClick={handleAddToCompare}
+                    disabled={compareList.length >= 4}
+                    title={t('ai.compare.add')}
+                  >
+                    <Layers size={18} aria-hidden="true" />
+                    {t('ai.compare.add')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 多候选对比栏 */}
+            {compareList.length > 0 && (
+              <div className="ai-page__compare">
+                <div className="ai-page__compare-header">
+                  <h3 className="ai-page__compare-title">{t('ai.compare.title')}</h3>
+                  <button
+                    type="button"
+                    className="ai-page__btn ai-page__btn--ghost"
+                    onClick={handleClearCompare}
+                  >
+                    {t('common.clear')}
+                  </button>
+                </div>
+                <div className="ai-page__compare-grid">
+                  {compareList.map((c, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="ai-page__compare-item"
+                      onClick={() => setResult({ grid: c.grid, colors: c.colors })}
+                      title={c.label}
+                    >
+                      <PixelGrid grid={c.grid} colors={c.colors} />
+                      <span className="ai-page__compare-label">{c.label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
