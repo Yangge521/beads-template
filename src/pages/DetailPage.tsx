@@ -783,7 +783,7 @@ export default function DetailPage({
             onTouchEnd={touch.onTouchEnd}
             onWheel={touch.onWheel}
           >
-            <div style={{ transform: `scale(${zoom * touch.scale}) translate(${touch.offsetX}px, ${touch.offsetY}px)`, transformOrigin: 'top center', touchAction: 'none' }}>
+            <div style={{ transform: `scale(${zoom * touch.scale}) translate(${touch.offsetX}px, ${touch.offsetY}px)`, transformOrigin: 'top center', touchAction: 'none', maxWidth: '100%' }}>
               <PixelGrid
                 grid={displayGrid}
                 colors={displayColors}

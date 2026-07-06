@@ -721,6 +721,13 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   padding: 20px;
   background: var(--code-bg);
   border-radius: var(--radius-lg);
+  /* flex 容器内的子项可收缩，避免 PixelGrid 内容多时撑大父容器 */
+  min-width: 0;
+  max-width: 100%;
+}
+
+.detail-page__pixel > * {
+  min-width: 0;
 }
 
 .detail-page__stats {
@@ -1393,6 +1400,8 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px 8px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .home-page__count {
@@ -1448,6 +1457,11 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   gap: 24px;
   align-items: start;
   margin-bottom: 24px;
+}
+
+/* grid 子项默认 min-width: auto，会让 PixelGrid 撑大列宽导致移动端溢出 */
+.detail-page__split > * {
+  min-width: 0;
 }
 
 .detail-page__cover {
@@ -4423,6 +4437,12 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
 html {
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  /* 兜底：任何子元素意外溢出都不会撑大视口，避免移动端右侧白屏 */
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
 }
 
 /* 所有可点击元素统一 active 反馈 */

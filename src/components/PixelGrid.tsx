@@ -100,9 +100,10 @@ export default function PixelGrid({
       className={`pixel-grid ${className} ${showGridLines ? 'pixel-grid--lined' : ''} ${interactive ? 'pixel-grid--interactive' : ''}`}
       style={{
         display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
         gap: showGridLines ? '0' : '1px',
         width: 'fit-content',
+        maxWidth: '100%',
       }}
       role={interactive ? 'grid' : 'img'}
       aria-label={t('pixelGrid.ariaLabel', { count: ariaCount })}
