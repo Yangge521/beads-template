@@ -2609,7 +2609,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/pixel3d-dragon3d-011.svg"
   },
   {
     "id": "pixel3d-castle3d-012",
@@ -3771,6 +3772,7 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/pixel3d-castle3d-012.svg"
   }
 ]

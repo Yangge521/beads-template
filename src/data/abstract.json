@@ -6468,7 +6468,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/abstract-mondrian2-009.svg"
   },
   {
     "id": "abstract-dali-010",
@@ -7630,7 +7631,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/abstract-dali-010.svg"
   },
   {
     "id": "abstract-picasso-011",
@@ -8792,6 +8794,7 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/abstract-picasso-011.svg"
   }
 ]

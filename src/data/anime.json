@@ -4776,7 +4776,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/anime-spirited-012.svg"
   },
   {
     "id": "anime-naruto-013",
@@ -5942,7 +5943,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/anime-naruto-013.svg"
   },
   {
     "id": "anime-luffy-014",
@@ -7108,7 +7110,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/anime-luffy-014.svg"
   },
   {
     "id": "anime-demon-015",
@@ -8274,6 +8277,7 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/anime-demon-015.svg"
   }
 ]

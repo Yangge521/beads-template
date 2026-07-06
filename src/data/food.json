@@ -4403,7 +4403,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-cake-011.svg"
   },
   {
     "id": "food-sushi-012",
@@ -5565,7 +5566,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-sushi-012.svg"
   },
   {
     "id": "food-feast-013",
@@ -6727,6 +6729,7 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-feast-013.svg"
   }
 ]

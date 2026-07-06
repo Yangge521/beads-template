@@ -5005,7 +5005,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/pokemon-mewtwo-012.svg"
   },
   {
     "id": "pokemon-charizard-013",
@@ -6171,7 +6172,8 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/pokemon-charizard-013.svg"
   },
   {
     "id": "pokemon-lucario-014",
@@ -7337,6 +7339,7 @@
       "复杂",
       "32x32"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/pokemon-lucario-014.svg"
   }
 ]
