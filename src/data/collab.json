@@ -298,7 +298,7 @@
       {
         "hex": "#C0C0C0",
         "name": "银色外壳",
-        "count": 104
+        "count": 102
       },
       {
         "hex": "#808080",
@@ -316,7 +316,7 @@
         "count": 1
       }
     ],
-    "beadCount": 143,
+    "beadCount": 141,
     "difficulty": "medium",
     "tags": [
       "机器人",
@@ -625,7 +625,7 @@
       {
         "hex": "#9370DB",
         "name": "魔法紫",
-        "count": 131
+        "count": 126
       },
       {
         "hex": "#FF69B4",
@@ -643,7 +643,7 @@
         "count": 2
       }
     ],
-    "beadCount": 147,
+    "beadCount": 142,
     "difficulty": "medium",
     "tags": [
       "魔法猫",
@@ -952,12 +952,12 @@
       {
         "hex": "#00FF00",
         "name": "亮绿",
-        "count": 56
+        "count": 54
       },
       {
         "hex": "#008000",
         "name": "深绿",
-        "count": 22
+        "count": 24
       },
       {
         "hex": "#FF0000",
@@ -1606,12 +1606,12 @@
       {
         "hex": "#FF0000",
         "name": "幽灵红",
-        "count": 124
+        "count": 119
       },
       {
         "hex": "#FFFFFF",
         "name": "眼白",
-        "count": 8
+        "count": 12
       },
       {
         "hex": "#000000",
@@ -1619,7 +1619,7 @@
         "count": 4
       }
     ],
-    "beadCount": 136,
+    "beadCount": 135,
     "difficulty": "easy",
     "tags": [
       "幽灵",

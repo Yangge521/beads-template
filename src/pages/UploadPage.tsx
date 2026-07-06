@@ -78,17 +78,21 @@ export default function UploadPage({
   // 像素化预览（实时随参数变化，使用增强算法）
   const preview = useMemo(() => {
     if (!img) return null;
-    return pixelizeImageEnhanced(img, {
-      maxGridSize: options.maxGridSize,
-      colorThreshold: options.colorThreshold,
-      dropBackground: options.dropBackground,
-      backgroundLuminance: options.backgroundLuminance,
-      colorNamePrefix: t('upload.build.colorNamePrefix'),
-      dither: options.dither,
-      edgeEnhance: options.edgeEnhance,
-      edgeStrength: options.edgeStrength,
-      maxColors: options.maxColors,
-    });
+    try {
+      return pixelizeImageEnhanced(img, {
+        maxGridSize: options.maxGridSize,
+        colorThreshold: options.colorThreshold,
+        dropBackground: options.dropBackground,
+        backgroundLuminance: options.backgroundLuminance,
+        colorNamePrefix: t('upload.build.colorNamePrefix'),
+        dither: options.dither,
+        edgeEnhance: options.edgeEnhance,
+        edgeStrength: options.edgeStrength,
+        maxColors: options.maxColors,
+      });
+    } catch {
+      return null;
+    }
   }, [img, options, t]);
 
   // 统计预览信息
@@ -247,7 +251,7 @@ export default function UploadPage({
                     <RefreshCw size={16} />
                   </button>
                 </div>
-                <img src={imgSrc} alt={t('upload.preview.originalAlt')} className="upload-page__original-img" />
+                <img src={imgSrc} alt={t('upload.preview.originalAlt')} className="upload-page__original-img" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
               </div>
             )}
             <input
@@ -325,7 +329,7 @@ export default function UploadPage({
                 </label>
                 {options.edgeEnhance && (
                   <label className="upload-page__option">
-                    <span className="upload-page__option-label">{t('upload.algorithm.edgeStrength', )} ({Math.round(options.edgeStrength * 100)}%)</span>
+                    <span className="upload-page__option-label">{t('upload.algorithm.edgeStrength')} ({Math.round(options.edgeStrength * 100)}%)</span>
                     <input
                       type="range"
                       min="10"

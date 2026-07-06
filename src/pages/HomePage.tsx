@@ -6,6 +6,7 @@ import TemplateCard from '../components/TemplateCard';
 import HeroBackground from '../components/HeroBackground';
 import { useCountUp } from '../hooks/useCountUp';
 import { getBeadCount } from '../utils/beadStats';
+import { multiFieldPinyinMatch } from '../utils/pinyinSearch';
 import { ChevronDown, X, Check, Upload } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -129,9 +130,7 @@ export default function HomePage({
       const matchColor = !colorFilter || t.colors.some(c => c.hex.toLowerCase() === colorFilter.toLowerCase());
       const matchSearch =
         !searchQuery ||
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        t.description.toLowerCase().includes(searchQuery.toLowerCase());
+        multiFieldPinyinMatch([t.name, ...t.tags, t.description], searchQuery);
       return matchCategory && matchDifficulty && matchGrid && matchColor && matchSearch;
     });
 

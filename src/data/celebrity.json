@@ -298,42 +298,42 @@
       {
         "hex": "#1A1A1A",
         "name": "深黑",
-        "count": 20
+        "count": 50
       },
       {
         "hex": "#3D2817",
         "name": "深棕",
-        "count": 18
+        "count": 38
       },
       {
         "hex": "#6B4423",
         "name": "棕",
-        "count": 15
+        "count": 26
       },
       {
         "hex": "#F5DEB3",
         "name": "肤色浅",
-        "count": 25
+        "count": 22
       },
       {
         "hex": "#FFDAB9",
         "name": "肤色",
-        "count": 20
+        "count": 16
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 8
+        "count": 6
       },
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 6
+        "count": 4
       },
       {
         "hex": "#8B4513",
         "name": "眼镜框",
-        "count": 4
+        "count": 2
       }
     ],
     "beadCount": 164,
@@ -646,7 +646,7 @@
       {
         "hex": "#0A0A0A",
         "name": "墨黑",
-        "count": 22
+        "count": 27
       },
       {
         "hex": "#2C1810",
@@ -656,22 +656,22 @@
       {
         "hex": "#5C3317",
         "name": "棕",
-        "count": 16
+        "count": 33
       },
       {
         "hex": "#F5DEB3",
         "name": "肤色浅",
-        "count": 24
+        "count": 26
       },
       {
         "hex": "#FFDAB9",
         "name": "肤色",
-        "count": 18
+        "count": 6
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 6
+        "count": 4
       }
     ],
     "beadCount": 114,
@@ -984,22 +984,22 @@
       {
         "hex": "#FFD700",
         "name": "金色",
-        "count": 24
+        "count": 48
       },
       {
         "hex": "#DAA520",
         "name": "深金",
-        "count": 18
+        "count": 45
       },
       {
         "hex": "#B8860B",
         "name": "暗金",
-        "count": 12
+        "count": 29
       },
       {
         "hex": "#FFDAB9",
         "name": "肤色",
-        "count": 22
+        "count": 21
       },
       {
         "hex": "#FFC0CB",
@@ -1009,7 +1009,7 @@
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 8
+        "count": 6
       },
       {
         "hex": "#DC143C",
@@ -1327,22 +1327,22 @@
       {
         "hex": "#2F1B14",
         "name": "深棕",
-        "count": 18
+        "count": 50
       },
       {
         "hex": "#5C3317",
         "name": "棕",
-        "count": 16
+        "count": 37
       },
       {
         "hex": "#8B4513",
         "name": "浅棕",
-        "count": 12
+        "count": 31
       },
       {
         "hex": "#FFDAB9",
         "name": "肤色",
-        "count": 26
+        "count": 21
       },
       {
         "hex": "#FFC0CB",
@@ -1670,17 +1670,17 @@
       {
         "hex": "#C0C0C0",
         "name": "银色",
-        "count": 22
+        "count": 46
       },
       {
         "hex": "#A9A9A9",
         "name": "深银",
-        "count": 16
+        "count": 33
       },
       {
         "hex": "#808080",
         "name": "灰",
-        "count": 12
+        "count": 27
       },
       {
         "hex": "#FFDAB9",
@@ -1690,17 +1690,17 @@
       {
         "hex": "#FFC0CB",
         "name": "粉肤色",
-        "count": 14
+        "count": 8
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 6
+        "count": 2
       },
       {
         "hex": "#DC143C",
         "name": "红唇",
-        "count": 4
+        "count": 2
       }
     ],
     "beadCount": 142,
@@ -2013,27 +2013,27 @@
       {
         "hex": "#0A0A0A",
         "name": "墨黑",
-        "count": 30
+        "count": 46
       },
       {
         "hex": "#1A1A1A",
         "name": "黑",
-        "count": 18
+        "count": 42
       },
       {
         "hex": "#F5DEB3",
         "name": "肤色浅",
-        "count": 22
+        "count": 30
       },
       {
         "hex": "#FFDAB9",
         "name": "肤色",
-        "count": 18
+        "count": 28
       },
       {
         "hex": "#000000",
         "name": "墨镜",
-        "count": 8
+        "count": 14
       },
       {
         "hex": "#FFFFFF",
@@ -2542,19 +2542,18 @@
     "colors": [
       {
         "name": "银色短发",
-        "hex": "#C0C0C0"
+        "hex": "#C0C0C0",
+        "count": 96
       },
       {
         "name": "肤色",
-        "hex": "#FFC9A8"
+        "hex": "#FFC9A8",
+        "count": 210
       },
       {
         "name": "红色嘴唇",
-        "hex": "#E53935"
-      },
-      {
-        "name": "黑色舞台装",
-        "hex": "#1A1A1A"
+        "hex": "#E53935",
+        "count": 42
       }
     ],
     "beadCount": 348,
@@ -3058,15 +3057,13 @@
     "colors": [
       {
         "name": "黑色头发",
-        "hex": "#1A1A1A"
+        "hex": "#1A1A1A",
+        "count": 210
       },
       {
         "name": "肤色",
-        "hex": "#FFC9A8"
-      },
-      {
-        "name": "白色上衣",
-        "hex": "#FAFAFA"
+        "hex": "#FFC9A8",
+        "count": 138
       }
     ],
     "beadCount": 348,
@@ -3570,15 +3567,18 @@
     "colors": [
       {
         "name": "棕色马尾",
-        "hex": "#6D4C41"
+        "hex": "#6D4C41",
+        "count": 96
       },
       {
         "name": "肤色",
-        "hex": "#FFC9A8"
+        "hex": "#FFC9A8",
+        "count": 217
       },
       {
         "name": "黑色 outfit",
-        "hex": "#1A1A1A"
+        "hex": "#1A1A1A",
+        "count": 43
       }
     ],
     "beadCount": 356,
@@ -4154,15 +4154,18 @@
     "colors": [
       {
         "name": "紫色 ARMY",
-        "hex": "#7C3AED"
+        "hex": "#7C3AED",
+        "count": 196
       },
       {
         "name": "粉色心形",
-        "hex": "#EC4899"
+        "hex": "#EC4899",
+        "count": 77
       },
       {
         "name": "黑色 logo",
-        "hex": "#1A1A1A"
+        "hex": "#1A1A1A",
+        "count": 114
       }
     ],
     "beadCount": 387,

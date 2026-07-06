@@ -14,6 +14,8 @@ interface InventoryPanelProps {
   onClearInventory: () => void;
   onApplyReplacements: (replacedColors: { hex: string; replacement: string }[]) => void;
   onClose: () => void;
+  /** 设置某颜色的库存数量 */
+  onSetCount?: (hex: string, count: number | undefined) => void;
 }
 
 export default function InventoryPanel({
@@ -24,6 +26,7 @@ export default function InventoryPanel({
   onClearInventory,
   onApplyReplacements,
   onClose,
+  onSetCount,
 }: InventoryPanelProps) {
   const { t } = useTranslation();
   const [hexInput, setHexInput] = useState('');
@@ -158,6 +161,21 @@ export default function InventoryPanel({
                   <span className="inventory-panel__chip-swatch" style={{ backgroundColor: item.hex }} aria-hidden="true" />
                   <span className="inventory-panel__chip-hex">{item.hex}</span>
                   {item.note && <span className="inventory-panel__chip-note">{item.note}</span>}
+                  {onSetCount && (
+                    <input
+                      type="number"
+                      className="inventory-panel__chip-count"
+                      min={0}
+                      value={item.count ?? ''}
+                      placeholder="—"
+                      onChange={e => {
+                        const v = e.target.value;
+                        onSetCount(item.hex, v === '' ? undefined : Math.max(0, Math.floor(Number(v))));
+                      }}
+                      aria-label={t('detail.inventory.countLabel', { defaultValue: 'Count' })}
+                      title={t('detail.inventory.countTitle', { defaultValue: 'Stock count' })}
+                    />
+                  )}
                   <button
                     type="button"
                     className="inventory-panel__chip-remove"
@@ -245,6 +263,69 @@ export default function InventoryPanel({
           )}
         </div>
       )}
+
+      {/* 缺料预警：库存中已有但数量不足的颜色 */}
+      {onSetCount && inventory.some(i => typeof i.count === 'number') && (() => {
+        // 统计模板每种颜色的实际用量
+        const colorDemand = new Map<string, number>(); // hex(lower) -> demand
+        const counts: number[] = [];
+        for (const row of template.grid) {
+          for (const v of row) {
+            if (v > 0) counts[v - 1] = (counts[v - 1] || 0) + 1;
+          }
+        }
+        template.colors.forEach((c, i) => {
+          const cnt = counts[i] ?? 0;
+          if (cnt > 0) colorDemand.set(c.hex.toLowerCase(), cnt);
+        });
+        // 找出库存中数量不足的（精确匹配 hex）
+        const shortList = inventory
+          .map(item => {
+            const demand = colorDemand.get(item.hex.toLowerCase()) ?? 0;
+            const have = item.count ?? 0;
+            const shortage = Math.max(0, demand - have);
+            return { hex: item.hex, have, demand, shortage, hasStock: typeof item.count === 'number' };
+          })
+          .filter(x => x.hasStock && x.shortage > 0)
+          .sort((a, b) => b.shortage - a.shortage);
+        if (shortList.length === 0) return null;
+        return (
+          <div className="inventory-panel__section inventory-panel__shortage">
+            <h3 className="inventory-panel__subtitle">
+              <AlertTriangle size={16} aria-hidden="true" />
+              {t('detail.inventory.shortageTitle', { defaultValue: '缺料预警' })}
+            </h3>
+            <p className="inventory-panel__missing-desc">
+              {t('detail.inventory.shortageDesc', { defaultValue: '以下颜色库存数量不足，需补购：' })}
+            </p>
+            <table className="inventory-panel__table">
+              <thead>
+                <tr>
+                  <th>{t('detail.inventory.colOriginal', { defaultValue: '颜色' })}</th>
+                  <th>{t('detail.inventory.colDemand', { defaultValue: '需要' })}</th>
+                  <th>{t('detail.inventory.colStock', { defaultValue: '已有' })}</th>
+                  <th>{t('detail.inventory.colShortage', { defaultValue: '缺少' })}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shortList.map(x => (
+                  <tr key={x.hex}>
+                    <td>
+                      <span className="inventory-panel__swatch-mini" style={{ backgroundColor: x.hex }} aria-hidden="true" />
+                      <span className="inventory-panel__hex-text">{x.hex}</span>
+                    </td>
+                    <td>{x.demand}</td>
+                    <td>{x.have}</td>
+                    <td>
+                      <span className="inventory-panel__level inventory-panel__level--far">{x.shortage}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
     </div>
   );
 }

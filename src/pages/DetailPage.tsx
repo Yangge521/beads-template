@@ -41,6 +41,7 @@ interface DetailPageProps {
   onAddInventoryColor: (hex: string, note?: string) => void;
   onRemoveInventoryColor: (hex: string) => void;
   onClearInventory: () => void;
+  onSetInventoryCount?: (hex: string, count: number | undefined) => void;
   onNavigateTemplate?: (id: string) => void;
   prevTemplate?: BeadTemplate | null;
   nextTemplate?: BeadTemplate | null;
@@ -80,6 +81,7 @@ export default function DetailPage({
   onAddInventoryColor,
   onRemoveInventoryColor,
   onClearInventory,
+  onSetInventoryCount,
   onNavigateTemplate,
   prevTemplate,
   nextTemplate,
@@ -335,7 +337,7 @@ export default function DetailPage({
     }
   }, [exportTemplate, showToast, t]);
 
-  // 切换模板时重置缩放、变换、进度模式与颜色替换，并滚动到顶部
+  // 切换模板时重置缩放、变换、进度模式、颜色替换与触摸手势，并滚动到顶部
   useEffect(() => {
     setZoom(1);
     setTransforms([]);
@@ -345,7 +347,10 @@ export default function DetailPage({
     celebratedRef.current = false;
     setNewlyUnlocked([]);
     prevProgressRef.current = 0;
+    // 重置触摸手势状态（pinch/pan 残留会导致新模板以错误的缩放/偏移显示）
+    touch.reset();
     window.scrollTo({ top: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template?.id]);
 
   // 进入进度模式时记录开始时间；退出时清空
@@ -607,6 +612,7 @@ export default function DetailPage({
             onRemoveColor={onRemoveInventoryColor}
             onClearInventory={onClearInventory}
             onApplyReplacements={handleApplyReplacements}
+            onSetCount={onSetInventoryCount}
             onClose={() => setShowInventory(false)}
           />
         )}

@@ -2,10 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 
 const STORAGE_KEY = 'beads-inventory';
 
-/** 库存颜色项：hex + 可选备注（如品牌色号、数量） */
+/** 库存颜色项：hex + 可选备注（如品牌色号）+ 可选数量 */
 export interface InventoryItem {
   hex: string;
   note?: string;
+  /** 拥有的数量（颗数）。undefined 表示未录入数量 */
+  count?: number;
 }
 
 /** 加载库存数据 */
@@ -19,7 +21,11 @@ function loadInventory(): InventoryItem[] {
           .filter((x: unknown): x is InventoryItem =>
             !!x && typeof x === 'object' && typeof (x as InventoryItem).hex === 'string'
           )
-          .map(x => ({ hex: (x.hex as string).toLowerCase(), note: typeof x.note === 'string' ? x.note : undefined }));
+          .map(x => ({
+            hex: (x.hex as string).toLowerCase(),
+            note: typeof x.note === 'string' ? x.note : undefined,
+            count: typeof x.count === 'number' && x.count >= 0 ? x.count : undefined,
+          }));
       }
     }
   } catch {}
@@ -81,6 +87,20 @@ export function useInventory() {
     });
   }, []);
 
+  /** 设置某颜色的库存数量（传入 undefined 或负数则清除数量） */
+  const setCount = useCallback((hex: string, count: number | undefined) => {
+    const normalized = hex.toLowerCase();
+    setInventory(prev => {
+      const next = prev.map(item =>
+        item.hex === normalized
+          ? { ...item, count: typeof count === 'number' && count >= 0 ? count : undefined }
+          : item
+      );
+      saveInventory(next);
+      return next;
+    });
+  }, []);
+
   /** 检查某颜色是否在库存中（大小写不敏感） */
   const hasColor = useCallback((hex: string) => {
     const normalized = hex.toLowerCase();
@@ -97,5 +117,6 @@ export function useInventory() {
     clearInventory,
     hasColor,
     inventoryHexes,
+    setCount,
   };
 }

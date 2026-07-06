@@ -298,22 +298,22 @@
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 35
+        "count": 111
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 8
+        "count": 6
       },
       {
         "hex": "#FF0000",
         "name": "红蝴蝶",
-        "count": 8
+        "count": 17
       },
       {
         "hex": "#FFD700",
         "name": "黄鼻子",
-        "count": 5
+        "count": 2
       }
     ],
     "beadCount": 136,
@@ -625,22 +625,22 @@
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 25
+        "count": 42
       },
       {
         "hex": "#FFD700",
         "name": "黄",
-        "count": 15
+        "count": 48
       },
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 12
+        "count": 6
       },
       {
         "hex": "#FF0000",
         "name": "红",
-        "count": 0
+        "count": 36
       }
     ],
     "beadCount": 132,
@@ -952,27 +952,27 @@
       {
         "hex": "#FFD700",
         "name": "黄",
-        "count": 30
+        "count": 131
       },
       {
         "hex": "#FFFACD",
         "name": "奶黄",
-        "count": 20
+        "count": 8
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 8
+        "count": 2
       },
       {
         "hex": "#FFB6C1",
         "name": "粉腮红",
-        "count": 8
+        "count": 2
       },
       {
         "hex": "#8B4513",
         "name": "棕",
-        "count": 0
+        "count": 14
       }
     ],
     "beadCount": 157,
@@ -1284,27 +1284,27 @@
       {
         "hex": "#32CD32",
         "name": "绿",
-        "count": 28
+        "count": 137
       },
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 10
+        "count": 6
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 8
+        "count": 6
       },
       {
         "hex": "#FF0000",
         "name": "红嘴",
-        "count": 5
+        "count": 1
       },
       {
         "hex": "#FFD700",
         "name": "黄",
-        "count": 0
+        "count": 4
       }
     ],
     "beadCount": 154,
@@ -1454,30 +1454,25 @@
       {
         "hex": "#FFD700",
         "name": "独角",
-        "count": 8
+        "count": 17
       },
       {
         "hex": "#FFFFFF",
         "name": "白马白",
-        "count": 25
+        "count": 19
       },
       {
         "hex": "#FF69B4",
         "name": "粉鬃",
-        "count": 10
+        "count": 13
       },
       {
         "hex": "#87CEEB",
         "name": "蓝鬃",
-        "count": 10
-      },
-      {
-        "hex": "#000000",
-        "name": "黑",
-        "count": 8
+        "count": 4
       }
     ],
-    "beadCount": 61,
+    "beadCount": 53,
     "difficulty": "medium",
     "tags": [
       "独角兽",
@@ -1619,12 +1614,12 @@
       {
         "hex": "#FFD700",
         "name": "金",
-        "count": 15
+        "count": 29
       },
       {
         "hex": "#000000",
         "name": "黑眼",
-        "count": 6
+        "count": 22
       },
       {
         "hex": "#FF69B4",
@@ -1634,10 +1629,10 @@
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 0
+        "count": 4
       }
     ],
-    "beadCount": 25,
+    "beadCount": 59,
     "difficulty": "easy",
     "tags": [
       "星星",

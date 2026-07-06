@@ -106,15 +106,15 @@
       {
         "hex": "#FFD700",
         "name": "黄",
-        "count": 40
+        "count": 58
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 10
+        "count": 8
       }
     ],
-    "beadCount": 50,
+    "beadCount": 66,
     "difficulty": "easy",
     "tags": [
       "笑脸",
@@ -212,10 +212,10 @@
       {
         "hex": "#FF0000",
         "name": "红",
-        "count": 25
+        "count": 45
       }
     ],
-    "beadCount": 25,
+    "beadCount": 45,
     "difficulty": "easy",
     "tags": [
       "爱心",
@@ -332,10 +332,10 @@
       {
         "hex": "#FFD700",
         "name": "金",
-        "count": 25
+        "count": 43
       }
     ],
-    "beadCount": 25,
+    "beadCount": 43,
     "difficulty": "easy",
     "tags": [
       "星星",
@@ -426,15 +426,10 @@
       {
         "hex": "#FFD700",
         "name": "黄",
-        "count": 15
-      },
-      {
-        "hex": "#FFA500",
-        "name": "橙边",
-        "count": 5
+        "count": 12
       }
     ],
-    "beadCount": 20,
+    "beadCount": 12,
     "difficulty": "easy",
     "tags": [
       "闪电",
@@ -563,20 +558,15 @@
       {
         "hex": "#FF0000",
         "name": "红",
-        "count": 20
+        "count": 22
       },
       {
         "hex": "#FF69B4",
         "name": "粉红",
-        "count": 10
-      },
-      {
-        "hex": "#228B22",
-        "name": "绿茎",
-        "count": 10
+        "count": 20
       }
     ],
-    "beadCount": 40,
+    "beadCount": 42,
     "difficulty": "easy",
     "tags": [
       "玫瑰",
@@ -681,20 +671,20 @@
       {
         "hex": "#00BFFF",
         "name": "亮蓝",
-        "count": 15
+        "count": 28
       },
       {
         "hex": "#87CEEB",
         "name": "浅蓝",
-        "count": 10
+        "count": 16
       },
       {
         "hex": "#FFFFFF",
         "name": "白闪",
-        "count": 5
+        "count": 2
       }
     ],
-    "beadCount": 30,
+    "beadCount": 46,
     "difficulty": "easy",
     "tags": [
       "钻石",

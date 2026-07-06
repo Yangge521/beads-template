@@ -7,6 +7,7 @@ import {
   Sun, Moon, Languages, X, CornerDownLeft, ChevronUp, ChevronDown,
 } from 'lucide-react';
 import type { BeadTemplate } from '../types/bead';
+import { multiFieldPinyinMatch } from '../utils/pinyinSearch';
 
 interface Command {
   id: string;
@@ -63,13 +64,9 @@ export default function CommandPalette({
     const q = query.trim().toLowerCase();
     if (!q) return baseCommands;
 
-    // 同时匹配模板
+    // 同时匹配模板（支持拼音搜索）
     const matchedTemplates: Command[] = templates
-      .filter(tpl =>
-        tpl.name.toLowerCase().includes(q) ||
-        tpl.tags.some(tag => tag.toLowerCase().includes(q)) ||
-        tpl.description.toLowerCase().includes(q)
-      )
+      .filter(tpl => multiFieldPinyinMatch([tpl.name, ...tpl.tags, tpl.description], q))
       .slice(0, 8)
       .map(tpl => ({
         id: `tpl-${tpl.id}`,

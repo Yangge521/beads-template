@@ -191,35 +191,25 @@
       {
         "hex": "#FFD700",
         "name": "金",
-        "count": 5
+        "count": 21
       },
       {
         "hex": "#228B22",
         "name": "深绿",
-        "count": 30
+        "count": 12
       },
       {
         "hex": "#32CD32",
         "name": "浅绿",
-        "count": 20
+        "count": 59
       },
       {
         "hex": "#FF0000",
         "name": "红",
-        "count": 8
-      },
-      {
-        "hex": "#FFD700",
-        "name": "金灯",
-        "count": 8
-      },
-      {
-        "hex": "#8B4513",
-        "name": "棕色",
-        "count": 10
+        "count": 6
       }
     ],
-    "beadCount": 81,
+    "beadCount": 98,
     "difficulty": "medium",
     "tags": [
       "圣诞",
@@ -380,20 +370,20 @@
       {
         "hex": "#FFD700",
         "name": "金",
-        "count": 10
+        "count": 30
       },
       {
         "hex": "#FF0000",
         "name": "红",
-        "count": 35
+        "count": 20
       },
       {
         "hex": "#FF8C00",
         "name": "深红",
-        "count": 10
+        "count": 18
       }
     ],
-    "beadCount": 55,
+    "beadCount": 68,
     "difficulty": "easy",
     "tags": [
       "春节",
@@ -702,22 +692,22 @@
       {
         "hex": "#FF8C00",
         "name": "南瓜橙",
-        "count": 30
+        "count": 131
       },
       {
         "hex": "#228B22",
         "name": "绿茎",
-        "count": 8
+        "count": 6
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 12
+        "count": 17
       },
       {
         "hex": "#FFD700",
         "name": "黄",
-        "count": 0
+        "count": 4
       }
     ],
     "beadCount": 158,
@@ -1029,22 +1019,22 @@
       {
         "hex": "#FFA500",
         "name": "胡萝卜橙",
-        "count": 6
+        "count": 5
       },
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 35
+        "count": 96
       },
       {
         "hex": "#000000",
         "name": "黑",
-        "count": 8
+        "count": 38
       },
       {
         "hex": "#FF0000",
         "name": "红围巾",
-        "count": 12
+        "count": 8
       }
     ],
     "beadCount": 147,
@@ -1194,20 +1184,10 @@
       {
         "hex": "#FF0000",
         "name": "红",
-        "count": 35
-      },
-      {
-        "hex": "#FFB6C1",
-        "name": "粉红",
-        "count": 15
-      },
-      {
-        "hex": "#FFD700",
-        "name": "金扣",
-        "count": 5
+        "count": 74
       }
     ],
-    "beadCount": 55,
+    "beadCount": 74,
     "difficulty": "easy",
     "tags": [
       "情人节",
@@ -1516,22 +1496,22 @@
       {
         "hex": "#87CEEB",
         "name": "天蓝",
-        "count": 20
+        "count": 72
       },
       {
         "hex": "#FF0000",
         "name": "红",
-        "count": 8
+        "count": 50
       },
       {
         "hex": "#FFD700",
         "name": "黄",
-        "count": 8
+        "count": 27
       },
       {
         "hex": "#FFFFFF",
         "name": "白",
-        "count": 10
+        "count": 8
       }
     ],
     "beadCount": 157,

@@ -62,7 +62,7 @@ function AppContent() {
   const { isLiked, toggleLike } = useLikes();
   const { getRating, setRating } = useRatings();
   const { getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
-  const { inventory, addColor: addInventoryColor, removeColor: removeInventoryColor, clearInventory } = useInventory();
+  const { inventory, addColor: addInventoryColor, removeColor: removeInventoryColor, clearInventory, setCount: setInventoryCount } = useInventory();
   const { compareIds, addToCompare, removeFromCompare, clearCompare, isInCompare } = useCompare();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
@@ -376,6 +376,7 @@ function AppContent() {
         onAddInventoryColor={addInventoryColor}
         onRemoveInventoryColor={removeInventoryColor}
         onClearInventory={clearInventory}
+        onSetInventoryCount={setInventoryCount}
         onNavigateTemplate={handleNavigateTemplate}
         prevTemplate={prevTemplate}
         nextTemplate={nextTemplate}

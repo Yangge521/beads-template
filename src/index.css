@@ -1144,6 +1144,36 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
 .inventory-panel__chip-remove:hover {
   color: #ef4444;
 }
+.inventory-panel__chip-count {
+  width: 48px;
+  padding: 2px 4px;
+  border: 1px solid var(--border, rgba(0,0,0,0.12));
+  border-radius: 6px;
+  background: var(--bg, #fff);
+  color: var(--text-h);
+  font-size: 12px;
+  font-family: inherit;
+  text-align: center;
+  /* 隐藏 number input 默认的上下箭头，保持 chip 紧凑 */
+  -moz-appearance: textfield;
+}
+.inventory-panel__chip-count::-webkit-outer-spin-button,
+.inventory-panel__chip-count::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.inventory-panel__chip-count:focus {
+  outline: none;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.15);
+}
+.inventory-panel__shortage {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
 .inventory-panel__empty {
   color: var(--text-m);
   font-size: 13px;
