@@ -147,7 +147,7 @@ export default function PixelGrid({
               {isCompleted && (
                 <span className="pixel-cell__check" aria-hidden="true">✓</span>
               )}
-              {showColorCode && !isEmpty && !isCompleted && (
+              {showColorCode && !isEmpty && !isCompleted && color && (
                 <span
                   className="pixel-cell__code"
                   aria-hidden="true"
