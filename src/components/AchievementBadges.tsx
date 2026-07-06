@@ -52,7 +52,7 @@ export default function AchievementBadges({
                   key={badge.id}
                   className={`achievement-badge ${badge.unlocked ? 'achievement-badge--unlocked' : 'achievement-badge--locked'} ${isNew ? 'achievement-badge--new' : ''}`}
                   title={t(badge.descKey)}
-                  aria-label={`${t(badge.nameKey)} - ${t(badge.descKey)}${badge.unlocked ? '' : ` (${badge.progress ?? ''})`}`}
+                  aria-label={`${t(badge.nameKey)} - ${t(badge.descKey)}${badge.unlocked ? '' : (badge.progress ? ` (${badge.progress})` : '')}`}
                 >
                   <span className="achievement-badge__emoji" aria-hidden="true">
                     {badge.emoji}

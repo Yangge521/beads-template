@@ -1,12 +1,19 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
+  --text-muted: #9ca3af;
+  --text-secondary: #6b7280;
   --bg: #fff;
+  --bg-secondary: #f3f4f6;
   --card-bg: #ffffff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #aa3bff;
   --accent-bg: rgba(170, 59, 255, 0.1);
+  --hover-bg: rgba(0, 0, 0, 0.04);
+  --badge-bg: rgba(0, 0, 0, 0.03);
+  --input-bg: #ffffff;
+  --danger: #ef4444;
   --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px;
   --sans: system-ui, -apple-system, sans-serif;
   font: 16px/1.5 var(--sans);
@@ -18,12 +25,19 @@
 [data-theme="dark"]:root {
   --text: #9ca3af;
   --text-h: #f3f4f6;
+  --text-muted: #9ca3af;
+  --text-secondary: #9ca3af;
   --bg: #16171d;
+  --bg-secondary: #2e303a;
   --card-bg: #1f2028;
   --border: #2e303a;
   --code-bg: #1f2028;
   --accent: #c084fc;
   --accent-bg: rgba(192, 132, 252, 0.15);
+  --hover-bg: rgba(255, 255, 255, 0.06);
+  --badge-bg: rgba(255, 255, 255, 0.04);
+  --input-bg: #1f2028;
+  --danger: #f87171;
   --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px;
   color-scheme: dark;
 }
@@ -4234,25 +4248,25 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   to { transform: scale(2.2); opacity: 0; }
 }
 
-/* 页面切换淡入淡出 */
+/* 页面切换淡入淡出（仅用 opacity 避免影响 fixed 元素定位） */
 .page-transition {
   animation: pageFadeIn 0.18s ease-out;
 }
 .page-transition--out { animation: pageFadeOut 0.16s ease-in forwards; }
 @keyframes pageFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @keyframes pageFadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-4px); }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* 命令面板 */
 .cmd-fab {
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
   z-index: 50;
   display: inline-flex;
   align-items: center;
@@ -4280,7 +4294,7 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
 .cmd-palette-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 300;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   display: flex;
@@ -4395,7 +4409,7 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
 
 /* 移动端响应式优化 */
 @media (max-width: 640px) {
-  .cmd-fab { bottom: 12px; right: 12px; padding: 4px 10px; }
+  .cmd-fab { bottom: 12px; left: 12px; padding: 4px 10px; }
   .cmd-fab__kbd { font-size: 11px; }
   .hero--animated { padding: 24px 12px 16px; margin: 8px 0; border-radius: 12px; }
   .hero-bg__blob { filter: blur(30px); }
@@ -4403,6 +4417,7 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   .hero-bg__blob--2 { width: 140px; height: 140px; }
   .hero-bg__blob--3 { width: 120px; height: 120px; }
   .cmd-palette { width: 96vw; max-height: 80vh; }
+  .cmd-palette-overlay { padding-top: 6vh; }
 }
 
 /* 模板卡片悬浮增强（桌面端） */
@@ -4550,7 +4565,7 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
 .confetti {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 150;
   pointer-events: none;
   overflow: hidden;
 }
@@ -4581,7 +4596,7 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 12px;
   background: var(--card-bg, rgba(255, 255, 255, 0.7));
-  overflow: hidden;
+  overflow: visible;
 }
 .achievement-panel__header {
   width: 100%;
@@ -4713,7 +4728,7 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 12px;
   background: var(--card-bg, rgba(255, 255, 255, 0.7));
-  overflow: hidden;
+  overflow: visible;
 }
 .comments-section__header {
   width: 100%;
@@ -5026,7 +5041,7 @@ h1, h2, h3 { color: var(--text-h); font-weight: 600; }
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 12px;
   background: var(--card-bg, rgba(255, 255, 255, 0.7));
-  overflow: hidden;
+  overflow: visible;
 }
 .shape-library__header {
   width: 100%;
