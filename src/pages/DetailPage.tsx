@@ -103,7 +103,7 @@ export default function DetailPage({
   const [beadSize, setBeadSize] = useState<5 | 2.6>(5);
   const [showInventory, setShowInventory] = useState(false);
   const stepGuide = useStepGuide(template?.id);
-  const touch = useTouchGesture(true);
+  const touch = useTouchGesture(true, zoom > 1);
   const [replacedColors, setReplacedColors] = useState<MissingColorInfo[]>([]);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const { showToast } = useToast();
@@ -783,7 +783,7 @@ export default function DetailPage({
             onTouchEnd={touch.onTouchEnd}
             onWheel={touch.onWheel}
           >
-            <div style={{ transform: `scale(${zoom * touch.scale}) translate(${touch.offsetX}px, ${touch.offsetY}px)`, transformOrigin: 'top center', touchAction: 'none', maxWidth: '100%' }}>
+            <div style={{ transform: `scale(${zoom * touch.scale}) translate(${touch.offsetX}px, ${touch.offsetY}px)`, transformOrigin: 'top center', touchAction: zoom > 1 || touch.scale > 1 ? 'none' : 'pan-y', maxWidth: '100%' }}>
               <PixelGrid
                 grid={displayGrid}
                 colors={displayColors}
