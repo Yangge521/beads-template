@@ -147,7 +147,8 @@
       "日料",
       "可爱"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-sushi-001.svg"
   },
   {
     "id": "food-coffee-002",
@@ -329,7 +330,8 @@
       "拿铁",
       "饮品"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-coffee-002.svg"
   },
   {
     "id": "food-pizza-003",
@@ -559,7 +561,8 @@
       "意式",
       "美食"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-pizza-003.svg"
   },
   {
     "id": "food-mochi-004",
@@ -885,7 +888,8 @@
       "抹茶",
       "甜品"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-mochi-004.svg"
   },
   {
     "id": "food-ramen-005",
@@ -1216,7 +1220,8 @@
       "日料",
       "美食"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-ramen-005.svg"
   },
   {
     "id": "food-boba-006",
@@ -1379,6 +1384,7 @@
       "珍珠",
       "饮品"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/food-boba-006.svg"
   }
 ]

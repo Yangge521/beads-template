@@ -344,7 +344,8 @@
       "华语流行",
       "明星"
     ],
-    "source": "粉丝创作"
+    "source": "粉丝创作",
+    "image": "covers/celebrity-xuezhiqian-001.svg"
   },
   {
     "id": "celebrity-jaychou-002",
@@ -681,7 +682,8 @@
       "华语流行",
       "明星"
     ],
-    "source": "粉丝创作"
+    "source": "粉丝创作",
+    "image": "covers/celebrity-jaychou-002.svg"
   },
   {
     "id": "celebrity-taylorswift-003",
@@ -1023,7 +1025,8 @@
       "欧美流行",
       "明星"
     ],
-    "source": "粉丝创作"
+    "source": "粉丝创作",
+    "image": "covers/celebrity-taylorswift-003.svg"
   },
   {
     "id": "celebrity-luhan-004",
@@ -1365,7 +1368,8 @@
       "偶像",
       "明星"
     ],
-    "source": "粉丝创作"
+    "source": "粉丝创作",
+    "image": "covers/celebrity-luhan-004.svg"
   },
   {
     "id": "celebrity-gem-005",
@@ -1707,7 +1711,8 @@
       "歌手",
       "明星"
     ],
-    "source": "粉丝创作"
+    "source": "粉丝创作",
+    "image": "covers/celebrity-gem-005.svg"
   },
   {
     "id": "celebrity-jackson-006",
@@ -2044,6 +2049,7 @@
       "欧美",
       "明星"
     ],
-    "source": "粉丝创作"
+    "source": "粉丝创作",
+    "image": "covers/celebrity-jackson-006.svg"
   }
 ]

@@ -84,7 +84,20 @@ function TemplateCard({
       tabIndex={0}
     >
       <div className="template-card__thumb">
-        <PixelGrid grid={thumbGrid} colors={template.colors} />
+        {template.image ? (
+          <img
+            className="template-card__cover"
+            src={`${import.meta.env.BASE_URL}${template.image}`}
+            alt={template.name}
+            loading="lazy"
+            onError={(e) => {
+              // 图片加载失败时回退到 PixelGrid 缩略图
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <PixelGrid grid={thumbGrid} colors={template.colors} />
+        )}
         <span
           className="template-card__difficulty"
           style={{ backgroundColor: diffBg }}

@@ -323,7 +323,8 @@
       "Sanrio",
       "可爱"
     ],
-    "source": "Sanrio 风格"
+    "source": "Sanrio 风格",
+    "image": "covers/kawaii-kitty-001.svg"
   },
   {
     "id": "kawaii-tsum-002",
@@ -649,7 +650,8 @@
       "米奇",
       "堆堆"
     ],
-    "source": "Tsum Tsum 风格"
+    "source": "Tsum Tsum 风格",
+    "image": "covers/kawaii-tsum-002.svg"
   },
   {
     "id": "kawaii-bear-003",
@@ -980,7 +982,8 @@
       "黄油",
       "日系"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/kawaii-bear-003.svg"
   },
   {
     "id": "kawaii-frog-004",
@@ -1311,7 +1314,8 @@
       "绿色",
       "可爱"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/kawaii-frog-004.svg"
   },
   {
     "id": "kawaii-uni-005",
@@ -1480,7 +1484,8 @@
       "梦幻",
       "彩虹"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/kawaii-uni-005.svg"
   },
   {
     "id": "kawaii-star-006",
@@ -1639,6 +1644,7 @@
       "入门",
       "可爱"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/kawaii-star-006.svg"
   }
 ]

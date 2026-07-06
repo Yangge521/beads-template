@@ -15,6 +15,8 @@ export interface BeadTemplate {
   difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
   source: string;
+  /** 封面图路径（SVG/JPG/PNG），相对 public 根；缺省时回退到 PixelGrid 缩略图 */
+  image?: string;
 }
 
 export interface Category {

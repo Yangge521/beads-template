@@ -200,7 +200,8 @@
       "萌宠",
       "入门"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/animals-cat-001.svg"
   },
   {
     "id": "animals-panda-002",
@@ -382,7 +383,8 @@
       "国宝",
       "黑白"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/animals-panda-002.svg"
   },
   {
     "id": "animals-dog-003",
@@ -563,7 +565,8 @@
       "萌宠",
       "网红"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/animals-dog-003.svg"
   },
   {
     "id": "animals-bunny-004",
@@ -745,7 +748,8 @@
       "萌宠",
       "粉色"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/animals-bunny-004.svg"
   },
   {
     "id": "animals-fox-005",
@@ -1071,7 +1075,8 @@
       "日系",
       "橙色"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/animals-fox-005.svg"
   },
   {
     "id": "animals-penguin-006",
@@ -1402,6 +1407,7 @@
       "可爱",
       "黑白"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/animals-penguin-006.svg"
   }
 ]

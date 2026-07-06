@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered, GitCompare } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered, GitCompare, Hash } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { exportTemplateToPNG } from '../utils/exportPNG';
 import { exportTemplateToSVG } from '../utils/exportSVG';
@@ -94,6 +94,7 @@ export default function DetailPage({
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [showTop, setShowTop] = useState(false);
   const [showGridLines, setShowGridLines] = useState(false);
+  const [showColorCode, setShowColorCode] = useState(false);
   const [progressMode, setProgressMode] = useState(false);
   const [transforms, setTransforms] = useState<TransformType[]>([]);
   const [copiedAll, setCopiedAll] = useState(false);
@@ -625,6 +626,18 @@ export default function DetailPage({
 
         <p className="detail-page__description">{template.description}</p>
 
+        <div className="detail-page__split">
+          {template.image && (
+            <aside className="detail-page__cover" aria-label={t('detail.cover.ariaLabel', { name: template.name })}>
+              <img
+                src={`${import.meta.env.BASE_URL}${template.image}`}
+                alt={template.name}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <p className="detail-page__cover-label">{t('detail.coverLabel')}</p>
+            </aside>
+          )}
+
         <div className="detail-page__pixel-wrapper">
           <div className="detail-page__pixel-controls">
             <button
@@ -729,6 +742,16 @@ export default function DetailPage({
                 <RefreshCw size={16} />
               </button>
             </div>
+            <button
+              type="button"
+              className={`detail-page__zoom-btn ${showColorCode ? 'detail-page__zoom-btn--active' : ''}`}
+              onClick={() => setShowColorCode(v => !v)}
+              aria-pressed={showColorCode}
+              aria-label={t('detail.colorCode.toggle.ariaLabel')}
+              title={t('detail.colorCode.toggle.title')}
+            >
+              <Hash size={16} />
+            </button>
           </div>
 
           {progressMode && (
@@ -765,12 +788,14 @@ export default function DetailPage({
                 grid={displayGrid}
                 colors={displayColors}
                 showGridLines={showGridLines}
+                showColorCode={showColorCode}
                 interactive={progressMode}
                 completedCells={completedCells}
                 onCellClick={onToggleCell}
               />
             </div>
           </div>
+        </div>
         </div>
 
         <div className="detail-page__stats">

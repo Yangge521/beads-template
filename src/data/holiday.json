@@ -226,7 +226,8 @@
       "圣诞树",
       "节日"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/holiday-christmas-001.svg"
   },
   {
     "id": "holiday-lantern-002",
@@ -399,7 +400,8 @@
       "灯笼",
       "元宵"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/holiday-lantern-002.svg"
   },
   {
     "id": "holiday-halloween-003",
@@ -725,7 +727,8 @@
       "南瓜",
       "搞怪"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/holiday-halloween-003.svg"
   },
   {
     "id": "holiday-snowman-004",
@@ -1051,7 +1054,8 @@
       "雪人",
       "白色"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/holiday-snowman-004.svg"
   },
   {
     "id": "holiday-valentine-005",
@@ -1210,7 +1214,8 @@
       "爱心",
       "礼物"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/holiday-valentine-005.svg"
   },
   {
     "id": "holiday-easter-006",
@@ -1536,6 +1541,7 @@
       "彩蛋",
       "花纹"
     ],
-    "source": "原创设计"
+    "source": "原创设计",
+    "image": "covers/holiday-easter-006.svg"
   }
 ]

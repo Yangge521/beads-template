@@ -18,6 +18,19 @@ interface PixelGridProps {
   ariaTotalBeads?: number;
   ariaCols?: number;
   ariaRows?: number;
+  /** 在格子内显示颜色编号（1/2/3…，对应色卡序号） */
+  showColorCode?: boolean;
+}
+
+/** 根据背景 hex 计算相对亮度，返回适合的前景色（黑/白） */
+function pickContrastText(hex: string): string {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  // 相对亮度（sRGB 近似）
+  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return L > 0.55 ? '#111' : '#fff';
 }
 
 export default function PixelGrid({
@@ -31,6 +44,7 @@ export default function PixelGrid({
   ariaTotalBeads,
   ariaCols,
   ariaRows,
+  showColorCode = false,
 }: PixelGridProps) {
   const { t } = useTranslation();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -132,6 +146,15 @@ export default function PixelGrid({
             >
               {isCompleted && (
                 <span className="pixel-cell__check" aria-hidden="true">✓</span>
+              )}
+              {showColorCode && !isEmpty && !isCompleted && (
+                <span
+                  className="pixel-cell__code"
+                  aria-hidden="true"
+                  style={{ color: pickContrastText(color.hex) }}
+                >
+                  {cellValue}
+                </span>
               )}
             </div>
           );
