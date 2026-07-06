@@ -167,7 +167,7 @@ export default function DetailPage({
     [template, displayGrid, displayColors]
   );
   const maxColorCount = useMemo(
-    () => displayColors.reduce((m, c) => Math.max(m, c.count), 0),
+    () => displayColors.reduce((m, c) => Math.max(m, c.count ?? 0), 0),
     [displayColors]
   );
   const sortedColors = useMemo(() => {
@@ -181,7 +181,7 @@ export default function DetailPage({
         break;
       case 'count':
       default:
-        list.sort((a, b) => b.count - a.count);
+        list.sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
         break;
     }
     return list;
@@ -241,7 +241,7 @@ export default function DetailPage({
     if (!template) return;
     const colors = getCorrectedColors(template);
     const text = colors
-      .map(c => `${c.hex}\t${c.name}\t${t('common.beadsUnitShort', { count: c.count })}`)
+      .map(c => `${c.hex}\t${c.name}\t${t('common.beadsUnitShort', { count: c.count ?? 0 })}`)
       .join('\n');
     try {
       await navigator.clipboard.writeText(text);
@@ -977,8 +977,8 @@ export default function DetailPage({
           </div>
           <div className="detail-page__palette-grid">
             {sortedColors.map((color, i) => {
-              const pct = maxColorCount > 0 ? (color.count / maxColorCount) * 100 : 0;
-              const ratio = beadCount > 0 ? ((color.count / beadCount) * 100).toFixed(1) : '0';
+              const pct = maxColorCount > 0 ? ((color.count ?? 0) / maxColorCount) * 100 : 0;
+              const ratio = beadCount > 0 ? (((color.count ?? 0) / beadCount) * 100).toFixed(1) : '0';
               return (
                 <button
                   key={i}
@@ -986,7 +986,7 @@ export default function DetailPage({
                   className="detail-page__swatch"
                   onClick={() => handleCopyHex(color.hex)}
                   title={t('detail.swatch.copyTitle', { hex: color.hex })}
-                  aria-label={t('detail.swatch.ariaLabel', { hex: color.hex, name: color.name, count: color.count })}
+                  aria-label={t('detail.swatch.ariaLabel', { hex: color.hex, name: color.name, count: color.count ?? 0 })}
                 >
                   <div
                     className="detail-page__swatch-color"
@@ -1048,9 +1048,9 @@ export default function DetailPage({
                   </td>
                   <td>{color.hex}</td>
                   <td>{color.name}</td>
-                  <td>{t('detail.print.cell.beads', { count: color.count })}</td>
+                  <td>{t('detail.print.cell.beads', { count: color.count ?? 0 })}</td>
                   <td>
-                    {beadCount > 0 ? ((color.count / beadCount) * 100).toFixed(1) : '0'}%
+                    {beadCount > 0 ? (((color.count ?? 0) / beadCount) * 100).toFixed(1) : '0'}%
                   </td>
                 </tr>
               ))}

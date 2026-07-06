@@ -57,7 +57,7 @@ export function exportColorListCSV(
 
   // 数据行
   colors.forEach((color, idx) => {
-    const count = color.count;
+    const count = color.count ?? 0;
     const ratio = totalBeads > 0 ? ((count / totalBeads) * 100).toFixed(1) + '%' : '0%';
     // 位置坐标：如果太多则截断显示前 50 个 + 省略号
     const posList = positions[idx];

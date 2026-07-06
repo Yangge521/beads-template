@@ -33,7 +33,7 @@ function toCompact(tpl: BeadTemplate): CompactTemplate {
     c: tpl.category,
     d: tpl.description,
     g: tpl.grid,
-    cs: tpl.colors.map(c => [c.hex, c.name, c.count]),
+    cs: tpl.colors.map(c => [c.hex, c.name, c.count ?? 0]),
     b: tpl.beadCount,
     df: tpl.difficulty,
     t: tpl.tags,

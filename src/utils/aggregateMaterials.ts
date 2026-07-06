@@ -20,13 +20,14 @@ export function aggregateMaterials(templates: BeadTemplate[]): MaterialSummaryIt
     const colors = getCorrectedColors(tpl);
     const seen = new Set<string>();
     for (const c of colors) {
-      if (c.count <= 0) continue;
+      const count = c.count ?? 0;
+      if (count <= 0) continue;
       const key = c.hex.toLowerCase();
       if (!map.has(key)) {
         map.set(key, { hex: c.hex, name: c.name, count: 0, templateCount: 0 });
       }
       const item = map.get(key)!;
-      item.count += c.count;
+      item.count += count;
       if (!seen.has(key)) {
         item.templateCount++;
         seen.add(key);

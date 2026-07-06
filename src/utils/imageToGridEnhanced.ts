@@ -269,7 +269,7 @@ export function pixelizeImageEnhanced(
         // findClosestColor 返回 hex，需要找到索引
         const colorIdx = bestIdx ? paletteHex.indexOf(bestIdx) : 0;
         row.push(colorIdx + 1);
-        colorInfos[colorIdx].count++;
+        colorInfos[colorIdx].count = (colorInfos[colorIdx].count ?? 0) + 1;
 
         // 计算量化误差
         const target = paletteRgb[colorIdx];
@@ -320,7 +320,7 @@ export function pixelizeImageEnhanced(
           }
         }
         row.push(bestIdx + 1);
-        colorInfos[bestIdx].count++;
+        colorInfos[bestIdx].count = (colorInfos[bestIdx].count ?? 0) + 1;
       }
       grid.push(row);
     }

@@ -373,12 +373,12 @@ export default function UploadPage({
                       <div
                         key={i}
                         className="upload-page__palette-swatch"
-                        title={t('upload.palette.swatchTitle', { name: c.name, hex: c.hex, count: c.count })}
+                        title={t('upload.palette.swatchTitle', { name: c.name, hex: c.hex, count: c.count ?? 0 })}
                       >
                         <span className="upload-page__palette-color" style={{ backgroundColor: c.hex }} />
                         <span className="upload-page__palette-info">
                           <span className="upload-page__palette-hex">{c.hex}</span>
-                          <span className="upload-page__palette-count">{t('upload.palette.count', { count: c.count })}</span>
+                          <span className="upload-page__palette-count">{t('upload.palette.count', { count: c.count ?? 0 })}</span>
                         </span>
                       </div>
                     ))}
