@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Search, Heart, Sun, Moon, X, Palette, Upload, Clock, Trash2, Pencil, Sparkles, Share2 } from 'lucide-react';
+import { Search, Heart, Sun, Moon, X, Palette, Upload, Clock, Trash2, Pencil, Sparkles, Share2, User } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { useSearchHistory } from '../hooks/useSearchHistory';
 
@@ -16,6 +16,8 @@ interface NavbarProps {
   onNavigateCommunity: () => void;
   onNavigateHome: () => void;
   searchQuery: string;
+  /** 个人中心导航回调（可选，未传时使用默认 hash 导航） */
+  onNavigateProfile?: () => void;
 }
 
 export default function Navbar({
@@ -30,6 +32,7 @@ export default function Navbar({
   onNavigateAi,
   onNavigateCommunity,
   onNavigateHome,
+  onNavigateProfile,
   searchQuery,
 }: NavbarProps) {
   const [query, setQuery] = useState(searchQuery);
@@ -254,6 +257,16 @@ export default function Navbar({
           title={t('nav.colorRef.title')}
         >
           <Palette size={20} />
+        </button>
+
+        <button
+          type="button"
+          className="navbar__action-btn"
+          onClick={() => (onNavigateProfile ? onNavigateProfile() : (window.location.hash = 'profile'))}
+          aria-label={t('nav.profile.ariaLabel')}
+          title={t('nav.profile.title')}
+        >
+          <User size={20} />
         </button>
 
         <button

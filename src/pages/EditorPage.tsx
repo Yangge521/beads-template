@@ -4,7 +4,8 @@ import {
   ArrowLeft, Brush, Eraser, PaintBucket, Pipette, Undo2, Redo2,
   Trash2, Save, Plus, Minus, Grid3x3, Check, X,
   Minus as LineIcon, Square, Circle, SquareDashed, CircleDashed,
-  FlipHorizontal, FlipVertical, Grid2x2, Image as ImageIcon
+  FlipHorizontal, FlipVertical, Grid2x2, Image as ImageIcon,
+  RotateCw, RotateCcw, Download
 } from 'lucide-react';
 import type { BeadTemplate, ColorInfo } from '../types/bead';
 import { BEAD_COLOR_GROUPS } from '../data/beadColors';
@@ -18,6 +19,10 @@ import { floodFill, resizeGrid, compactColors, countColorUsage } from '../utils/
 import { drawShapeWithSymmetry, paintWithSymmetry } from '../utils/shapeEdit';
 import type { ShapeTool, SymmetryMode } from '../utils/shapeEdit';
 import { getPresetShapeById, stampShapeCenter } from '../utils/presetShapes';
+import { applyTransform, type TransformType } from '../utils/transformGrid';
+import { exportTemplateToPNG } from '../utils/exportPNG';
+import { exportTemplateToSVG } from '../utils/exportSVG';
+import { exportColorListCSV } from '../utils/exportCSV';
 
 type ToolMode = 'paint' | 'erase' | 'fill' | 'picker' | 'line' | 'rect' | 'rectFill' | 'circle' | 'circleFill';
 
@@ -56,6 +61,8 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
   // 参考底图
   const [referenceImg, setReferenceImg] = useState<string | null>(null);
   const [showReference, setShowReference] = useState(false);
+  // 导出下拉菜单
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // 拖拽绘制状态
   const isDrawing = useRef(false);
@@ -266,6 +273,57 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
     showToast(t('editor.shapeLib.stamped', { name: t(shape.nameKey) }), 'success');
   }, [grid, palette, selectedColorIdx, commit, markDirty, showToast, t]);
 
+  // 整体变换（翻转/旋转）
+  const handleTransform = useCallback((type: TransformType) => {
+    const next = applyTransform(grid, type);
+    commit(next);
+    markDirty();
+  }, [grid, commit, markDirty]);
+
+  // 导出当前编辑结果为 PNG/SVG/CSV
+  const handleExport = useCallback(async (format: 'png' | 'svg' | 'csv') => {
+    if (totalBeads === 0) {
+      showToast(t('editor.emptyGrid'), 'info');
+      return;
+    }
+    const { grid: compactedGrid, colors: compactedColors } = compactColors(grid, palette);
+    const usage = countColorUsage(compactedGrid);
+    const finalColors = compactedColors.map((c, i) => ({ ...c, count: usage.get(i + 1) || 0 }));
+    const name = templateName.trim() || t('editor.untitled');
+    const tpl: BeadTemplate = {
+      id: 'editor-export',
+      name,
+      category: 'custom',
+      description: '',
+      grid: compactedGrid,
+      colors: finalColors,
+      beadCount: totalBeads,
+      difficulty: 'easy',
+      tags: ['custom', 'editor'],
+      source: t('editor.source'),
+    };
+    try {
+      if (format === 'png') {
+        await exportTemplateToPNG(tpl);
+      } else if (format === 'svg') {
+        exportTemplateToSVG(tpl);
+      } else {
+        exportColorListCSV(tpl, {
+          headerNo: t('detail.csv.headerNo'),
+          headerHex: t('detail.csv.headerHex'),
+          headerName: t('detail.csv.headerName'),
+          headerCount: t('detail.csv.headerCount'),
+          headerRatio: t('detail.csv.headerRatio'),
+          headerPositions: t('detail.csv.headerPositions'),
+          totalLabel: t('detail.csv.totalLabel'),
+        }, t('detail.csv.fileNameSuffix'));
+      }
+      showToast(t(`editor.export.${format}Success`), 'success');
+    } catch {
+      showToast(t(`editor.export.${format}Failed`), 'error');
+    }
+  }, [grid, palette, totalBeads, templateName, t, showToast]);
+
   // 保存模板
   const handleSave = useCallback(() => {
     const name = templateName.trim() || t('editor.untitled');
@@ -397,6 +455,35 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
             <Save size={18} />
             {t('editor.save')}
           </button>
+          {/* 导出下拉菜单 */}
+          <div className="editor-page__export-wrapper">
+            <button
+              type="button"
+              className="editor-page__btn editor-page__btn--ghost"
+              onClick={() => setShowExportMenu(v => !v)}
+              title={t('editor.export.title')}
+              aria-label={t('editor.export.title')}
+              aria-expanded={showExportMenu}
+            >
+              <Download size={18} />
+            </button>
+            {showExportMenu && (
+              <>
+                <div className="editor-page__export-overlay" onClick={() => setShowExportMenu(false)} aria-hidden="true" />
+                <div className="editor-page__export-menu" role="menu">
+                  <button type="button" className="editor-page__export-item" role="menuitem" onClick={() => { handleExport('png'); setShowExportMenu(false); }}>
+                    PNG
+                  </button>
+                  <button type="button" className="editor-page__export-item" role="menuitem" onClick={() => { handleExport('svg'); setShowExportMenu(false); }}>
+                    SVG
+                  </button>
+                  <button type="button" className="editor-page__export-item" role="menuitem" onClick={() => { handleExport('csv'); setShowExportMenu(false); }}>
+                    CSV
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -488,6 +575,46 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
             aria-hidden="true"
             tabIndex={-1}
           />
+          <div className="editor-page__toolbar-divider" aria-hidden="true" />
+          {/* 整体变换：翻转/旋转 */}
+          <div className="editor-page__symmetry-group" role="group" aria-label={t('editor.transform.label')}>
+            <button
+              type="button"
+              className="editor-page__btn editor-page__btn--ghost"
+              onClick={() => handleTransform('flipH')}
+              title={t('editor.transform.flipH')}
+              aria-label={t('editor.transform.flipH')}
+            >
+              <FlipHorizontal size={18} />
+            </button>
+            <button
+              type="button"
+              className="editor-page__btn editor-page__btn--ghost"
+              onClick={() => handleTransform('flipV')}
+              title={t('editor.transform.flipV')}
+              aria-label={t('editor.transform.flipV')}
+            >
+              <FlipVertical size={18} />
+            </button>
+            <button
+              type="button"
+              className="editor-page__btn editor-page__btn--ghost"
+              onClick={() => handleTransform('rotate90')}
+              title={t('editor.transform.rotate90')}
+              aria-label={t('editor.transform.rotate90')}
+            >
+              <RotateCw size={18} />
+            </button>
+            <button
+              type="button"
+              className="editor-page__btn editor-page__btn--ghost"
+              onClick={() => handleTransform('rotate270')}
+              title={t('editor.transform.rotate270')}
+              aria-label={t('editor.transform.rotate270')}
+            >
+              <RotateCcw size={18} />
+            </button>
+          </div>
           <div className="editor-page__toolbar-divider" aria-hidden="true" />
           <button
             type="button"

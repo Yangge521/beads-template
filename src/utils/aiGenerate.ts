@@ -320,6 +320,38 @@ export function generatePresetShape(
 }
 
 /**
+ * 根据预设形状生成模板（使用自定义配色方案）
+ * @param palette 自定义颜色数组（hex）
+ * @param colorNames 对应颜色名称
+ */
+export function generatePresetShapeWithStyle(
+  shape: PresetShape,
+  size = 16,
+  palette: string[] = [],
+  colorNames: string[] = []
+): PresetGenerateResult {
+  const safeSize = Math.max(8, Math.min(40, Math.floor(size)));
+  const builder = SHAPE_BUILDERS[shape];
+  const grid = builder(safeSize);
+  // 使用自定义配色覆盖默认 PRESET_COLORS
+  const customColors: ColorInfo[] = palette.length > 0
+    ? palette.map((hex, i) => ({ hex, name: colorNames[i] || `color${i + 1}`, count: 0 }))
+    : PRESET_COLORS;
+  const usedIdx = new Set<number>();
+  for (const row of grid) for (const v of row) if (v > 0) usedIdx.add(v);
+  const colors: ColorInfo[] = [];
+  for (const idx of usedIdx) {
+    const base = customColors[idx - 1];
+    if (base) {
+      let count = 0;
+      for (const row of grid) for (const v of row) if (v === idx) count++;
+      colors.push({ hex: base.hex, name: base.name, count });
+    }
+  }
+  return { grid, colors, shape };
+}
+
+/**
  * 从提示词中提取目标网格尺寸（如 "32x32" "16格"）
  */
 export function extractGridSize(prompt: string, defaultSize = 16): number {

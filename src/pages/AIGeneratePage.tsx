@@ -3,11 +3,13 @@ import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
 import { useToast } from '../components/ToastContainer';
-import { ArrowLeft, Sparkles, Wand2, Check, Shuffle, Layers, Image as ImageIcon, Upload } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wand2, Check, Shuffle, Layers, Image as ImageIcon, Upload, History, X, Palette } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
-import { matchTemplatesByPrompt, matchPresetShape, generatePresetShape, extractGridSize } from '../utils/aiGenerate';
+import { matchTemplatesByPrompt, matchPresetShape, generatePresetShape, generatePresetShapeWithStyle, extractGridSize } from '../utils/aiGenerate';
 import type { PresetShape } from '../utils/aiGenerate';
 import { analyzeImage } from '../utils/imageToGrid';
+import { STYLE_PRESETS } from '../data/stylePresets';
+import { useAIGenerateHistory } from '../hooks/useAIGenerateHistory';
 
 interface AIGeneratePageProps {
   onBack: () => void;
@@ -72,6 +74,13 @@ export default function AIGeneratePage({
   const [presetSize, setPresetSize] = useState(16);
   const [selectedShape, setSelectedShape] = useState<PresetShape | null>(null);
   const [compareList, setCompareList] = useState<{ grid: number[][]; colors: BeadTemplate['colors']; label: string }[]>([]);
+  // 风格预设
+  const [selectedStyleId, setSelectedStyleId] = useState<string>('classic');
+  // 批量生成结果
+  const [variants, setVariants] = useState<{ grid: number[][]; colors: BeadTemplate['colors']; label: string }[]>([]);
+  // 历史记录面板
+  const [showHistory, setShowHistory] = useState(false);
+  const { history, addHistory, removeHistory, clearHistory } = useAIGenerateHistory();
   // 图生图状态
   const [imageSize, setImageSize] = useState(24);
   const [analyzing, setAnalyzing] = useState(false);
@@ -86,13 +95,16 @@ export default function AIGeneratePage({
     if (mode !== 'preset' || !selectedShape) return;
     if (debounceRef.current !== null) clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
-      const r = generatePresetShape(selectedShape, presetSize);
+      const stylePreset = STYLE_PRESETS.find(s => s.id === selectedStyleId);
+      const r = stylePreset && selectedStyleId !== 'classic'
+        ? generatePresetShapeWithStyle(selectedShape, presetSize, stylePreset.palette, stylePreset.colorNames)
+        : generatePresetShape(selectedShape, presetSize);
       setResult({ grid: r.grid, colors: r.colors, shape: r.shape });
     }, 200);
     return () => {
       if (debounceRef.current !== null) clearTimeout(debounceRef.current);
     };
-  }, [presetSize, selectedShape, mode]);
+  }, [presetSize, selectedShape, mode, selectedStyleId]);
 
   const handleGenerate = useCallback(() => {
     if (!prompt.trim()) {
@@ -145,13 +157,16 @@ export default function AIGeneratePage({
     setSelectedShape(shape);
     setGenerating(true);
     setTimeout(() => {
-      const r = generatePresetShape(shape, presetSize);
+      const stylePreset = STYLE_PRESETS.find(s => s.id === selectedStyleId);
+      const r = stylePreset && selectedStyleId !== 'classic'
+        ? generatePresetShapeWithStyle(shape, presetSize, stylePreset.palette, stylePreset.colorNames)
+        : generatePresetShape(shape, presetSize);
       setResult({ grid: r.grid, colors: r.colors, shape: r.shape });
       setMatchedTemplates([]);
       setGenerating(false);
       showToast(t('ai.generated.preset'), 'success');
     }, 300);
-  }, [presetSize, showToast, t]);
+  }, [presetSize, selectedStyleId, showToast, t]);
 
   // 加入对比栏
   const handleAddToCompare = useCallback(() => {
@@ -217,6 +232,60 @@ export default function AIGeneratePage({
     setPresetSize(randomSize);
     handlePresetClick(random);
   }, [handlePresetClick]);
+
+  // 批量生成 4 个变体（不同形状 + 不同风格）
+  const handleBatchGenerate = useCallback(() => {
+    const shapes: PresetShape[] = ['heart', 'star', 'smile', 'flower', 'diamond', 'cat'];
+    // 随机选 4 个不同形状
+    const shuffled = [...shapes].sort(() => Math.random() - 0.5).slice(0, 4);
+    const size = extractGridSize(prompt, presetSize);
+    const stylePreset = STYLE_PRESETS.find(s => s.id === selectedStyleId);
+    const newVariants = shuffled.map(shape => {
+      const r = stylePreset && selectedStyleId !== 'classic'
+        ? generatePresetShapeWithStyle(shape, size, stylePreset.palette, stylePreset.colorNames)
+        : generatePresetShape(shape, size);
+      return {
+        grid: r.grid,
+        colors: r.colors,
+        label: t(`ai.shape.${shape}`),
+      };
+    });
+    setVariants(newVariants);
+    showToast(t('ai.batchGenerated', { n: 4 }), 'success');
+  }, [prompt, presetSize, selectedStyleId, t, showToast]);
+
+  // 从历史记录恢复
+  const handleRestoreHistory = useCallback((item: typeof history[number]) => {
+    setResult({
+      grid: item.template.grid,
+      colors: item.template.colors,
+    });
+    setPrompt(item.prompt);
+    setMode(item.mode);
+    setSelectedShape(null);
+    setMatchedTemplates([]);
+    setShowHistory(false);
+    showToast(t('ai.history.restored', { name: item.templateName }), 'success');
+  }, [showToast, t]);
+
+  // 保存当前结果到历史
+  const saveToHistory = useCallback(() => {
+    if (!result) return;
+    const name = prompt.trim().slice(0, 30) || t('ai.defaultName');
+    addHistory({
+      prompt: prompt.trim(),
+      mode,
+      templateName: name,
+      template: {
+        grid: result.grid,
+        colors: result.colors,
+        beadCount: result.grid.flat().filter(v => v > 0).length,
+        rows: result.grid.length,
+        cols: result.grid[0]?.length || 0,
+      },
+    });
+    showToast(t('ai.history.saved'), 'success');
+  }, [result, prompt, mode, addHistory, t, showToast]);
 
   // 图生图：上传图片分析
   const handleImageFile = useCallback(async (file: File) => {
@@ -443,7 +512,133 @@ export default function AIGeneratePage({
                 <Shuffle size={18} aria-hidden="true" />
                 {t('ai.shuffle')}
               </button>
+              <button
+                type="button"
+                className="ai-page__btn ai-page__btn--secondary"
+                onClick={handleBatchGenerate}
+                disabled={generating}
+                title={t('ai.batchGenerate')}
+              >
+                <Layers size={18} aria-hidden="true" />
+                {t('ai.batchGenerate')}
+              </button>
+              <button
+                type="button"
+                className="ai-page__btn ai-page__btn--secondary"
+                onClick={saveToHistory}
+                disabled={!result}
+                title={t('ai.history.save')}
+              >
+                <History size={18} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`ai-page__btn ai-page__btn--secondary ${showHistory ? 'ai-page__btn--active' : ''}`}
+                onClick={() => setShowHistory(v => !v)}
+                title={t('ai.history.title')}
+                aria-expanded={showHistory}
+              >
+                <History size={18} aria-hidden="true" />
+                {history.length > 0 && (
+                  <span className="ai-page__badge">{history.length}</span>
+                )}
+              </button>
             </div>
+
+            {/* 风格预设选择器 */}
+            <div className="ai-page__style-presets">
+              <label className="ai-page__label">
+                <Palette size={14} aria-hidden="true" />
+                {t('ai.style.label')}
+              </label>
+              <div className="ai-page__style-list">
+                {STYLE_PRESETS.map(s => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className={`ai-page__style-chip ${selectedStyleId === s.id ? 'ai-page__style-chip--active' : ''}`}
+                    onClick={() => setSelectedStyleId(s.id)}
+                    title={s.description}
+                  >
+                    <span aria-hidden="true">{s.icon}</span>
+                    {t('ai.style.' + s.id)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 批量生成结果 */}
+            {variants.length > 0 && (
+              <div className="ai-page__variants">
+                <div className="ai-page__variants-header">
+                  <h3 className="ai-page__matched-title">{t('ai.variants.title')}</h3>
+                  <button type="button" className="ai-page__btn ai-page__btn--secondary" onClick={() => setVariants([])}>
+                    <X size={14} />
+                  </button>
+                </div>
+                <div className="ai-page__variants-grid">
+                  {variants.map((v, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="ai-page__variant-item"
+                      onClick={() => { setResult({ grid: v.grid, colors: v.colors }); showToast(t('ai.variantSelected'), 'success'); }}
+                      title={v.label}
+                    >
+                      <PixelGrid grid={v.grid} colors={v.colors} />
+                      <span className="ai-page__variant-label">{v.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 历史记录面板 */}
+            {showHistory && (
+              <div className="ai-page__history-panel">
+                <div className="ai-page__history-header">
+                  <h3 className="ai-page__matched-title">{t('ai.history.title')}</h3>
+                  {history.length > 0 && (
+                    <button type="button" className="ai-page__btn ai-page__btn--secondary" onClick={clearHistory}>
+                      {t('ai.history.clear')}
+                    </button>
+                  )}
+                </div>
+                {history.length === 0 ? (
+                  <p className="ai-page__history-empty">{t('ai.history.empty')}</p>
+                ) : (
+                  <div className="ai-page__history-list">
+                    {history.map(item => (
+                      <div key={item.id} className="ai-page__history-item">
+                        <button
+                          type="button"
+                          className="ai-page__history-thumb"
+                          onClick={() => handleRestoreHistory(item)}
+                          title={item.templateName}
+                        >
+                          <PixelGrid grid={item.template.grid} colors={item.template.colors} />
+                        </button>
+                        <div className="ai-page__history-info">
+                          <span className="ai-page__history-name">{item.templateName}</span>
+                          <span className="ai-page__history-prompt">{item.prompt}</span>
+                          <span className="ai-page__history-date">
+                            {new Date(item.createdAt).toLocaleString(lang === 'en' ? 'en-US' : 'zh-CN')}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="ai-page__history-remove"
+                          onClick={() => removeHistory(item.id)}
+                          aria-label={t('ai.history.remove')}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {matchedTemplates.length > 0 && (
               <div className="ai-page__matched">

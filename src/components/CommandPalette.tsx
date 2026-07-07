@@ -7,7 +7,9 @@ import {
   Sun, Moon, Languages, X, CornerDownLeft, ChevronUp, ChevronDown,
 } from 'lucide-react';
 import type { BeadTemplate } from '../types/bead';
-import { multiFieldPinyinMatch } from '../utils/pinyinSearch';
+
+// 拼音匹配器类型：首屏用简单 includes，pinyinSearch 异步加载后升级
+type PinyinMatcher = (fields: (string | undefined | null)[], query: string) => boolean;
 
 interface Command {
   id: string;
@@ -37,6 +39,20 @@ export default function CommandPalette({
   open, onClose, templates, onNavigate, onToggleTheme, onToggleLanguage, onSearch,
 }: CommandPaletteProps) {
   const { t, lang } = useTranslation();
+
+  // 拼音匹配器：懒加载 pinyinSearch，避免首屏加载 pinyin-pro
+  const simpleMatch = useCallback((fields: (string | undefined | null)[], q: string): boolean => {
+    const ql = q.toLowerCase();
+    return fields.some(f => f != null && f.toLowerCase().includes(ql));
+  }, []);
+  const [pinyinMatcher, setPinyinMatcher] = useState<PinyinMatcher>(simpleMatch);
+  useEffect(() => {
+    let cancelled = false;
+    import('../utils/pinyinSearch').then(m => {
+      if (!cancelled) setPinyinMatcher(() => m.multiFieldPinyinMatch);
+    }).catch(() => { /* 加载失败保持简单匹配 */ });
+    return () => { cancelled = true; };
+  }, []);
   const { theme } = useTheme();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -64,9 +80,9 @@ export default function CommandPalette({
     const q = query.trim().toLowerCase();
     if (!q) return baseCommands;
 
-    // 同时匹配模板（支持拼音搜索）
+    // 同时匹配模板（支持拼音搜索，懒加载升级）
     const matchedTemplates: Command[] = templates
-      .filter(tpl => multiFieldPinyinMatch([tpl.name, ...tpl.tags, tpl.description], q))
+      .filter(tpl => pinyinMatcher([tpl.name, ...tpl.tags, tpl.description], q))
       .slice(0, 8)
       .map(tpl => ({
         id: `tpl-${tpl.id}`,
@@ -84,7 +100,7 @@ export default function CommandPalette({
     );
 
     return [...matchedBase, ...matchedTemplates];
-  }, [query, baseCommands, templates, onNavigate]);
+  }, [query, baseCommands, templates, onNavigate, pinyinMatcher]);
 
   // 重置选中
   useEffect(() => {

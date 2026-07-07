@@ -1,13 +1,15 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import HomePage, { type SortKey, type DifficultyFilter, type GridSizeFilter } from './pages/HomePage';
-import DetailPage from './pages/DetailPage';
-import FavoritesPage from './pages/FavoritesPage';
-import ColorReferencePage from './pages/ColorReferencePage';
-import UploadPage from './pages/UploadPage';
-import EditorPage from './pages/EditorPage';
-import AIGeneratePage from './pages/AIGeneratePage';
-import CommunityPage from './pages/CommunityPage';
-import ComparePage from './pages/ComparePage';
+// 非首屏页面懒加载，减小首屏 bundle 体积
+const DetailPage = lazy(() => import('./pages/DetailPage'));
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
+const ColorReferencePage = lazy(() => import('./pages/ColorReferencePage'));
+const UploadPage = lazy(() => import('./pages/UploadPage'));
+const EditorPage = lazy(() => import('./pages/EditorPage'));
+const AIGeneratePage = lazy(() => import('./pages/AIGeneratePage'));
+const CommunityPage = lazy(() => import('./pages/CommunityPage'));
+const ComparePage = lazy(() => import('./pages/ComparePage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer, { useToast } from './components/ToastContainer';
 import ShortcutHelp from './components/ShortcutHelp';
@@ -59,9 +61,9 @@ const builtinTemplates: BeadTemplate[] = [
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
   const { favorites, isFavorite, toggleFavorite: toggleFav, clearFavorites } = useFavorites();
-  const { isLiked, toggleLike } = useLikes();
-  const { getRating, setRating } = useRatings();
-  const { getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
+  const { likes, isLiked, toggleLike } = useLikes();
+  const { ratings, getRating, setRating } = useRatings();
+  const { progress, getCompleted, toggleCell, clearProgress, getProgressPercent } = useProgress();
   const { inventory, addColor: addInventoryColor, removeColor: removeInventoryColor, clearInventory, setCount: setInventoryCount } = useInventory();
   const { compareIds, addToCompare, removeFromCompare, clearCompare, isInCompare } = useCompare();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
@@ -316,6 +318,8 @@ function AppContent() {
       document.title = t('community.title');
     } else if (routeParts[0] === 'compare') {
       document.title = t('compare.title');
+    } else if (routeParts[0] === 'profile') {
+      document.title = t('profile.app.title');
     } else if (routeParts[0] === 'template') {
       document.title = t('app.title.notFound');
     } else {
@@ -519,7 +523,36 @@ function AppContent() {
         searchQuery={searchQuery}
       />
     );
-  } else if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload', 'editor', 'ai', 'community', 'compare'].includes(routeParts[0])) {
+  } else if (routeParts[0] === 'profile') {
+    page = (
+      <ProfilePage
+        onBack={goHome}
+        onNavigate={handleNavigate}
+        templates={allTemplates}
+        favorites={favorites}
+        likes={likes}
+        ratings={ratings}
+        recentlyViewed={recentlyViewed}
+        customTemplates={customTemplates}
+        inventory={inventory}
+        progress={progress}
+        onExportData={handleExportData}
+        onImportData={handleImportData}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        favoritesCount={favorites.length}
+        onNavigateFavorites={handleNavigateFavorites}
+        onNavigateColorRef={handleNavigateColorRef}
+        onNavigateUpload={handleNavigateUpload}
+        onNavigateEditor={handleNavigateEditor}
+        onNavigateAi={handleNavigateAi}
+        onNavigateCommunity={handleNavigateCommunity}
+        onNavigateHome={goHome}
+        searchQuery={searchQuery}
+        onSearch={handleSearch}
+      />
+    );
+  } else if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload', 'editor', 'ai', 'community', 'compare', 'profile'].includes(routeParts[0])) {
     // 未知路由：显示 404 空状态
     page = (
       <div className="page">
@@ -570,7 +603,9 @@ function AppContent() {
 
   return (
     <>
-      <PageTransition pageKey={hash}>{page}</PageTransition>
+      <Suspense fallback={<PageLoader />}>
+        <PageTransition pageKey={hash}>{page}</PageTransition>
+      </Suspense>
       <button
         type="button"
         className="cmd-fab"
@@ -606,6 +641,15 @@ function SkipLink() {
     <button type="button" className="skip-link" onClick={handleSkip}>
       {t('common.skipToMain')}
     </button>
+  );
+}
+
+/** 懒加载页面切换时的占位 loading */
+function PageLoader() {
+  return (
+    <div className="page-loader" role="status" aria-live="polite">
+      <div className="page-loader__spinner" aria-hidden="true" />
+    </div>
   );
 }
 

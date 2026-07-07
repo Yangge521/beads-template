@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { BeadTemplate, Category } from '../types/bead';
 import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
@@ -6,9 +6,11 @@ import TemplateCard from '../components/TemplateCard';
 import HeroBackground from '../components/HeroBackground';
 import { useCountUp } from '../hooks/useCountUp';
 import { getBeadCount } from '../utils/beadStats';
-import { multiFieldPinyinMatch } from '../utils/pinyinSearch';
 import { ChevronDown, X, Check, Upload } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
+
+// 拼音匹配器类型：首屏用简单 includes，pinyinSearch 异步加载后升级为拼音匹配
+type PinyinMatcher = (fields: (string | undefined | null)[], query: string) => boolean;
 
 export type SortKey = 'default' | 'name' | 'beads-asc' | 'beads-desc' | 'difficulty';
 export type DifficultyFilter = 'all' | 'easy' | 'medium' | 'hard';
@@ -108,6 +110,21 @@ export default function HomePage({
 }: HomePageProps) {
   const { t, lang } = useTranslation();
 
+  // 拼音匹配器：首屏用简单 includes（即时可用），pinyinSearch 异步加载后升级为拼音匹配
+  // 这样首屏不加载 pinyin-pro（287KB），仅在后台加载完成后支持拼音首字母/全拼搜索
+  const simpleMatch = useCallback((fields: (string | undefined | null)[], q: string): boolean => {
+    const ql = q.toLowerCase();
+    return fields.some(f => f != null && f.toLowerCase().includes(ql));
+  }, []);
+  const [pinyinMatcher, setPinyinMatcher] = useState<PinyinMatcher>(simpleMatch);
+  useEffect(() => {
+    let cancelled = false;
+    import('../utils/pinyinSearch').then(m => {
+      if (!cancelled) setPinyinMatcher(() => m.multiFieldPinyinMatch);
+    }).catch(() => { /* 加载失败保持简单匹配 */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // Map category id -> name for card labels（通过 t() 解析分类名）
   const categoryNameMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -130,7 +147,7 @@ export default function HomePage({
       const matchColor = !colorFilter || t.colors.some(c => c.hex.toLowerCase() === colorFilter.toLowerCase());
       const matchSearch =
         !searchQuery ||
-        multiFieldPinyinMatch([t.name, ...t.tags, t.description], searchQuery);
+        pinyinMatcher([t.name, ...t.tags, t.description], searchQuery);
       return matchCategory && matchDifficulty && matchGrid && matchColor && matchSearch;
     });
 
@@ -153,7 +170,7 @@ export default function HomePage({
         break;
     }
     return sorted;
-  }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize, colorFilter, lang]);
+  }, [templates, activeCategory, searchQuery, sortKey, difficulty, gridSize, colorFilter, lang, pinyinMatcher]);
 
   // 最近浏览：仅在无任何筛选时显示，避免与下方筛选结果不一致造成混淆
   const recentTemplates = useMemo(() => {
