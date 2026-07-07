@@ -117,23 +117,23 @@ export default function ProfilePage({
     return Array.from(dist.entries()).sort((a, b) => b[1] - a[1]);
   }, [favorites, templateMap]);
 
-  // 进度分布：按是否在收藏中区分统计
+  // 进度分布：统计卡与列表均只看收藏中的模板，保持口径一致
   const progressStats = useMemo(() => {
     const favSet = new Set(favorites);
     let inProgress = 0;        // 收藏中且进行中
     let completed = 0;          // 收藏中且已完成
-    const inProgressList: { template: BeadTemplate; percent: number }[] = []; // 所有进行中（不限收藏）
+    const inProgressList: { template: BeadTemplate; percent: number }[] = []; // 收藏中的进行中
     Object.entries(progress).forEach(([id, cells]) => {
+      if (!favSet.has(id)) return;  // 仅统计收藏中的
       const tpl = templateMap.get(id);
       if (!tpl) return;
       const total = getBeadCount(tpl);
       const done = cells.length;
       const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
-      const isFavorite = favSet.has(id);
       if (pct >= 100) {
-        if (isFavorite) completed++;
+        completed++;
       } else if (pct > 0) {
-        if (isFavorite) inProgress++;
+        inProgress++;
         inProgressList.push({ template: tpl, percent: pct });
       }
     });
@@ -267,7 +267,7 @@ export default function ProfilePage({
           </div>
           <div className="profile-summary-item">
             <Layers size={18} aria-hidden="true" />
-            <span className="profile-summary-item__label">{t('profile.stat.totalBeads')}</span>
+            <span className="profile-summary-item__label">{t('profile.stat.totalCompletions')}</span>
             <span className="profile-summary-item__value">{record.totalCompletions}</span>
           </div>
         </section>
@@ -364,7 +364,13 @@ export default function ProfilePage({
             {t('profile.inProgress.title')}
           </h2>
           {progressStats.inProgressList.length === 0 ? (
-            <p className="profile-section__empty">{t('profile.inProgress.empty')}</p>
+            <div className="profile-section__empty">
+              <Clock size={32} aria-hidden="true" className="profile-section__empty-icon" />
+              <p className="profile-section__empty-text">{t('profile.inProgress.empty')}</p>
+              <button type="button" className="profile-section__empty-cta" onClick={onNavigateHome}>
+                {t('profile.inProgress.cta')}
+              </button>
+            </div>
           ) : (
             <ul className="profile-progress-list">
               {progressStats.inProgressList.map(({ template, percent }) => (
@@ -404,7 +410,13 @@ export default function ProfilePage({
             )}
           </div>
           {recentFavorites.length === 0 ? (
-            <p className="profile-section__empty">{t('profile.recentFav.empty')}</p>
+            <div className="profile-section__empty">
+              <Heart size={32} aria-hidden="true" className="profile-section__empty-icon" />
+              <p className="profile-section__empty-text">{t('profile.recentFav.empty')}</p>
+              <button type="button" className="profile-section__empty-cta" onClick={onNavigateHome}>
+                {t('profile.recentFav.cta')}
+              </button>
+            </div>
           ) : (
             <div className="template-grid">
               {recentFavorites.map(tpl => (

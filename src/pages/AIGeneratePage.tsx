@@ -89,6 +89,42 @@ export default function AIGeneratePage({
   const { showToast } = useToast();
   const { t, lang } = useTranslation();
   const debounceRef = useRef<number | null>(null);
+  // 跟踪未完成的定时器，组件卸载时清理
+  const generateTimerRef = useRef<number | null>(null);
+  const presetTimerRef = useRef<number | null>(null);
+  // 历史面板点击外部关闭
+  const historyPanelRef = useRef<HTMLDivElement | null>(null);
+  const historyToggleRef = useRef<HTMLButtonElement | null>(null);
+
+  // 组件卸载时清理所有定时器 + 释放 Blob URL
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+      if (generateTimerRef.current !== null) clearTimeout(generateTimerRef.current);
+      if (presetTimerRef.current !== null) clearTimeout(presetTimerRef.current);
+    };
+  }, []);
+
+  // imagePreviewUrl 变化时释放旧的 Blob URL
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    };
+  }, [imagePreviewUrl]);
+
+  // 历史面板：点击外部关闭（点击切换按钮除外，避免与 toggle 冲突）
+  useEffect(() => {
+    if (!showHistory) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (historyPanelRef.current?.contains(target)) return;
+      if (historyToggleRef.current?.contains(target)) return;
+      setShowHistory(false);
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showHistory]);
 
   // 实时预览：preset 模式下，size 滑块变化时自动重新生成（debounce 200ms）
   useEffect(() => {
@@ -114,7 +150,8 @@ export default function AIGeneratePage({
     setGenerating(true);
     try {
       // 模拟"思考"延迟
-      setTimeout(() => {
+      if (generateTimerRef.current !== null) clearTimeout(generateTimerRef.current);
+      generateTimerRef.current = window.setTimeout(() => {
         const shape = matchPresetShape(prompt);
         if (shape && mode === 'preset') {
           const size = extractGridSize(prompt, presetSize);
@@ -146,6 +183,7 @@ export default function AIGeneratePage({
           }
         }
         setGenerating(false);
+        generateTimerRef.current = null;
       }, 600);
     } catch {
       setGenerating(false);
@@ -156,7 +194,8 @@ export default function AIGeneratePage({
   const handlePresetClick = useCallback((shape: PresetShape) => {
     setSelectedShape(shape);
     setGenerating(true);
-    setTimeout(() => {
+    if (presetTimerRef.current !== null) clearTimeout(presetTimerRef.current);
+    presetTimerRef.current = window.setTimeout(() => {
       const stylePreset = STYLE_PRESETS.find(s => s.id === selectedStyleId);
       const r = stylePreset && selectedStyleId !== 'classic'
         ? generatePresetShapeWithStyle(shape, presetSize, stylePreset.palette, stylePreset.colorNames)
@@ -165,6 +204,7 @@ export default function AIGeneratePage({
       setMatchedTemplates([]);
       setGenerating(false);
       showToast(t('ai.generated.preset'), 'success');
+      presetTimerRef.current = null;
     }, 300);
   }, [presetSize, selectedStyleId, showToast, t]);
 
@@ -533,6 +573,7 @@ export default function AIGeneratePage({
               </button>
               <button
                 type="button"
+                ref={historyToggleRef}
                 className={`ai-page__btn ai-page__btn--secondary ${showHistory ? 'ai-page__btn--active' : ''}`}
                 onClick={() => setShowHistory(v => !v)}
                 title={t('ai.history.title')}
@@ -577,9 +618,9 @@ export default function AIGeneratePage({
                   </button>
                 </div>
                 <div className="ai-page__variants-grid">
-                  {variants.map((v, i) => (
+                  {variants.map((v) => (
                     <button
-                      key={i}
+                      key={v.label}
                       type="button"
                       className="ai-page__variant-item"
                       onClick={() => { setResult({ grid: v.grid, colors: v.colors }); showToast(t('ai.variantSelected'), 'success'); }}
@@ -595,7 +636,7 @@ export default function AIGeneratePage({
 
             {/* 历史记录面板 */}
             {showHistory && (
-              <div className="ai-page__history-panel">
+              <div className="ai-page__history-panel" ref={historyPanelRef}>
                 <div className="ai-page__history-header">
                   <h3 className="ai-page__matched-title">{t('ai.history.title')}</h3>
                   {history.length > 0 && (
@@ -723,9 +764,9 @@ export default function AIGeneratePage({
                   </button>
                 </div>
                 <div className="ai-page__compare-grid">
-                  {compareList.map((c, i) => (
+                  {compareList.map((c) => (
                     <button
-                      key={i}
+                      key={c.label}
                       type="button"
                       className="ai-page__compare-item"
                       onClick={() => setResult({ grid: c.grid, colors: c.colors })}

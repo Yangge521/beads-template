@@ -632,7 +632,7 @@ function AppContent() {
   return (
     <>
       <Suspense fallback={<PageLoader />}>
-        <ErrorBoundary key={hash.split('/')[0] || '/'}>
+        <ErrorBoundary key={hash}>
           <PageTransition pageKey={hash}>{page}</PageTransition>
         </ErrorBoundary>
       </Suspense>

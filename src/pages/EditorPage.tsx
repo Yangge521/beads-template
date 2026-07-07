@@ -454,7 +454,7 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
   }, [commit, markDirty, showToast, t]);
 
   return (
-    <div className="page editor-page" onMouseUp={handleMouseUp}>
+    <div className="page editor-page">
       <header className="editor-page__header">
         <button type="button" className="editor-page__back" onClick={handleBack}>
           <ArrowLeft size={20} />

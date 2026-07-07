@@ -353,37 +353,6 @@ export default function DetailPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template?.id]);
 
-  // SEO 结构化数据：注入 Schema.org VisualArtwork，便于搜索引擎富结果展示
-  useEffect(() => {
-    if (!template) return;
-    const json = {
-      '@context': 'https://schema.org',
-      '@type': 'VisualArtwork',
-      name: template.name,
-      description: template.description,
-      artMedium: '拼豆 / Perler Beads',
-      artform: 'Pixel Art',
-      keywords: template.tags.join(', '),
-      url: `${window.location.origin}${import.meta.env.BASE_URL}#template/${template.id}`,
-      thumbnailUrl: template.image
-        ? `${window.location.origin}${import.meta.env.BASE_URL}${template.image}`
-        : undefined,
-      // 用约 200 字符的描述作为 abstract
-      abstract: template.description.slice(0, 200),
-      creator: {
-        '@type': 'Organization',
-        name: template.source || 'Beads Template',
-      },
-    };
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.textContent = JSON.stringify(json);
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, [template]);
-
   // 进入进度模式时记录开始时间；退出时清空
   useEffect(() => {
     if (progressMode && startTimeRef.current === null) {
