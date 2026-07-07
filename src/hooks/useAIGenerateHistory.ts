@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 /** AI 生成历史记录项 */
 export interface AIHistoryItem {
@@ -77,15 +78,7 @@ export function useAIGenerateHistory() {
   const [history, setHistory] = useState<AIHistoryItem[]>(() => loadHistory());
 
   // 跨标签页同步
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setHistory(loadHistory());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setHistory(loadHistory()));
 
   /** 添加一条历史记录（按 prompt + 网格签名去重） */
   const addHistory = useCallback((item: Omit<AIHistoryItem, 'id' | 'createdAt'>) => {
