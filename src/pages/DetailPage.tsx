@@ -1039,7 +1039,7 @@ export default function DetailPage({
                     />
                   </div>
                   <span className="detail-page__swatch-count">
-                    {color.count}
+                    {color.count ?? 0}
                     <span className="detail-page__swatch-pct">{ratio}%</span>
                   </span>
                   <span className="detail-page__swatch-copy">

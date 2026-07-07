@@ -109,11 +109,11 @@ export default function CommandPalette({
 
   // 打开时聚焦输入框
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setActiveIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 30);
-    }
+    if (!open) return;
+    setQuery('');
+    setActiveIndex(0);
+    const timer = setTimeout(() => inputRef.current?.focus(), 30);
+    return () => clearTimeout(timer);
   }, [open]);
 
   // 关闭时清空

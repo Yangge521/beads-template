@@ -135,6 +135,7 @@ function AppContent() {
     difficulty, setDifficulty,
     gridSize, setGridSize,
     colorFilter, setColorFilter,
+    resetFilters,
   } = ui;
 
   // Apply theme to document
@@ -252,13 +253,8 @@ function AppContent() {
   }, [showToast, t]);
 
   const handleClearFilters = useCallback(() => {
-    setActiveCategory('all');
-    setSearchQuery('');
-    setSortKey('default');
-    setDifficulty('all');
-    setGridSize('all');
-    setColorFilter(null);
-  }, []);
+    resetFilters();
+  }, [resetFilters]);
 
   // Parse route
   const routeParts = hash.split('/').filter(Boolean);

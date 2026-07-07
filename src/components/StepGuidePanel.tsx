@@ -273,9 +273,13 @@ export default function StepGuidePanel({
 
       {/* 步骤列表 */}
       <div className="step-guide__list">
-        {steps.map((step, idx) => (
+        {steps.map((step, idx) => {
+          const stableKey = step.type === 'color'
+            ? `color-${step.color.hex}`
+            : `region-${step.regionIndex}`;
+          return (
           <button
-            key={idx}
+            key={stableKey}
             type="button"
             className={`step-guide__item ${idx === currentStep ? 'step-guide__item--active' : ''} ${completedSteps.has(idx) ? 'step-guide__item--done' : ''}`}
             onClick={() => onGoTo(idx)}
@@ -299,7 +303,8 @@ export default function StepGuidePanel({
             <span className="step-guide__item-count">{step.count}</span>
             {completedSteps.has(idx) && <Check size={14} className="step-guide__item-check" />}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       <button

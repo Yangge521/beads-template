@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, useRef, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, useRef, type ReactNode } from 'react';
 import { Check, Info, AlertCircle, AlertTriangle, X } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -80,6 +80,14 @@ export default function ToastContainer({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => dismiss(id), DURATION);
     timersRef.current.set(id, timer);
   }, [dismiss]);
+
+  // 组件卸载时清理所有残留定时器，避免 setState on unmounted
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current.clear();
+    };
+  }, []);
 
   return (
     <ToastContext.Provider value={{ showToast }}>

@@ -18,8 +18,10 @@ export function useUIStore() {
   const [gridSize, setGridSize] = useState<GridSizeFilter>('all');
   const [colorFilter, setColorFilter] = useState<string | null>(null);
 
-  /** 清空所有筛选，回到初始状态 */
+  /** 清空所有筛选与搜索，回到初始状态 */
   const resetFilters = useCallback(() => {
+    setActiveCategory('all');
+    setSearchQuery('');
     setSortKey('default');
     setDifficulty('all');
     setGridSize('all');
