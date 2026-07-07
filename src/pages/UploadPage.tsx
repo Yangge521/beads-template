@@ -373,9 +373,9 @@ export default function UploadPage({
                 <div className="upload-page__palette-preview">
                   <span className="upload-page__palette-label">{t('upload.palette.label', { count: preview.colors.length })}</span>
                   <div className="upload-page__palette-list">
-                    {preview.colors.map((c, i) => (
+                    {preview.colors.map((c) => (
                       <div
-                        key={i}
+                        key={c.hex}
                         className="upload-page__palette-swatch"
                         title={t('upload.palette.swatchTitle', { name: c.name, hex: c.hex, count: c.count ?? 0 })}
                       >

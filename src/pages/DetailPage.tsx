@@ -982,12 +982,12 @@ export default function DetailPage({
             </div>
           </div>
           <div className="detail-page__palette-grid">
-            {sortedColors.map((color, i) => {
+            {sortedColors.map((color) => {
               const pct = maxColorCount > 0 ? ((color.count ?? 0) / maxColorCount) * 100 : 0;
               const ratio = beadCount > 0 ? (((color.count ?? 0) / beadCount) * 100).toFixed(1) : '0';
               return (
                 <button
-                  key={i}
+                  key={color.hex}
                   type="button"
                   className="detail-page__swatch"
                   onClick={() => handleCopyHex(color.hex)}
@@ -1044,8 +1044,8 @@ export default function DetailPage({
               </tr>
             </thead>
             <tbody>
-              {sortedColors.map((color, i) => (
-                <tr key={i}>
+              {sortedColors.map((color) => (
+                <tr key={color.hex}>
                   <td>
                     <span
                       className="detail-page__print-swatch"

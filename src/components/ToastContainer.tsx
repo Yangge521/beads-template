@@ -1,13 +1,15 @@
 import { createContext, useCallback, useContext, useState, useRef, type ReactNode } from 'react';
-import { Check, Info, AlertCircle, X } from 'lucide-react';
+import { Check, Info, AlertCircle, AlertTriangle, X } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 
-type ToastType = 'success' | 'info' | 'error';
+type ToastType = 'success' | 'info' | 'warning' | 'error';
 
 interface Toast {
   id: number;
   message: string;
   type: ToastType;
+  /** 是否正在退出（用于淡出动画） */
+  leaving?: boolean;
 }
 
 interface ToastContextValue {
@@ -25,11 +27,21 @@ export function useToast() {
 const icons: Record<ToastType, typeof Check> = {
   success: Check,
   info: Info,
+  warning: AlertTriangle,
   error: AlertCircle,
+};
+
+/** 按类型决定 aria-live：error/warning 需要立即插播 */
+const liveByType: Record<ToastType, 'polite' | 'assertive'> = {
+  success: 'polite',
+  info: 'polite',
+  warning: 'assertive',
+  error: 'assertive',
 };
 
 const MAX_TOASTS = 4;
 const DURATION = 2500;
+const EXIT_ANIMATION_MS = 200;
 
 export default function ToastContainer({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -38,12 +50,13 @@ export default function ToastContainer({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
 
   const dismiss = useCallback((id: number) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-    const timer = timersRef.current.get(id);
-    if (timer) {
-      clearTimeout(timer);
+    // 先标记为 leaving 触发淡出动画，动画结束后再移除
+    setToasts(prev => prev.map(t => t.id === id ? { ...t, leaving: true } : t));
+    const exitTimer = setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
       timersRef.current.delete(id);
-    }
+    }, EXIT_ANIMATION_MS);
+    timersRef.current.set(id, exitTimer);
   }, []);
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
@@ -71,12 +84,19 @@ export default function ToastContainer({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="toast-container" role="region" aria-label={t('common.toast.region')} aria-live="polite">
+      {/* 容器保持 polite，每条 toast 自己按类型设置 role */}
+      <div className="toast-container" role="region" aria-label={t('common.toast.region')}>
         {toasts.map(toast => {
           const Icon = icons[toast.type];
+          const live = liveByType[toast.type];
           return (
-            <div key={toast.id} className={`toast toast--${toast.type}`}>
-              <Icon size={16} className="toast__icon" />
+            <div
+              key={toast.id}
+              className={`toast toast--${toast.type}${toast.leaving ? ' toast--leaving' : ''}`}
+              role={live === 'assertive' ? 'alert' : 'status'}
+              aria-live={live}
+            >
+              <Icon size={16} className="toast__icon" aria-hidden="true" />
               <span className="toast__msg">{toast.message}</span>
               <button
                 type="button"
@@ -84,7 +104,7 @@ export default function ToastContainer({ children }: { children: ReactNode }) {
                 onClick={() => dismiss(toast.id)}
                 aria-label={t('common.close')}
               >
-                <X size={14} />
+                <X size={14} aria-hidden="true" />
               </button>
             </div>
           );
