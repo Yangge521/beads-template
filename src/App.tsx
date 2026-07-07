@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
-import HomePage, { type SortKey, type DifficultyFilter, type GridSizeFilter } from './pages/HomePage';
+import HomePage from './pages/HomePage';
 // 非首屏页面懒加载，减小首屏 bundle 体积
 const DetailPage = lazy(() => import('./pages/DetailPage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
@@ -20,6 +20,7 @@ import { LanguageProvider, useTranslation } from './context/LanguageContext';
 import { useFavorites } from './hooks/useFavorites';
 import { useRecentlyViewed } from './hooks/useRecentlyViewed';
 import { useCustomTemplates } from './hooks/useCustomTemplates';
+import { useUIStore } from './hooks/useUIStore';
 import { useLikes } from './hooks/useLikes';
 import { useRatings } from './hooks/useRatings';
 import { useProgress } from './hooks/useProgress';
@@ -125,13 +126,16 @@ function AppContent() {
     showToast(t('app.toast.customDeleted'), 'info');
   }, [removeCustomTemplate, isFavorite, toggleFav, removeRecentlyViewed, showToast, t]);
 
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
   // 提升到 App 层：导航到详情/收藏页再返回时，筛选/排序状态得以保留
-  const [sortKey, setSortKey] = useState<SortKey>('default');
-  const [difficulty, setDifficulty] = useState<DifficultyFilter>('all');
-  const [gridSize, setGridSize] = useState<GridSizeFilter>('all');
-  const [colorFilter, setColorFilter] = useState<string | null>(null);
+  const ui = useUIStore();
+  const {
+    activeCategory, setActiveCategory,
+    searchQuery, setSearchQuery,
+    sortKey, setSortKey,
+    difficulty, setDifficulty,
+    gridSize, setGridSize,
+    colorFilter, setColorFilter,
+  } = ui;
 
   // Apply theme to document
   useEffect(() => {
