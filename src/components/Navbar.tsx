@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { Search, Heart, Sun, Moon, X, Palette, Upload, Clock, Trash2, Pencil, Sparkles, Share2, User } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { useSearchHistory } from '../hooks/useSearchHistory';
@@ -20,7 +20,7 @@ interface NavbarProps {
   onNavigateProfile?: () => void;
 }
 
-export default function Navbar({
+function Navbar({
   onSearch,
   onToggleTheme,
   theme,
@@ -303,3 +303,5 @@ export default function Navbar({
     </nav>
   );
 }
+
+export default memo(Navbar);

@@ -1,1 +1,59 @@
-aW1wb3J0IHsgQ29tcG9uZW50IH0gZnJvbSAncmVhY3QnOwppbXBvcnQgdHlwZSB7IEVycm9ySW5mbywgUmVhY3ROb2RlIH0gZnJvbSAncmVhY3QnOwppbXBvcnQgeyB1c2VUcmFuc2xhdGlvbiB9IGZyb20gJy4uL2NvbnRleHQvTGFuZ3VhZ2VDb250ZXh0JzsKCmludGVyZmFjZSBQcm9wcyB7CiAgY2hpbGRyZW46IFJlYWN0Tm9kZTsKfQoKaW50ZXJmYWNlIFN0YXRlIHsKICBoYXNFcnJvcjogYm9vbGVhbjsKICBtZXNzYWdlPzogc3RyaW5nOwp9CgovLyDplJnor68gVUkg5YaF6YOo57uE5Lu277ya5Y+v5L2/55SoIHVzZVRyYW5zbGF0aW9uIGhvb2sKZnVuY3Rpb24gRXJyb3JGYWxsYmFjayh7IG1lc3NhZ2UsIG9uUmVzZXQgfTogeyBtZXNzYWdlPzogc3RyaW5nOyBvblJlc2V0OiAoKSA9PiB2b2lkIH0pIHsKICBjb25zdCB7IHQgfSA9IHVzZVRyYW5zbGF0aW9uKCk7CiAgcmV0dXJuICgKICAgIDxkaXYgY2xhc3NOYW1lPSJwYWdlIGVycm9yLWJvdW5kYXJ5Ij4KICAgICAgPGRpdiBjbGFzc05hbWU9ImVtcHR5LXN0YXRlIj4KICAgICAgICA8cCBjbGFzc05hbWU9ImVtcHR5LXN0YXRlX19pY29uIiBhcmlhLWhpZGRlbj0idHJ1ZSI+8J+YtTwvcD4KICAgICAgICA8cCBjbGFzc05hbWU9ImVtcHR5LXN0YXRlX190aXRsZSI+e3QoJ2Vycm9yQm91bmRhcnkudGl0bGUnKX08L3A+CiAgICAgICAgPHAgY2xhc3NOYW1lPSJlbXB0eS1zdGF0ZV9fZGVzYyI+CiAgICAgICAgICB7bWVzc2FnZSB8fCB0KCdlcnJvckJvdW5kYXJ5LnVua25vd24nKX0KICAgICAgICA8L3A+CiAgICAgICAgPGJ1dHRvbiB0eXBlPSJidXR0b24iIGNsYXNzTmFtZT0iZW1wdHktc3RhdGVfX2FjdGlvbiIgb25DbGljaz17b25SZXNldH0+CiAgICAgICAgICB7dCgnZXJyb3JCb3VuZGFyeS5iYWNrSG9tZScpfQogICAgICAgIDwvYnV0dG9uPgogICAgICA8L2Rpdj4KICAgIDwvZGl2PgogICk7Cn0KCmV4cG9ydCBkZWZhdWx0IGNsYXNzIEVycm9yQm91bmRhcnkgZXh0ZW5kcyBDb21wb25lbnQ8UHJvcHMsIFN0YXRlPiB7CiAgb3ZlcnJpZGUgc3RhdGU6IFN0YXRlID0geyBoYXNFcnJvcjogZmFsc2UgfTsKCiAgc3RhdGljIGdldERlcml2ZWRTdGF0ZUZyb21FcnJvcihlcnJvcjogRXJyb3IpOiBTdGF0ZSB7CiAgICByZXR1cm4geyBoYXNFcnJvcjogdHJ1ZSwgbWVzc2FnZTogZXJyb3IubWVzc2FnZSB9OwogIH0KCiAgb3ZlcnJpZGUgY29tcG9uZW50RGlkQ2F0Y2goZXJyb3I6IEVycm9yLCBpbmZvOiBFcnJvckluZm8pIHsKICAgIGNvbnNvbGUuZXJyb3IoJ0Vycm9yQm91bmRhcnkgY2F1Z2h0OicsIGVycm9yLCBpbmZvKTsKICB9CgogIGhhbmRsZVJlc2V0ID0gKCkgPT4gewogICAgdGhpcy5zZXRTdGF0ZSh7IGhhc0Vycm9yOiBmYWxzZSwgbWVzc2FnZTogdW5kZWZpbmVkIH0pOwogICAgLy8g5Zue5Yiw6aaW6aG177yIcmVwbGFjZVN0YXRlIOmBv+WFjeWOhuWPsuagiOWGl+S9me+8iQogICAgaGlzdG9yeS5yZXBsYWNlU3RhdGUobnVsbCwgJycsIGxvY2F0aW9uLnBhdGhuYW1lKTsKICAgIGxvY2F0aW9uLnJlbG9hZCgpOwogIH07CgogIG92ZXJyaWRlIHJlbmRlcigpIHsKICAgIGlmICh0aGlzLnN0YXRlLmhhc0Vycm9yKSB7CiAgICAgIHJldHVybiAoCiAgICAgICAgPEVycm9yRmFsbGJhY2sgbWVzc2FnZT17dGhpcy5zdGF0ZS5tZXNzYWdlfSBvblJlc2V0PXt0aGlzLmhhbmRsZVJlc2V0fSAvPgogICAgICApOwogICAgfQogICAgcmV0dXJuIHRoaXMucHJvcHMuY2hpbGRyZW47CiAgfQp9Cg==
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
+import { useTranslation } from '../context/LanguageContext';
+
+interface Props {
+  children: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+  message?: string;
+}
+
+// 错误 UI 内部组件：可使用 useTranslation hook
+function ErrorFallback({ message, onReset }: { message?: string; onReset: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="page error-boundary">
+      <div className="empty-state">
+        <p className="empty-state__icon" aria-hidden="true">😵</p>
+        <p className="empty-state__title">{t('errorBoundary.title')}</p>
+        <p className="empty-state__desc">
+          {message || t('errorBoundary.unknown')}
+        </p>
+        <button type="button" className="empty-state__action" onClick={onReset}>
+          {t('errorBoundary.backHome')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default class ErrorBoundary extends Component<Props, State> {
+  override state: State = { hasError: false };
+
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, message: error.message };
+  }
+
+  override componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('ErrorBoundary caught:', error, info);
+  }
+
+  handleReset = () => {
+    this.setState({ hasError: false, message: undefined });
+    // 回到首页（replaceState 避免历史栈冗余）
+    history.replaceState(null, '', location.pathname);
+    location.reload();
+  };
+
+  override render() {
+    if (this.state.hasError) {
+      return (
+        <ErrorFallback message={this.state.message} onReset={this.handleReset} />
+      );
+    }
+    return this.props.children;
+  }
+}
