@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-compare-list';
 const MAX_COMPARE = 4;
@@ -26,20 +27,14 @@ export function useCompare() {
     }
   }, [compareIds]);
 
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        try {
-          const raw = e.newValue;
-          setCompareIds(raw ? JSON.parse(raw) as string[] : []);
-        } catch {
-          // ignore
-        }
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, (e) => {
+    try {
+      const raw = e.newValue;
+      setCompareIds(raw ? JSON.parse(raw) as string[] : []);
+    } catch {
+      // ignore
+    }
+  });
 
   const addToCompare = useCallback((id: string) => {
     setCompareIds(prev => {

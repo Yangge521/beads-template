@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-progress';
 
@@ -40,15 +41,7 @@ export function useProgress() {
   const [progress, setProgress] = useState<ProgressMap>(loadProgress);
 
   // 跨标签页同步
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setProgress(loadProgress());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setProgress(loadProgress()));
 
   /** 获取某模板的已完成格子集合 */
   const getCompleted = useCallback((id: string): Set<string> => {

@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-inventory';
 
@@ -46,15 +47,7 @@ function saveInventory(items: InventoryItem[]) {
 export function useInventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>(loadInventory);
 
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setInventory(loadInventory());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setInventory(loadInventory()));
 
   /** 添加颜色到库存（hex 去重，大小写不敏感） */
   const addColor = useCallback((hex: string, note?: string) => {

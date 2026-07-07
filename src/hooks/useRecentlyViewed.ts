@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-recently-viewed';
 const MAX_ITEMS = 8;
@@ -26,15 +27,7 @@ export function useRecentlyViewed() {
   const [recentlyViewed, setRecentlyViewed] = useState<string[]>(loadRecentlyViewed);
 
   // 跨标签页同步：监听 storage 事件
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setRecentlyViewed(loadRecentlyViewed());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setRecentlyViewed(loadRecentlyViewed()));
 
   const addRecentlyViewed = useCallback((id: string) => {
     setRecentlyViewed(prev => {

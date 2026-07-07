@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { registerServiceWorker } from './utils/registerSW'
+import { initPerfMonitor } from './utils/perfMonitor'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,3 +15,6 @@ createRoot(document.getElementById('root')!).render(
 registerServiceWorker(() => {
   window.dispatchEvent(new CustomEvent('sw:update-available'));
 });
+
+// 初始化 Web Vitals 监控（仅生产环境，控制台输出 LCP/CLS/FID/TTFB）
+initPerfMonitor();

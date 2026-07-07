@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useStorageSync } from './useStorageSync';
 import type { BeadTemplate } from '../types/bead';
 
 const STORAGE_KEY = 'beads-custom-templates';
@@ -33,15 +34,7 @@ export function useCustomTemplates() {
   const [templates, setTemplates] = useState<BeadTemplate[]>(loadCustomTemplates);
 
   // 跨标签页同步
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setTemplates(loadCustomTemplates());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setTemplates(loadCustomTemplates()));
 
   const addTemplate = useCallback((template: Omit<BeadTemplate, 'id'>): BeadTemplate => {
     const newTemplate: BeadTemplate = { ...template, id: genId() };

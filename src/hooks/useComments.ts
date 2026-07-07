@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-comments';
 const MAX_COMMENTS_PER_TEMPLATE = 100;
@@ -71,15 +72,7 @@ export function useComments(): UseCommentsResult {
   const [comments, setComments] = useState<Comment[]>(loadComments);
 
   // 跨标签页同步
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setComments(loadComments());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setComments(loadComments()));
 
   const persist = useCallback((next: Comment[]) => {
     saveComments(next);

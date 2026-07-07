@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-search-history';
 const MAX_ITEMS = 8;
@@ -30,15 +31,7 @@ function saveHistory(list: string[]) {
 export function useSearchHistory() {
   const [history, setHistory] = useState<string[]>(loadHistory);
 
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setHistory(loadHistory());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setHistory(loadHistory()));
 
   const addQuery = useCallback((q: string) => {
     const trimmed = q.trim();

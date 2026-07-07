@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-likes';
 
@@ -28,15 +29,7 @@ export function useLikes() {
   const likesCount = useMemo(() => likes.length, [likes]);
 
   // 跨标签页同步
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setLikes(loadLikes());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setLikes(loadLikes()));
 
   const isLiked = useCallback((id: string) => likes.includes(id), [likes]);
 

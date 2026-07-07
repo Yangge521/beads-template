@@ -3,6 +3,7 @@ import type { BeadTemplate, Category } from '../types/bead';
 import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
 import TemplateCard from '../components/TemplateCard';
+import LazyCard from '../components/LazyCard';
 import HeroBackground from '../components/HeroBackground';
 import { useCountUp } from '../hooks/useCountUp';
 import { getBeadCount } from '../utils/beadStats';
@@ -473,17 +474,18 @@ export default function HomePage({
         {filtered.length > 0 ? (
           <div className="template-grid">
             {filtered.map(template => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                isFavorite={favorites.includes(template.id)}
-                onToggleFavorite={() => onToggleFavorite(template.id)}
-                onClick={() => {
-                  window.location.hash = `template/${template.id}`;
-                }}
-                highlight={searchQuery}
-                categoryName={activeCategory === 'all' ? categoryNameMap[template.category] : undefined}
-              />
+              <LazyCard key={template.id} placeholderHeight={260}>
+                <TemplateCard
+                  template={template}
+                  isFavorite={favorites.includes(template.id)}
+                  onToggleFavorite={() => onToggleFavorite(template.id)}
+                  onClick={() => {
+                    window.location.hash = `template/${template.id}`;
+                  }}
+                  highlight={searchQuery}
+                  categoryName={activeCategory === 'all' ? categoryNameMap[template.category] : undefined}
+                />
+              </LazyCard>
             ))}
           </div>
         ) : (

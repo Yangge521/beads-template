@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
+import { useStorageSync } from './useStorageSync';
 
 const STORAGE_KEY = 'beads-ratings';
 
@@ -34,15 +35,7 @@ export function useRatings() {
   const [ratings, setRatings] = useState<RatingMap>(loadRatings);
 
   // 跨标签页同步
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) {
-        setRatings(loadRatings());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setRatings(loadRatings()));
 
   const getRating = useCallback((id: string): number => ratings[id] || 0, [ratings]);
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import TemplateCard from '../components/TemplateCard';
+import LazyCard from '../components/LazyCard';
 import { ArrowLeft, Trash2, Download, Upload, ClipboardList, Table } from 'lucide-react';
 import { getBeadCount } from '../utils/beadStats';
 import { aggregateMaterials, getTotalBeads } from '../utils/aggregateMaterials';
@@ -330,13 +331,14 @@ export default function FavoritesPage({
         ) : (
           <div className="template-grid">
             {favoritedTemplates.map(template => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                isFavorite={true}
-                onToggleFavorite={() => onToggleFavorite(template.id)}
-                onClick={() => onNavigate(`template/${template.id}`)}
-              />
+              <LazyCard key={template.id} placeholderHeight={260}>
+                <TemplateCard
+                  template={template}
+                  isFavorite={true}
+                  onToggleFavorite={() => onToggleFavorite(template.id)}
+                  onClick={() => onNavigate(`template/${template.id}`)}
+                />
+              </LazyCard>
             ))}
           </div>
         )}

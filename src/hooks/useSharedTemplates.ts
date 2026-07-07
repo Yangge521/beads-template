@@ -2,7 +2,8 @@
  * 社区分享数据管理：保存分享过的模板、统计下载次数、跨标签页同步
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useStorageSync } from './useStorageSync';
 import type { BeadTemplate } from '../types/bead';
 
 const STORAGE_KEY = 'beads-shared-history';
@@ -35,15 +36,7 @@ function save(records: SharedRecord[]) {
 export function useSharedTemplates() {
   const [records, setRecords] = useState<SharedRecord[]>(() => load());
 
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY || e.key === null) {
-        setRecords(load());
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  useStorageSync(STORAGE_KEY, () => setRecords(load()));
 
   const addShared = useCallback((template: BeadTemplate, code: string) => {
     const list = load();
