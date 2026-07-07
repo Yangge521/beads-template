@@ -37,7 +37,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const next = prev === 'light' ? 'dark' : 'light';
       try {
         localStorage.setItem(STORAGE_KEY, next);
-      } catch {}
+      } catch { /* 隐私模式忽略 */ }
       return next;
     });
   }, []);
@@ -49,7 +49,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     let hasUserPreference = false;
     try {
       hasUserPreference = localStorage.getItem(STORAGE_KEY) !== null;
-    } catch {}
+    } catch { /* 隐私模式忽略 */ }
 
     if (hasUserPreference) return;
 
@@ -57,7 +57,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const onChange = (e: MediaQueryListEvent) => {
       try {
         if (localStorage.getItem(STORAGE_KEY) !== null) return;
-      } catch {}
+      } catch { /* 隐私模式忽略 */ }
       setTheme(e.matches ? 'dark' : 'light');
     };
     mql.addEventListener('change', onChange);
@@ -85,6 +85,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider');

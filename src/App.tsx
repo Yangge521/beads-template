@@ -17,6 +17,7 @@ import PageTransition from './components/PageTransition';
 import CommandPalette from './components/CommandPalette';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider, useTranslation } from './context/LanguageContext';
+import { NavigationProvider } from './context/NavigationProvider';
 import { useFavorites } from './hooks/useFavorites';
 import { useRecentlyViewed } from './hooks/useRecentlyViewed';
 import { useCustomTemplates } from './hooks/useCustomTemplates';
@@ -26,46 +27,11 @@ import { useRatings } from './hooks/useRatings';
 import { useProgress } from './hooks/useProgress';
 import { useInventory } from './hooks/useInventory';
 import { useCompare } from './hooks/useCompare';
+import { useBuiltinTemplates } from './hooks/useBuiltinTemplates';
 import { getBeadCount } from './utils/beadStats';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
 import { downloadBackupFile, parseBackupFile, importUserData } from './utils/dataSync';
-import animeData from './data/anime.json';
-import pokemonData from './data/pokemon.json';
-import celebrityData from './data/celebrity.json';
-import foodData from './data/food.json';
-import animalsData from './data/animals.json';
-import holidayData from './data/holiday.json';
-import kawaiiData from './data/kawaii.json';
-import pixel3dData from './data/pixel3d.json';
-import pixelartData from './data/pixelart.json';
-import emojiData from './data/emoji.json';
-import seasonalData from './data/seasonal.json';
-import collabData from './data/collab.json';
-import natureData from './data/nature.json';
-import portraitData from './data/portrait.json';
-import abstractData from './data/abstract.json';
-import logoData from './data/logo.json';
-
-// 内置模板（静态数据）
-const builtinTemplates: BeadTemplate[] = [
-  ...animeData,
-  ...pokemonData,
-  ...celebrityData,
-  ...foodData,
-  ...animalsData,
-  ...holidayData,
-  ...kawaiiData,
-  ...pixel3dData,
-  ...pixelartData,
-  ...emojiData,
-  ...seasonalData,
-  ...collabData,
-  ...natureData,
-  ...portraitData,
-  ...abstractData,
-  ...logoData,
-] as BeadTemplate[];
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
@@ -77,13 +43,14 @@ function AppContent() {
   const { compareIds, addToCompare, removeFromCompare, clearCompare, isInCompare } = useCompare();
   const { recentlyViewed, addRecentlyViewed, removeRecentlyViewed } = useRecentlyViewed();
   const { templates: customTemplates, addTemplate: addCustomTemplate, removeTemplate: removeCustomTemplate } = useCustomTemplates();
+  const { templates: builtinTemplates, loading: builtinLoading } = useBuiltinTemplates();
   const { showToast } = useToast();
   const { t } = useTranslation();
 
   // 合并内置 + 自定义模板作为全量列表
   const allTemplates = useMemo(
     () => [...customTemplates, ...builtinTemplates],
-    [customTemplates]
+    [customTemplates, builtinTemplates]
   );
 
   const toggleFavorite = useCallback((id: string) => {
@@ -181,30 +148,6 @@ function AppContent() {
 
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
-  }, []);
-
-  const handleNavigateFavorites = useCallback(() => {
-    window.location.hash = 'favorites';
-  }, []);
-
-  const handleNavigateColorRef = useCallback(() => {
-    window.location.hash = 'colors';
-  }, []);
-
-  const handleNavigateUpload = useCallback(() => {
-    window.location.hash = 'upload';
-  }, []);
-
-  const handleNavigateEditor = useCallback(() => {
-    window.location.hash = 'editor';
-  }, []);
-
-  const handleNavigateAi = useCallback(() => {
-    window.location.hash = 'ai';
-  }, []);
-
-  const handleNavigateCommunity = useCallback(() => {
-    window.location.hash = 'community';
   }, []);
 
   const handleNavigateCompare = useCallback(() => {
@@ -435,31 +378,15 @@ function AppContent() {
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
         onClearFavorites={handleClearFavoritesWithToast}
-        onBack={goHome}
-        onNavigate={handleNavigate}
         onExportData={handleExportData}
         onImportData={handleImportData}
       />
     );
   } else if (routeParts[0] === 'colors') {
-    page = <ColorReferencePage onBack={goHome} />;
+    page = <ColorReferencePage />;
   } else if (routeParts[0] === 'upload') {
     page = (
       <UploadPage
-        onBack={goHome}
-        onNavigate={handleNavigate}
-        onSearch={handleSearch}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        favoritesCount={favorites.length}
-        onNavigateFavorites={handleNavigateFavorites}
-        onNavigateColorRef={handleNavigateColorRef}
-        onNavigateUpload={handleNavigateUpload}
-        onNavigateEditor={handleNavigateEditor}
-        onNavigateAi={handleNavigateAi}
-        onNavigateCommunity={handleNavigateCommunity}
-        onNavigateHome={goHome}
-        searchQuery={searchQuery}
         onSaveTemplate={addCustomTemplate}
       />
     );
@@ -480,28 +407,12 @@ function AppContent() {
     page = (
       <EditorPage
         initialTemplate={editBase ?? draftTemplate}
-        onBack={goHome}
         onSave={addCustomTemplate}
-        onNavigate={handleNavigate}
       />
     );
   } else if (routeParts[0] === 'ai') {
     page = (
       <AIGeneratePage
-        onBack={goHome}
-        onNavigate={handleNavigate}
-        onSearch={handleSearch}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        favoritesCount={favorites.length}
-        onNavigateFavorites={handleNavigateFavorites}
-        onNavigateColorRef={handleNavigateColorRef}
-        onNavigateUpload={handleNavigateUpload}
-        onNavigateEditor={handleNavigateEditor}
-        onNavigateAi={handleNavigateAi}
-        onNavigateCommunity={handleNavigateCommunity}
-        onNavigateHome={goHome}
-        searchQuery={searchQuery}
         templates={allTemplates}
         onSaveTemplate={addCustomTemplate}
       />
@@ -509,20 +420,6 @@ function AppContent() {
   } else if (routeParts[0] === 'community') {
     page = (
       <CommunityPage
-        onBack={goHome}
-        onNavigate={handleNavigate}
-        onSearch={handleSearch}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        favoritesCount={favorites.length}
-        onNavigateFavorites={handleNavigateFavorites}
-        onNavigateColorRef={handleNavigateColorRef}
-        onNavigateUpload={handleNavigateUpload}
-        onNavigateEditor={handleNavigateEditor}
-        onNavigateHome={goHome}
-        onNavigateAi={handleNavigateAi}
-        onNavigateCommunity={handleNavigateCommunity}
-        searchQuery={searchQuery}
         templates={allTemplates}
         onSaveTemplate={addCustomTemplate}
       />
@@ -534,28 +431,11 @@ function AppContent() {
         compareIds={compareIds}
         onRemove={removeFromCompare}
         onClear={clearCompare}
-        onBack={goHome}
-        onNavigate={handleNavigate}
-        onNavigateTemplate={handleNavigateTemplate}
-        onNavigateHome={goHome}
-        onNavigateFavorites={handleNavigateFavorites}
-        onNavigateColorRef={handleNavigateColorRef}
-        onNavigateUpload={handleNavigateUpload}
-        onNavigateEditor={handleNavigateEditor}
-        onNavigateAi={handleNavigateAi}
-        onNavigateCommunity={handleNavigateCommunity}
-        onSearch={handleSearch}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        favoritesCount={favorites.length}
-        searchQuery={searchQuery}
       />
     );
   } else if (routeParts[0] === 'profile') {
     page = (
       <ProfilePage
-        onBack={goHome}
-        onNavigate={handleNavigate}
         templates={allTemplates}
         favorites={favorites}
         likes={likes}
@@ -566,18 +446,6 @@ function AppContent() {
         progress={progress}
         onExportData={handleExportData}
         onImportData={handleImportData}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        favoritesCount={favorites.length}
-        onNavigateFavorites={handleNavigateFavorites}
-        onNavigateColorRef={handleNavigateColorRef}
-        onNavigateUpload={handleNavigateUpload}
-        onNavigateEditor={handleNavigateEditor}
-        onNavigateAi={handleNavigateAi}
-        onNavigateCommunity={handleNavigateCommunity}
-        onNavigateHome={goHome}
-        searchQuery={searchQuery}
-        onSearch={handleSearch}
       />
     );
   } else if (routeParts.length > 0 && !['template', 'favorites', 'colors', 'upload', 'editor', 'ai', 'community', 'compare', 'profile'].includes(routeParts[0])) {
@@ -598,24 +466,13 @@ function AppContent() {
     page = (
       <HomePage
         templates={allTemplates}
+        loading={builtinLoading}
         categories={CATEGORIES}
         onCategorySelect={handleCategorySelect}
         activeCategory={activeCategory}
-        searchQuery={searchQuery}
-        onSearch={handleSearch}
         favorites={favorites}
         onToggleFavorite={toggleFavorite}
-        onNavigateFavorites={handleNavigateFavorites}
-        onNavigateColorRef={handleNavigateColorRef}
-        onNavigateHome={goHome}
-        onNavigateUpload={handleNavigateUpload}
-        onNavigateEditor={handleNavigateEditor}
-        onNavigateAi={handleNavigateAi}
-        onNavigateCommunity={handleNavigateCommunity}
-        theme={theme}
-        onToggleTheme={toggleTheme}
         recentlyViewed={recentlyViewed}
-        onNavigate={handleNavigate}
         onClearFilters={handleClearFilters}
         sortKey={sortKey}
         onSortKeyChange={setSortKey}
@@ -630,7 +487,15 @@ function AppContent() {
   }
 
   return (
-    <>
+    <NavigationProvider
+      navigate={handleNavigate}
+      goHome={goHome}
+      searchQuery={searchQuery}
+      onSearch={handleSearch}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+      favoritesCount={favorites.length}
+    >
       <Suspense fallback={<PageLoader />}>
         <ErrorBoundary key={hash}>
           <PageTransition pageKey={hash}>{page}</PageTransition>
@@ -654,7 +519,7 @@ function AppContent() {
         onToggleLanguage={toggleLang}
         onSearch={handleSearch}
       />
-    </>
+    </NavigationProvider>
   );
 }
 

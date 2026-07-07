@@ -24,7 +24,7 @@ function detectInitialLang(): Language {
   try {
     const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
     if (stored === 'zh' || stored === 'en') return stored;
-  } catch {}
+  } catch { /* 隐私模式忽略 */ }
   // 首次访问：跟随浏览器语言（与 ThemeContext 跟随系统主题的思路一致）
   if (typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('en')) {
     return 'en';
@@ -51,7 +51,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLangState(next);
     try {
       localStorage.setItem(STORAGE_KEY, next);
-    } catch {}
+    } catch { /* 隐私模式忽略 */ }
     document.documentElement.lang = next === 'en' ? 'en' : 'zh-CN';
   }, []);
 
@@ -99,6 +99,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTranslation() {
   const ctx = useContext(LanguageContext);
   if (!ctx) throw new Error('useTranslation must be used within LanguageProvider');

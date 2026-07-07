@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+﻿import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
 import {
   ArrowLeft, Brush, Eraser, PaintBucket, Pipette, Undo2, Redo2,
@@ -12,6 +12,7 @@ import { BEAD_COLOR_GROUPS } from '../data/beadColors';
 import { useEditorHistory } from '../hooks/useEditorHistory';
 import { useSnapshots } from '../hooks/useSnapshots';
 import { useTranslation } from '../context/LanguageContext';
+import { useNavigation } from '../context/NavigationContext';
 import { useToast } from '../components/ToastContainer';
 import EditorHistoryPanel from '../components/EditorHistoryPanel';
 import ShapeLibraryPanel from '../components/ShapeLibraryPanel';
@@ -20,18 +21,14 @@ import { drawShapeWithSymmetry, paintWithSymmetry } from '../utils/shapeEdit';
 import type { ShapeTool, SymmetryMode } from '../utils/shapeEdit';
 import { getPresetShapeById, stampShapeCenter } from '../utils/presetShapes';
 import { applyTransform, type TransformType } from '../utils/transformGrid';
-import { exportTemplateToPNG } from '../utils/exportPNG';
-import { exportTemplateToSVG } from '../utils/exportSVG';
-import { exportColorListCSV } from '../utils/exportCSV';
+import { lazyExportPNG, lazyExportSVG, lazyExportCSV } from '../utils/exporters';
 
 type ToolMode = 'paint' | 'erase' | 'fill' | 'picker' | 'line' | 'rect' | 'rectFill' | 'circle' | 'circleFill';
 
 interface EditorPageProps {
   /** 基于现有模板编辑（不传则为空白新建） */
   initialTemplate?: BeadTemplate;
-  onBack: () => void;
   onSave: (template: Omit<BeadTemplate, 'id'>) => BeadTemplate;
-  onNavigate: (id: string) => void;
 }
 
 /** 默认空白网格尺寸 */
@@ -40,9 +37,10 @@ const DEFAULT_COLS = 16;
 /** 色板最大颜色数 */
 const MAX_PALETTE = 30;
 
-export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate }: EditorPageProps) {
+export default function EditorPage({ initialTemplate, onSave }: EditorPageProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const { goHome: onBack, navigateTemplate: onNavigate } = useNavigation();
 
   // 初始化网格与色板
   const initialGrid = initialTemplate?.grid ?? Array.from({ length: DEFAULT_ROWS }, () => Array(DEFAULT_COLS).fill(0));
@@ -340,11 +338,11 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
     };
     try {
       if (format === 'png') {
-        await exportTemplateToPNG(tpl);
+        await lazyExportPNG(tpl);
       } else if (format === 'svg') {
-        exportTemplateToSVG(tpl);
+        await lazyExportSVG(tpl);
       } else {
-        exportColorListCSV(tpl, {
+        await lazyExportCSV(tpl, {
           headerNo: t('detail.csv.headerNo'),
           headerHex: t('detail.csv.headerHex'),
           headerName: t('detail.csv.headerName'),

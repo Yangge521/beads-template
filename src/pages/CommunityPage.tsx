@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+﻿import { useState, useCallback, useEffect } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
@@ -7,44 +7,28 @@ import { ArrowLeft, Share2, Copy, Download, Trash2, Link as LinkIcon, Upload as 
 import { useTranslation } from '../context/LanguageContext';
 import { encodeShareCode, decodeShareCode, buildShareUrl } from '../utils/shareCode';
 import { useSharedTemplates } from '../hooks/useSharedTemplates';
+import { useNavigation } from '../context/NavigationContext';
 
 interface CommunityPageProps {
-  onBack: () => void;
-  onNavigate: (hash: string) => void;
-  onSearch: (q: string) => void;
-  theme: string;
-  onToggleTheme: () => void;
-  favoritesCount: number;
-  onNavigateFavorites: () => void;
-  onNavigateColorRef: () => void;
-  onNavigateUpload: () => void;
-  onNavigateEditor: () => void;
-  onNavigateHome: () => void;
-  onNavigateAi: () => void;
-  onNavigateCommunity: () => void;
-  searchQuery: string;
   templates: BeadTemplate[];
   onSaveTemplate: (template: Omit<BeadTemplate, 'id'>) => BeadTemplate;
 }
 
 export default function CommunityPage({
-  onBack,
-  onNavigate,
-  onSearch,
-  theme,
-  onToggleTheme,
-  favoritesCount,
-  onNavigateFavorites,
-  onNavigateColorRef,
-  onNavigateUpload,
-  onNavigateEditor,
-  onNavigateHome,
-  onNavigateAi,
-  onNavigateCommunity,
-  searchQuery,
   templates,
   onSaveTemplate,
 }: CommunityPageProps) {
+  const nav = useNavigation();
+  const {
+    navigate,
+    goHome,
+    navigateTo,
+    searchQuery,
+    onSearch,
+    theme,
+    onToggleTheme,
+    favoritesCount,
+  } = nav;
   const [importCode, setImportCode] = useState('');
   const [importedPreview, setImportedPreview] = useState<BeadTemplate | null>(null);
   const { records, addShared, incrementDownload, removeShared, clearShared } = useSharedTemplates();
@@ -95,8 +79,8 @@ export default function CommunityPage({
     showToast(t('community.imported', { name: saved.name }), 'success');
     setImportedPreview(null);
     setImportCode('');
-    onNavigate(`template/${saved.id}`);
-  }, [importedPreview, onSaveTemplate, incrementDownload, importCode, onNavigate, showToast, t]);
+    navigate(`template/${saved.id}`);
+  }, [importedPreview, onSaveTemplate, incrementDownload, importCode, navigate, showToast, t]);
 
   // 从 URL 自动检测分享码（一次性）
   useEffect(() => {
@@ -111,7 +95,7 @@ export default function CommunityPage({
         history.replaceState(null, '', window.location.pathname);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   return (
@@ -121,18 +105,18 @@ export default function CommunityPage({
         onToggleTheme={onToggleTheme}
         theme={theme}
         favoritesCount={favoritesCount}
-        onNavigateFavorites={onNavigateFavorites}
-        onNavigateColorRef={onNavigateColorRef}
-        onNavigateUpload={onNavigateUpload}
-        onNavigateEditor={onNavigateEditor}
-        onNavigateAi={onNavigateAi}
-        onNavigateCommunity={onNavigateCommunity}
-        onNavigateHome={onNavigateHome}
+        onNavigateFavorites={() => navigateTo('favorites')}
+        onNavigateColorRef={() => navigateTo('colors')}
+        onNavigateUpload={() => navigateTo('upload')}
+        onNavigateEditor={() => navigateTo('editor')}
+        onNavigateAi={() => navigateTo('ai')}
+        onNavigateCommunity={() => navigateTo('community')}
+        onNavigateHome={goHome}
         searchQuery={searchQuery}
       />
 
       <main id="main-content" className="community-page__content" tabIndex={-1}>
-        <button type="button" className="detail-page__back" onClick={onBack}>
+        <button type="button" className="detail-page__back" onClick={goHome}>
           <ArrowLeft size={20} />
           {t('common.back')}
         </button>

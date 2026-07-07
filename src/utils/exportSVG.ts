@@ -22,17 +22,21 @@ export function exportTemplateToSVG(
   const width = cols * cellSize;
   const height = rows * cellSize;
 
-  // 收集所有色块（跳过空格 v<=0）
-  const rects: string[] = [];
+  // 按颜色索引分组：把同色 rect 合并到单个 <path>，大幅减小 SVG 体积。
+  // 例：50x50 网格 1500 格 → 原本 1500 个 <rect>，现在 ≤ 颜色数 个 <path>。
+  const byColor = new Map<number, string[]>();
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const v = grid[r][c];
       if (v <= 0) continue;
       const color = colors[v - 1];
       if (!color) continue;
-      rects.push(
-        `<rect x="${(c * cellSize).toFixed(2)}" y="${(r * cellSize).toFixed(2)}" width="${cellSize}" height="${cellSize}" fill="${escapeXML(color.hex)}"/>`
-      );
+      const x = c * cellSize;
+      const y = r * cellSize;
+      const d = `M${x} ${y}h${cellSize}v${cellSize}h-${cellSize}z`;
+      let arr = byColor.get(v);
+      if (!arr) { arr = []; byColor.set(v, arr); }
+      arr.push(d);
     }
   }
 
@@ -45,7 +49,15 @@ export function exportTemplateToSVG(
   );
   // 标题（无障碍）
   parts.push(`<title>${escapeXML(name || id)}</title>`);
-  parts.push(rects.join(''));
+
+  // 同色合并 path：一个颜色一个 <path d="..."> 节点
+  for (const [v, dList] of byColor) {
+    const color = colors[v - 1];
+    if (!color) continue;
+    parts.push(
+      `<path d="${dList.join('')}" fill="${escapeXML(color.hex)}"/>`
+    );
+  }
 
   // 网格线：用一个 path 绘制所有横竖线，减少节点数
   if (withGridLines) {

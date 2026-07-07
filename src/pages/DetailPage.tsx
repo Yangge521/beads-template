@@ -2,12 +2,9 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered, GitCompare, Hash } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, FileText, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered, GitCompare, Hash } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
-import { exportTemplateToPNG } from '../utils/exportPNG';
-import { exportTemplateToSVG } from '../utils/exportSVG';
-import { exportPrintChart } from '../utils/exportPrintChart';
-import { exportColorListCSV } from '../utils/exportCSV';
+import { lazyExportPNG, lazyExportSVG, lazyExportCSV, lazyExportPrintChart, lazyExportPDF } from '../utils/exporters';
 import { applyTransform, type TransformType } from '../utils/transformGrid';
 import type { InventoryItem } from '../hooks/useInventory';
 import InventoryPanel from '../components/InventoryPanel';
@@ -268,7 +265,7 @@ export default function DetailPage({
   const handleExportPNG = useCallback(async () => {
     if (!exportTemplate) return;
     try {
-      const ok = await exportTemplateToPNG(
+      const ok = await lazyExportPNG(
         exportTemplate,
         24,
         showGridLines,
@@ -281,10 +278,10 @@ export default function DetailPage({
   }, [exportTemplate, showGridLines, showToast, t]);
 
   // 导出 SVG：矢量格式，无限缩放不失真，文件体积小
-  const handleExportSVG = useCallback(() => {
+  const handleExportSVG = useCallback(async () => {
     if (!exportTemplate) return;
     try {
-      exportTemplateToSVG(exportTemplate, 24, showGridLines, t('detail.export.fileNameSuffix'));
+      await lazyExportSVG(exportTemplate, 24, showGridLines, t('detail.export.fileNameSuffix'));
       showToast(t('detail.toast.svgExported'), 'success');
     } catch {
       showToast(t('detail.toast.exportFailed'), 'error');
@@ -292,10 +289,10 @@ export default function DetailPage({
   }, [exportTemplate, showGridLines, showToast, t]);
 
   // 导出坐标网格图纸：带行列坐标 + 每 5 格加粗 + 格内色号 + 色卡图例，打印即可对照拼制
-  const handleExportChart = useCallback(() => {
+  const handleExportChart = useCallback(async () => {
     if (!exportTemplate) return;
     try {
-      exportPrintChart(
+      await lazyExportPrintChart(
         exportTemplate,
         {
           chartTitle: t('detail.chart.title'),
@@ -315,10 +312,10 @@ export default function DetailPage({
   }, [exportTemplate, showToast, t]);
 
   // 导出 CSV 色号清单：Excel 兼容，含行列坐标 + 色号 + 数量，竞品 PixelBeads 核心功能
-  const handleExportCSV = useCallback(() => {
+  const handleExportCSV = useCallback(async () => {
     if (!exportTemplate) return;
     try {
-      const ok = exportColorListCSV(
+      const ok = await lazyExportCSV(
         exportTemplate,
         {
           headerNo: t('detail.csv.headerNo'),
@@ -332,6 +329,30 @@ export default function DetailPage({
         t('detail.csv.fileNameSuffix')
       );
       showToast(ok ? t('detail.toast.csvExported') : t('detail.toast.exportFailed'), ok ? 'success' : 'error');
+    } catch {
+      showToast(t('detail.toast.exportFailed'), 'error');
+    }
+  }, [exportTemplate, showToast, t]);
+
+  // 导出 PDF：包含图案 + 色卡图例 + 统计信息，便于打印归档
+  const handleExportPDF = useCallback(async () => {
+    if (!exportTemplate) return;
+    try {
+      const ok = await lazyExportPDF(exportTemplate, {
+        titleLabel: t('detail.pdf.titleLabel'),
+        legendTitle: t('detail.pdf.legendTitle'),
+        statsTitle: t('detail.pdf.statsTitle'),
+        totalLabel: t('detail.pdf.totalLabel'),
+        ratioLabel: t('detail.pdf.ratioLabel'),
+        colorNameLabel: t('detail.pdf.colorNameLabel'),
+        colorCodeLabel: t('detail.pdf.colorCodeLabel'),
+        countLabel: t('detail.pdf.countLabel'),
+        gridSizeLabel: t('detail.pdf.gridSizeLabel'),
+        difficultyLabel: t('detail.pdf.difficultyLabel'),
+        difficultyText: (d: string) => t(`difficulty.${d}`),
+        fileNameSuffix: t('detail.pdf.fileNameSuffix'),
+      });
+      showToast(ok ? t('detail.toast.pdfExported') : t('detail.toast.exportFailed'), ok ? 'success' : 'error');
     } catch {
       showToast(t('detail.toast.exportFailed'), 'error');
     }
@@ -1009,6 +1030,16 @@ export default function DetailPage({
               >
                 <Table size={14} />
                 <span>{t('detail.palette.exportCsv.label')}</span>
+              </button>
+              <button
+                type="button"
+                className="detail-page__copy-all"
+                onClick={handleExportPDF}
+                title={t('detail.palette.exportPdf.title')}
+                aria-label={t('detail.palette.exportPdf.ariaLabel')}
+              >
+                <FileText size={14} />
+                <span>{t('detail.palette.exportPdf.label')}</span>
               </button>
             </div>
           </div>

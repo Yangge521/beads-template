@@ -10,9 +10,12 @@ export default defineConfig([
     'dist',
     'node_modules',
     'scripts',         // 一次性数据生成脚本，不参与 lint
+    'e2e',             // Playwright E2E 测试，单独运行
     '**/*.cjs',        // CommonJS 脚本
     'eslint.config.js',
     'vite.config.ts',
+    'playwright.config.ts',
+    'vitest.config.ts',
   ]),
   {
     files: ['**/*.{ts,tsx}'],

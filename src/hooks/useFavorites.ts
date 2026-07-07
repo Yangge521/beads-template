@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { FavoriteEntry } from '../types/bead';
-import { useStorageSync } from './useStorageSync';
+import { usePersistentState } from './usePersistentState';
 
 const STORAGE_KEY = 'beads-favorites';
 
@@ -22,24 +22,17 @@ function loadEntries(): FavoriteEntry[] {
         e => e && typeof e.templateId === 'string'
       );
     }
-  } catch {}
+  } catch {
+    // 损坏数据回退默认值
+  }
   return [];
 }
 
-function saveEntries(entries: FavoriteEntry[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-  } catch {}
-}
-
 export function useFavorites() {
-  const [entries, setEntries] = useState<FavoriteEntry[]>(loadEntries);
+  const [entries, setEntries] = usePersistentState(STORAGE_KEY, loadEntries);
 
   // favorites 从 entries 派生，避免双数据源
   const favorites = useMemo(() => entries.map(e => e.templateId), [entries]);
-
-  // 跨标签页同步：监听 storage 事件
-  useStorageSync(STORAGE_KEY, () => setEntries(loadEntries()));
 
   const isFavorite = useCallback((id: string) => {
     return favorites.includes(id);
@@ -47,21 +40,16 @@ export function useFavorites() {
 
   const toggleFavorite = useCallback((id: string) => {
     setEntries(prev => {
-      let next: FavoriteEntry[];
       if (prev.some(e => e.templateId === id)) {
-        next = prev.filter(e => e.templateId !== id);
-      } else {
-        next = [{ templateId: id, favoritedAt: new Date().toISOString() }, ...prev];
+        return prev.filter(e => e.templateId !== id);
       }
-      saveEntries(next);
-      return next;
+      return [{ templateId: id, favoritedAt: new Date().toISOString() }, ...prev];
     });
-  }, []);
+  }, [setEntries]);
 
   const clearFavorites = useCallback(() => {
     setEntries([]);
-    saveEntries([]);
-  }, []);
+  }, [setEntries]);
 
   return { favorites, isFavorite, toggleFavorite, clearFavorites };
 }

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useStorageSync } from './useStorageSync';
+import { useCallback } from 'react';
+import { usePersistentState } from './usePersistentState';
 
 const STORAGE_KEY = 'beads-recently-viewed';
 const MAX_ITEMS = 8;
@@ -13,37 +13,22 @@ function loadRecentlyViewed(): string[] {
         ? ids.filter((x: unknown): x is string => typeof x === 'string').slice(0, MAX_ITEMS)
         : [];
     }
-  } catch {}
+  } catch {
+    // 损坏数据回退默认值
+  }
   return [];
 }
 
-function saveRecentlyViewed(ids: string[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
-  } catch {}
-}
-
 export function useRecentlyViewed() {
-  const [recentlyViewed, setRecentlyViewed] = useState<string[]>(loadRecentlyViewed);
-
-  // 跨标签页同步：监听 storage 事件
-  useStorageSync(STORAGE_KEY, () => setRecentlyViewed(loadRecentlyViewed()));
+  const [recentlyViewed, setRecentlyViewed] = usePersistentState(STORAGE_KEY, loadRecentlyViewed);
 
   const addRecentlyViewed = useCallback((id: string) => {
-    setRecentlyViewed(prev => {
-      const next = [id, ...prev.filter(v => v !== id)].slice(0, MAX_ITEMS);
-      saveRecentlyViewed(next);
-      return next;
-    });
-  }, []);
+    setRecentlyViewed(prev => [id, ...prev.filter(v => v !== id)].slice(0, MAX_ITEMS));
+  }, [setRecentlyViewed]);
 
   const removeRecentlyViewed = useCallback((id: string) => {
-    setRecentlyViewed(prev => {
-      const next = prev.filter(v => v !== id);
-      saveRecentlyViewed(next);
-      return next;
-    });
-  }, []);
+    setRecentlyViewed(prev => prev.filter(v => v !== id));
+  }, [setRecentlyViewed]);
 
   return { recentlyViewed, addRecentlyViewed, removeRecentlyViewed };
 }

@@ -27,14 +27,14 @@ function loadProgress(): ProgressMap {
         return result;
       }
     }
-  } catch {}
+  } catch { /* 损坏数据回退默认值 */ }
   return {};
 }
 
 function saveProgress(progress: ProgressMap) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  } catch {}
+  } catch { /* 隐私模式忽略 */ }
 }
 
 export function useProgress() {

@@ -32,14 +32,14 @@ function loadComments(): Comment[] {
         );
       }
     }
-  } catch {}
+  } catch { /* 损坏数据回退默认值 */ }
   return [];
 }
 
 function saveComments(comments: Comment[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
-  } catch {}
+  } catch { /* 隐私模式忽略 */ }
 }
 
 function genId(): string {

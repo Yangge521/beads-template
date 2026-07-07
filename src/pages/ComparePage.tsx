@@ -1,39 +1,33 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
 import { ArrowLeft, X, GitCompare } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { getBeadCount } from '../utils/beadStats';
+import { useNavigation } from '../context/NavigationContext';
 
 interface ComparePageProps {
   templates: BeadTemplate[];
   compareIds: string[];
   onRemove: (id: string) => void;
   onClear: () => void;
-  onBack: () => void;
-  onNavigate: (hash: string) => void;
-  onNavigateTemplate: (id: string) => void;
-  onNavigateHome: () => void;
-  onNavigateFavorites: () => void;
-  onNavigateColorRef: () => void;
-  onNavigateUpload: () => void;
-  onNavigateEditor: () => void;
-  onNavigateAi: () => void;
-  onNavigateCommunity: () => void;
-  onSearch: (q: string) => void;
-  theme: string;
-  onToggleTheme: () => void;
-  favoritesCount: number;
-  searchQuery: string;
 }
 
 export default function ComparePage({
-  templates, compareIds, onRemove, onClear, onBack, onNavigateTemplate,
-  onNavigateHome, onNavigateFavorites, onNavigateColorRef, onNavigateUpload,
-  onNavigateEditor, onNavigateAi, onNavigateCommunity, onSearch, theme, onToggleTheme,
-  favoritesCount, searchQuery,
+  templates, compareIds, onRemove, onClear,
 }: ComparePageProps) {
+  const nav = useNavigation();
+  const {
+    goHome,
+    navigateTo,
+    navigateTemplate,
+    searchQuery,
+    onSearch,
+    theme,
+    onToggleTheme,
+    favoritesCount,
+  } = nav;
   const { t } = useTranslation();
 
   const items = useMemo(
@@ -48,17 +42,17 @@ export default function ComparePage({
         onToggleTheme={onToggleTheme}
         theme={theme}
         favoritesCount={favoritesCount}
-        onNavigateFavorites={onNavigateFavorites}
-        onNavigateColorRef={onNavigateColorRef}
-        onNavigateUpload={onNavigateUpload}
-        onNavigateEditor={onNavigateEditor}
-        onNavigateAi={onNavigateAi}
-        onNavigateCommunity={onNavigateCommunity}
-        onNavigateHome={onNavigateHome}
+        onNavigateFavorites={() => navigateTo('favorites')}
+        onNavigateColorRef={() => navigateTo('colors')}
+        onNavigateUpload={() => navigateTo('upload')}
+        onNavigateEditor={() => navigateTo('editor')}
+        onNavigateAi={() => navigateTo('ai')}
+        onNavigateCommunity={() => navigateTo('community')}
+        onNavigateHome={goHome}
         searchQuery={searchQuery}
       />
       <main id="main-content" className="compare-page__content" tabIndex={-1}>
-        <button type="button" className="detail-page__back" onClick={onBack}>
+        <button type="button" className="detail-page__back" onClick={goHome}>
           <ArrowLeft size={20} />
           {t('common.back')}
         </button>
@@ -102,10 +96,10 @@ export default function ComparePage({
                     </button>
                     <h2
                       className="compare-page__item-name"
-                      onClick={() => onNavigateTemplate(tpl.id)}
+                      onClick={() => navigateTemplate(tpl.id)}
                       role="link"
                       tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') onNavigateTemplate(tpl.id); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') navigateTemplate(tpl.id); }}
                     >
                       {tpl.name}
                     </h2>

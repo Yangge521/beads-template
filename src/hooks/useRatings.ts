@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useStorageSync } from './useStorageSync';
+import { useCallback } from 'react';
+import { usePersistentState } from './usePersistentState';
 
 const STORAGE_KEY = 'beads-ratings';
 
@@ -21,21 +21,14 @@ function loadRatings(): RatingMap {
         return result;
       }
     }
-  } catch {}
+  } catch {
+    // 损坏数据回退默认值
+  }
   return {};
 }
 
-function saveRatings(ratings: RatingMap) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ratings));
-  } catch {}
-}
-
 export function useRatings() {
-  const [ratings, setRatings] = useState<RatingMap>(loadRatings);
-
-  // 跨标签页同步
-  useStorageSync(STORAGE_KEY, () => setRatings(loadRatings()));
+  const [ratings, setRatings] = usePersistentState(STORAGE_KEY, loadRatings);
 
   const getRating = useCallback((id: string): number => ratings[id] || 0, [ratings]);
 
@@ -49,20 +42,18 @@ export function useRatings() {
       } else {
         next[id] = clamped;
       }
-      saveRatings(next);
       return next;
     });
-  }, []);
+  }, [setRatings]);
 
   const clearRating = useCallback((id: string) => {
     setRatings(prev => {
       if (!(id in prev)) return prev;
       const next = { ...prev };
       delete next[id];
-      saveRatings(next);
       return next;
     });
-  }, []);
+  }, [setRatings]);
 
   return { ratings, getRating, setRating, clearRating };
 }

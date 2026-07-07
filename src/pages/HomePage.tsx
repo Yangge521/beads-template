@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { BeadTemplate, Category } from '../types/bead';
 import Navbar from '../components/Navbar';
 import CategoryFilter from '../components/CategoryFilter';
@@ -9,6 +9,7 @@ import { useCountUp } from '../hooks/useCountUp';
 import { getBeadCount } from '../utils/beadStats';
 import { ChevronDown, X, Check, Upload } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
+import { useNavigation } from '../context/NavigationContext';
 
 // 拼音匹配器类型：首屏用简单 includes，pinyinSearch 异步加载后升级为拼音匹配
 type PinyinMatcher = (fields: (string | undefined | null)[], query: string) => boolean;
@@ -50,24 +51,14 @@ const difficultyFilters: { value: DifficultyFilter; label: string; color: string
 
 interface HomePageProps {
   templates: BeadTemplate[];
+  /** 内置模板是否仍在加载（用于首屏骨架屏） */
+  loading?: boolean;
   categories: Category[];
   onCategorySelect: (id: string) => void;
   activeCategory: string;
-  searchQuery: string;
-  onSearch: (q: string) => void;
   favorites: string[];
   onToggleFavorite: (id: string) => void;
-  onNavigateFavorites: () => void;
-  onNavigateColorRef: () => void;
-  onNavigateHome: () => void;
-  onNavigateUpload: () => void;
-  onNavigateEditor: () => void;
-  onNavigateAi: () => void;
-  onNavigateCommunity: () => void;
-  theme: string;
-  onToggleTheme: () => void;
   recentlyViewed: string[];
-  onNavigate: (hash: string) => void;
   onClearFilters: () => void;
   sortKey: SortKey;
   onSortKeyChange: (key: SortKey) => void;
@@ -81,24 +72,13 @@ interface HomePageProps {
 
 export default function HomePage({
   templates,
+  loading = false,
   categories,
   onCategorySelect,
   activeCategory,
-  searchQuery,
-  onSearch,
   favorites,
   onToggleFavorite,
-  onNavigateFavorites,
-  onNavigateColorRef,
-  onNavigateHome,
-  onNavigateUpload,
-  onNavigateEditor,
-  onNavigateAi,
-  onNavigateCommunity,
-  theme,
-  onToggleTheme,
   recentlyViewed,
-  onNavigate,
   onClearFilters,
   sortKey,
   onSortKeyChange,
@@ -109,6 +89,16 @@ export default function HomePage({
   colorFilter,
   onColorFilterChange,
 }: HomePageProps) {
+  const nav = useNavigation();
+  const {
+    navigate,
+    goHome,
+    navigateTo,
+    searchQuery,
+    onSearch,
+    theme,
+    onToggleTheme,
+  } = nav;
   const { t, lang } = useTranslation();
 
   // 拼音匹配器：首屏用简单 includes（即时可用），pinyinSearch 异步加载后升级为拼音匹配
@@ -253,13 +243,13 @@ export default function HomePage({
         onToggleTheme={onToggleTheme}
         theme={theme}
         favoritesCount={favorites.length}
-        onNavigateFavorites={onNavigateFavorites}
-        onNavigateColorRef={onNavigateColorRef}
-        onNavigateUpload={onNavigateUpload}
-        onNavigateEditor={onNavigateEditor}
-        onNavigateAi={onNavigateAi}
-        onNavigateCommunity={onNavigateCommunity}
-        onNavigateHome={onNavigateHome}
+        onNavigateFavorites={() => navigateTo('favorites')}
+        onNavigateColorRef={() => navigateTo('colors')}
+        onNavigateUpload={() => navigateTo('upload')}
+        onNavigateEditor={() => navigateTo('editor')}
+        onNavigateAi={() => navigateTo('ai')}
+        onNavigateCommunity={() => navigateTo('community')}
+        onNavigateHome={goHome}
         searchQuery={searchQuery}
       />
 
@@ -311,7 +301,7 @@ export default function HomePage({
               <button
                 type="button"
                 className="hero__upload-btn"
-                onClick={onNavigateUpload}
+                onClick={() => navigateTo('upload')}
               >
                 <Upload size={18} />
                 <span>{t('home.hero.upload')}</span>
@@ -329,7 +319,7 @@ export default function HomePage({
                   key={rt.id}
                   type="button"
                   className="recent-chip"
-                  onClick={() => onNavigate(`template/${rt.id}`)}
+                  onClick={() => navigate(`template/${rt.id}`)}
                   title={rt.name}
                 >
                   <span className="recent-chip__name">{rt.name}</span>
@@ -471,7 +461,17 @@ export default function HomePage({
           </div>
         </div>
 
-        {filtered.length > 0 ? (
+        {loading && filtered.length === 0 ? (
+          <div className="template-grid" aria-busy="true" aria-live="polite">
+            {Array.from({ length: 12 }, (_, i) => (
+              <div key={i} className="template-card template-card--skeleton" aria-hidden="true">
+                <div className="template-card__cover-skeleton" />
+                <div className="template-card__line-skeleton" />
+                <div className="template-card__line-skeleton template-card__line-skeleton--short" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length > 0 ? (
           <div className="template-grid">
             {filtered.map(template => (
               <LazyCard key={template.id} placeholderHeight={260}>

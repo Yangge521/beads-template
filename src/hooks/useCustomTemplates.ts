@@ -22,7 +22,7 @@ function loadCustomTemplates(): BeadTemplate[] {
 function saveCustomTemplates(templates: BeadTemplate[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(templates));
-  } catch {}
+  } catch { /* 隐私模式忽略 */ }
 }
 
 /** 生成唯一 id（时间戳 + 随机串） */

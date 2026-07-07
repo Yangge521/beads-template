@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useStorageSync } from './useStorageSync';
+import { useCallback } from 'react';
+import { usePersistentState } from './usePersistentState';
 
 const STORAGE_KEY = 'beads-inventory';
 
@@ -29,14 +29,10 @@ function loadInventory(): InventoryItem[] {
           }));
       }
     }
-  } catch {}
+  } catch {
+    // 损坏数据回退默认值
+  }
   return [];
-}
-
-function saveInventory(items: InventoryItem[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  } catch {}
 }
 
 /**
@@ -45,9 +41,7 @@ function saveInventory(items: InventoryItem[]) {
  * localStorage 持久化 + 跨标签页 storage 事件同步。
  */
 export function useInventory() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(loadInventory);
-
-  useStorageSync(STORAGE_KEY, () => setInventory(loadInventory()));
+  const [inventory, setInventory] = usePersistentState(STORAGE_KEY, loadInventory);
 
   /** 添加颜色到库存（hex 去重，大小写不敏感） */
   const addColor = useCallback((hex: string, note?: string) => {
@@ -55,44 +49,33 @@ export function useInventory() {
     if (!/^#[0-9a-f]{6}$/i.test(normalized)) return;
     setInventory(prev => {
       if (prev.some(x => x.hex === normalized)) return prev;
-      const next = [...prev, { hex: normalized, note: note?.trim() || undefined }];
-      saveInventory(next);
-      return next;
+      return [...prev, { hex: normalized, note: note?.trim() || undefined }];
     });
-  }, []);
+  }, [setInventory]);
 
   /** 移除库存颜色 */
   const removeColor = useCallback((hex: string) => {
     const normalized = hex.toLowerCase();
-    setInventory(prev => {
-      const next = prev.filter(x => x.hex !== normalized);
-      saveInventory(next);
-      return next;
-    });
-  }, []);
+    setInventory(prev => prev.filter(x => x.hex !== normalized));
+  }, [setInventory]);
 
   /** 清空库存 */
   const clearInventory = useCallback(() => {
     setInventory(prev => {
       if (prev.length === 0) return prev;
-      saveInventory([]);
       return [];
     });
-  }, []);
+  }, [setInventory]);
 
   /** 设置某颜色的库存数量（传入 undefined 或负数则清除数量） */
   const setCount = useCallback((hex: string, count: number | undefined) => {
     const normalized = hex.toLowerCase();
-    setInventory(prev => {
-      const next = prev.map(item =>
-        item.hex === normalized
-          ? { ...item, count: typeof count === 'number' && count >= 0 ? count : undefined }
-          : item
-      );
-      saveInventory(next);
-      return next;
-    });
-  }, []);
+    setInventory(prev => prev.map(item =>
+      item.hex === normalized
+        ? { ...item, count: typeof count === 'number' && count >= 0 ? count : undefined }
+        : item
+    ));
+  }, [setInventory]);
 
   /** 检查某颜色是否在库存中（大小写不敏感） */
   const hasColor = useCallback((hex: string) => {

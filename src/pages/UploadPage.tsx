@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+﻿import { useState, useCallback, useRef, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
@@ -8,22 +8,9 @@ import { loadImageFromFile, buildTemplateFromImage } from '../utils/imageToGrid'
 import { pixelizeImageEnhanced } from '../utils/imageToGridEnhanced';
 import type { DitherAlgorithm } from '../utils/imageToGridEnhanced';
 import { useTranslation } from '../context/LanguageContext';
+import { useNavigation } from '../context/NavigationContext';
 
 interface UploadPageProps {
-  onBack: () => void;
-  onNavigate: (hash: string) => void;
-  onSearch: (q: string) => void;
-  theme: string;
-  onToggleTheme: () => void;
-  favoritesCount: number;
-  onNavigateFavorites: () => void;
-  onNavigateColorRef: () => void;
-  onNavigateUpload: () => void;
-  onNavigateEditor: () => void;
-  onNavigateAi: () => void;
-  onNavigateCommunity: () => void;
-  onNavigateHome: () => void;
-  searchQuery: string;
   onSaveTemplate: (template: Omit<BeadTemplate, 'id'>) => BeadTemplate;
 }
 
@@ -50,21 +37,19 @@ const DEFAULT_OPTIONS: PreviewOptions = {
 };
 
 export default function UploadPage({
-  onBack,
-  onNavigate,
-  onSearch,
-  theme,
-  onToggleTheme,
-  favoritesCount,
-  onNavigateFavorites,
-  onNavigateColorRef,
-  onNavigateEditor,
-  onNavigateAi,
-  onNavigateCommunity,
-  onNavigateHome,
-  searchQuery,
   onSaveTemplate,
 }: UploadPageProps) {
+  const nav = useNavigation();
+  const {
+    navigate,
+    goHome,
+    navigateTo,
+    searchQuery,
+    onSearch,
+    theme,
+    onToggleTheme,
+    favoritesCount,
+  } = nav;
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [imgSrc, setImgSrc] = useState<string>('');
   const [options, setOptions] = useState<PreviewOptions>(DEFAULT_OPTIONS);
@@ -169,13 +154,13 @@ export default function UploadPage({
       const saved = onSaveTemplate(template);
       showToast(t('upload.toast.saved', { name: saved.name }), 'success');
       // 跳转到详情页查看
-      onNavigate(`template/${saved.id}`);
+      navigate(`template/${saved.id}`);
     } catch {
       showToast(t('upload.toast.saveFailed'), 'error');
     } finally {
       setSaving(false);
     }
-  }, [img, name, options, onSaveTemplate, showToast, onNavigate, t]);
+  }, [img, name, options, onSaveTemplate, showToast, navigate, t]);
 
   const handleReset = useCallback(() => {
     setImg(null);
@@ -192,18 +177,18 @@ export default function UploadPage({
         onToggleTheme={onToggleTheme}
         theme={theme}
         favoritesCount={favoritesCount}
-        onNavigateFavorites={onNavigateFavorites}
-        onNavigateColorRef={onNavigateColorRef}
+        onNavigateFavorites={() => navigateTo('favorites')}
+        onNavigateColorRef={() => navigateTo('colors')}
         onNavigateUpload={() => {}}
-        onNavigateEditor={onNavigateEditor}
-        onNavigateAi={onNavigateAi}
-        onNavigateCommunity={onNavigateCommunity}
-        onNavigateHome={onNavigateHome}
+        onNavigateEditor={() => navigateTo('editor')}
+        onNavigateAi={() => navigateTo('ai')}
+        onNavigateCommunity={() => navigateTo('community')}
+        onNavigateHome={goHome}
         searchQuery={searchQuery}
       />
 
       <main id="main-content" className="upload-page__content" tabIndex={-1}>
-        <button type="button" className="detail-page__back" onClick={onBack}>
+        <button type="button" className="detail-page__back" onClick={goHome}>
           <ArrowLeft size={20} />
           {t('common.back')}
         </button>

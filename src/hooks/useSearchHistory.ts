@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { useStorageSync } from './useStorageSync';
+import { useCallback } from 'react';
+import { usePersistentState } from './usePersistentState';
 
 const STORAGE_KEY = 'beads-search-history';
 const MAX_ITEMS = 8;
@@ -15,12 +15,6 @@ function loadHistory(): string[] {
   }
 }
 
-function saveHistory(list: string[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  } catch {}
-}
-
 /**
  * 搜索历史记录 hook。
  * - addQuery: 把一次搜索词加入历史（去重、最新在前、最多 MAX_ITEMS 条）
@@ -29,32 +23,21 @@ function saveHistory(list: string[]) {
  * - 跨标签页通过 storage 事件同步
  */
 export function useSearchHistory() {
-  const [history, setHistory] = useState<string[]>(loadHistory);
-
-  useStorageSync(STORAGE_KEY, () => setHistory(loadHistory()));
+  const [history, setHistory] = usePersistentState(STORAGE_KEY, loadHistory);
 
   const addQuery = useCallback((q: string) => {
     const trimmed = q.trim();
     if (!trimmed) return;
-    setHistory(prev => {
-      const next = [trimmed, ...prev.filter(x => x !== trimmed)].slice(0, MAX_ITEMS);
-      saveHistory(next);
-      return next;
-    });
-  }, []);
+    setHistory(prev => [trimmed, ...prev.filter(x => x !== trimmed)].slice(0, MAX_ITEMS));
+  }, [setHistory]);
 
   const removeQuery = useCallback((q: string) => {
-    setHistory(prev => {
-      const next = prev.filter(x => x !== q);
-      saveHistory(next);
-      return next;
-    });
-  }, []);
+    setHistory(prev => prev.filter(x => x !== q));
+  }, [setHistory]);
 
   const clearHistory = useCallback(() => {
-    saveHistory([]);
     setHistory([]);
-  }, []);
+  }, [setHistory]);
 
   return { history, addQuery, removeQuery, clearHistory };
 }

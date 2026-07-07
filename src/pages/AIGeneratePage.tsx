@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+﻿import { useState, useCallback, useEffect, useRef } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
@@ -10,22 +10,9 @@ import type { PresetShape } from '../utils/aiGenerate';
 import { analyzeImage } from '../utils/imageToGrid';
 import { STYLE_PRESETS } from '../data/stylePresets';
 import { useAIGenerateHistory } from '../hooks/useAIGenerateHistory';
+import { useNavigation } from '../context/NavigationContext';
 
 interface AIGeneratePageProps {
-  onBack: () => void;
-  onNavigate: (hash: string) => void;
-  onSearch: (q: string) => void;
-  theme: string;
-  onToggleTheme: () => void;
-  favoritesCount: number;
-  onNavigateFavorites: () => void;
-  onNavigateColorRef: () => void;
-  onNavigateUpload: () => void;
-  onNavigateEditor: () => void;
-  onNavigateAi: () => void;
-  onNavigateCommunity: () => void;
-  onNavigateHome: () => void;
-  searchQuery: string;
   templates: BeadTemplate[];
   onSaveTemplate: (template: Omit<BeadTemplate, 'id'>) => BeadTemplate;
 }
@@ -49,23 +36,20 @@ const EXAMPLE_PROMPTS = [
 ];
 
 export default function AIGeneratePage({
-  onBack,
-  onNavigate,
-  onSearch,
-  theme,
-  onToggleTheme,
-  favoritesCount,
-  onNavigateFavorites,
-  onNavigateColorRef,
-  onNavigateUpload,
-  onNavigateEditor,
-  onNavigateAi,
-  onNavigateCommunity,
-  onNavigateHome,
-  searchQuery,
   templates,
   onSaveTemplate,
 }: AIGeneratePageProps) {
+  const nav = useNavigation();
+  const {
+    navigate,
+    goHome,
+    navigateTo,
+    searchQuery,
+    onSearch,
+    theme,
+    onToggleTheme,
+    favoritesCount,
+  } = nav;
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
   const [mode, setMode] = useState<'preset' | 'match' | 'image'>('preset');
@@ -242,8 +226,8 @@ export default function AIGeneratePage({
     };
     const saved = onSaveTemplate(tpl);
     showToast(t('ai.saved', { name: saved.name }), 'success');
-    onNavigate(`template/${saved.id}`);
-  }, [result, prompt, onSaveTemplate, onNavigate, showToast, t]);
+    navigate(`template/${saved.id}`);
+  }, [result, prompt, onSaveTemplate, navigate, showToast, t]);
 
   const handleEditInEditor = useCallback(() => {
     if (!result) return;
@@ -261,8 +245,8 @@ export default function AIGeneratePage({
       source: 'AI',
     };
     sessionStorage.setItem('editor-draft', JSON.stringify(tpl));
-    onNavigate('editor');
-  }, [result, prompt, onNavigate, t]);
+    navigate('editor');
+  }, [result, prompt, navigate, t]);
 
   const handleShuffle = useCallback(() => {
     const shapes: PresetShape[] = ['heart', 'star', 'smile', 'flower', 'diamond', 'cat'];
@@ -377,18 +361,18 @@ export default function AIGeneratePage({
         onToggleTheme={onToggleTheme}
         theme={theme}
         favoritesCount={favoritesCount}
-        onNavigateFavorites={onNavigateFavorites}
-        onNavigateColorRef={onNavigateColorRef}
-        onNavigateUpload={onNavigateUpload}
-        onNavigateEditor={onNavigateEditor}
-        onNavigateAi={onNavigateAi}
-        onNavigateCommunity={onNavigateCommunity}
-        onNavigateHome={onNavigateHome}
+        onNavigateFavorites={() => navigateTo('favorites')}
+        onNavigateColorRef={() => navigateTo('colors')}
+        onNavigateUpload={() => navigateTo('upload')}
+        onNavigateEditor={() => navigateTo('editor')}
+        onNavigateAi={() => navigateTo('ai')}
+        onNavigateCommunity={() => navigateTo('community')}
+        onNavigateHome={goHome}
         searchQuery={searchQuery}
       />
 
       <main id="main-content" className="ai-page__content" tabIndex={-1}>
-        <button type="button" className="detail-page__back" onClick={onBack}>
+        <button type="button" className="detail-page__back" onClick={goHome}>
           <ArrowLeft size={20} />
           {t('common.back')}
         </button>

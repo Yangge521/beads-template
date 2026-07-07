@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useStorageSync } from './useStorageSync';
+import { useCallback } from 'react';
+import { usePersistentState } from './usePersistentState';
 
 /** AI 生成历史记录项 */
 export interface AIHistoryItem {
@@ -58,16 +58,6 @@ function loadHistory(): AIHistoryItem[] {
   }
 }
 
-function saveHistory(items: AIHistoryItem[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    // 通知其他标签页
-    window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
-  } catch {
-    // 忽略写入失败（如隐私模式）
-  }
-}
-
 /**
  * AI 生成历史记录 hook
  * - 持久化到 localStorage
@@ -75,10 +65,7 @@ function saveHistory(items: AIHistoryItem[]) {
  * - 最多保留 MAX_HISTORY 条
  */
 export function useAIGenerateHistory() {
-  const [history, setHistory] = useState<AIHistoryItem[]>(() => loadHistory());
-
-  // 跨标签页同步
-  useStorageSync(STORAGE_KEY, () => setHistory(loadHistory()));
+  const [history, setHistory] = usePersistentState(STORAGE_KEY, loadHistory);
 
   /** 添加一条历史记录（按 prompt + 网格签名去重） */
   const addHistory = useCallback((item: Omit<AIHistoryItem, 'id' | 'createdAt'>) => {
@@ -91,27 +78,20 @@ export function useAIGenerateHistory() {
       // 去重：移除相同 prompt + 相同网格行数的旧记录
       const deduped = prev.filter(h => !(h.prompt === item.prompt && h.template.rows === item.template.rows));
       // 最新在前
-      const next = [full, ...deduped].slice(0, MAX_HISTORY);
-      saveHistory(next);
-      return next;
+      return [full, ...deduped].slice(0, MAX_HISTORY);
     });
     return full;
-  }, []);
+  }, [setHistory]);
 
   /** 删除一条历史记录 */
   const removeHistory = useCallback((id: string) => {
-    setHistory(prev => {
-      const next = prev.filter(item => item.id !== id);
-      saveHistory(next);
-      return next;
-    });
-  }, []);
+    setHistory(prev => prev.filter(item => item.id !== id));
+  }, [setHistory]);
 
   /** 清空所有历史记录 */
   const clearHistory = useCallback(() => {
     setHistory([]);
-    saveHistory([]);
-  }, []);
+  }, [setHistory]);
 
   return { history, addHistory, removeHistory, clearHistory };
 }

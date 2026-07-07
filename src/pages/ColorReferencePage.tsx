@@ -1,16 +1,14 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+﻿import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ArrowLeft, Search, Check, Copy, X } from 'lucide-react';
 import { BEAD_COLOR_GROUPS } from '../data/beadColors';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
-
-interface ColorReferencePageProps {
-  onBack: () => void;
-}
+import { useNavigation } from '../context/NavigationContext';
 
 type BrandKey = 'perler' | 'artkal' | 'hama' | 'mixiaowo' | 'manman' | 'coco';
 
-export default function ColorReferencePage({ onBack }: ColorReferencePageProps) {
+export default function ColorReferencePage() {
+  const { goHome: onBack } = useNavigation();
   const [query, setQuery] = useState('');
   const [activeBrands, setActiveBrands] = useState<Set<BrandKey>>(new Set());
   const [copiedHex, setCopiedHex] = useState<string | null>(null);

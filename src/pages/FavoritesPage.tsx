@@ -1,21 +1,20 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import TemplateCard from '../components/TemplateCard';
 import LazyCard from '../components/LazyCard';
 import { ArrowLeft, Trash2, Download, Upload, ClipboardList, Table } from 'lucide-react';
 import { getBeadCount } from '../utils/beadStats';
 import { aggregateMaterials, getTotalBeads } from '../utils/aggregateMaterials';
-import { exportMaterialListCSV } from '../utils/exportMaterialCSV';
+import { lazyExportMaterialCSV } from '../utils/exporters';
 import { useToast } from '../components/ToastContainer';
 import { useTranslation } from '../context/LanguageContext';
+import { useNavigation } from '../context/NavigationContext';
 
 interface FavoritesPageProps {
   templates: BeadTemplate[];
   favorites: string[];
   onToggleFavorite: (id: string) => void;
   onClearFavorites: () => void;
-  onBack: () => void;
-  onNavigate: (hash: string) => void;
   onExportData: () => void;
   onImportData: (file: File) => void;
 }
@@ -34,11 +33,15 @@ export default function FavoritesPage({
   favorites,
   onToggleFavorite,
   onClearFavorites,
-  onBack,
-  onNavigate,
   onExportData,
   onImportData,
 }: FavoritesPageProps) {
+  const { goHome: onBack, navigateTemplate } = useNavigation();
+  const onNavigate = (hash: string) => {
+    if (hash.startsWith('template/')) {
+      navigateTemplate(hash.slice('template/'.length));
+    }
+  };
   const [confirming, setConfirming] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>('recent');
   const [showSummary, setShowSummary] = useState(false);
@@ -77,10 +80,10 @@ export default function FavoritesPage({
     [materialSummary]
   );
 
-  const handleExportMaterial = useCallback(() => {
+  const handleExportMaterial = useCallback(async () => {
     if (materialSummary.length === 0) return;
     try {
-      const ok = exportMaterialListCSV(
+      const ok = await lazyExportMaterialCSV(
         materialSummary,
         {
           headerNo: t('favorites.material.colNo'),

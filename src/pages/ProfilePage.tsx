@@ -1,4 +1,4 @@
-import { useMemo, useRef, useCallback } from 'react';
+﻿import { useMemo, useRef, useCallback } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import type { InventoryItem } from '../hooks/useInventory';
 import Navbar from '../components/Navbar';
@@ -9,10 +9,9 @@ import { ArrowLeft, Download, Upload, Heart, Star, Eye, Palette, Layers, Clock, 
 import { getBeadCount } from '../utils/beadStats';
 import { useTranslation } from '../context/LanguageContext';
 import { CATEGORIES } from '../categories';
+import { useNavigation } from '../context/NavigationContext';
 
 interface ProfilePageProps {
-  onBack: () => void;
-  onNavigate: (hash: string) => void;
   templates: BeadTemplate[];
   favorites: string[];
   likes: string[];
@@ -23,19 +22,6 @@ interface ProfilePageProps {
   progress: Record<string, string[]>;
   onExportData: () => void;
   onImportData: (file: File) => void;
-  // Navbar
-  theme: string;
-  onToggleTheme: () => void;
-  favoritesCount: number;
-  onNavigateFavorites: () => void;
-  onNavigateColorRef: () => void;
-  onNavigateUpload: () => void;
-  onNavigateEditor: () => void;
-  onNavigateAi: () => void;
-  onNavigateCommunity: () => void;
-  onNavigateHome: () => void;
-  searchQuery: string;
-  onSearch: (q: string) => void;
 }
 
 interface StatCard {
@@ -60,8 +46,6 @@ function BarRow({ label, value, max, color }: { label: string; value: number; ma
 }
 
 export default function ProfilePage({
-  onBack,
-  onNavigate,
   templates,
   favorites,
   likes,
@@ -72,19 +56,18 @@ export default function ProfilePage({
   progress,
   onExportData,
   onImportData,
-  theme,
-  onToggleTheme,
-  favoritesCount,
-  onNavigateFavorites,
-  onNavigateColorRef,
-  onNavigateUpload,
-  onNavigateEditor,
-  onNavigateAi,
-  onNavigateCommunity,
-  onNavigateHome,
-  searchQuery,
-  onSearch,
 }: ProfilePageProps) {
+  const nav = useNavigation();
+  const {
+    navigate,
+    goHome,
+    navigateTo,
+    searchQuery,
+    onSearch,
+    theme,
+    onToggleTheme,
+    favoritesCount,
+  } = nav;
   const importInputRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
   const { badges, unlockedCount, record, resetAchievements } = useAchievements();
@@ -197,20 +180,20 @@ export default function ProfilePage({
         onToggleTheme={onToggleTheme}
         theme={theme}
         favoritesCount={favoritesCount}
-        onNavigateFavorites={onNavigateFavorites}
-        onNavigateColorRef={onNavigateColorRef}
-        onNavigateUpload={onNavigateUpload}
-        onNavigateEditor={onNavigateEditor}
-        onNavigateAi={onNavigateAi}
-        onNavigateCommunity={onNavigateCommunity}
-        onNavigateHome={onNavigateHome}
+        onNavigateFavorites={() => navigateTo('favorites')}
+        onNavigateColorRef={() => navigateTo('colors')}
+        onNavigateUpload={() => navigateTo('upload')}
+        onNavigateEditor={() => navigateTo('editor')}
+        onNavigateAi={() => navigateTo('ai')}
+        onNavigateCommunity={() => navigateTo('community')}
+        onNavigateHome={goHome}
         searchQuery={searchQuery}
       />
 
       <main id="main-content" className="profile-page" tabIndex={-1}>
         {/* 页头 */}
         <header className="profile-header">
-          <button type="button" className="back-btn" onClick={onBack} aria-label={t('common.back')}>
+          <button type="button" className="back-btn" onClick={goHome} aria-label={t('common.back')}>
             <ArrowLeft size={20} />
           </button>
           <div className="profile-header__text">
@@ -367,7 +350,7 @@ export default function ProfilePage({
             <div className="profile-section__empty">
               <Clock size={32} aria-hidden="true" className="profile-section__empty-icon" />
               <p className="profile-section__empty-text">{t('profile.inProgress.empty')}</p>
-              <button type="button" className="profile-section__empty-cta" onClick={onNavigateHome}>
+              <button type="button" className="profile-section__empty-cta" onClick={goHome}>
                 {t('profile.inProgress.cta')}
               </button>
             </div>
@@ -378,7 +361,7 @@ export default function ProfilePage({
                   <button
                     type="button"
                     className="profile-progress-item"
-                    onClick={() => onNavigate(`template/${template.id}`)}
+                    onClick={() => navigate(`template/${template.id}`)}
                   >
                     <span className="profile-progress-item__name">{template.name}</span>
                     <div className="profile-progress-item__track" aria-hidden="true">
@@ -403,7 +386,7 @@ export default function ProfilePage({
               <button
                 type="button"
                 className="profile-section__link"
-                onClick={onNavigateFavorites}
+                onClick={() => navigateTo('favorites')}
               >
                 {t('profile.inProgress.viewAll')}
               </button>
@@ -413,7 +396,7 @@ export default function ProfilePage({
             <div className="profile-section__empty">
               <Heart size={32} aria-hidden="true" className="profile-section__empty-icon" />
               <p className="profile-section__empty-text">{t('profile.recentFav.empty')}</p>
-              <button type="button" className="profile-section__empty-cta" onClick={onNavigateHome}>
+              <button type="button" className="profile-section__empty-cta" onClick={goHome}>
                 {t('profile.recentFav.cta')}
               </button>
             </div>
@@ -423,7 +406,7 @@ export default function ProfilePage({
                 <TemplateCard
                   key={tpl.id}
                   template={tpl}
-                  onClick={() => onNavigate(`template/${tpl.id}`)}
+                  onClick={() => navigate(`template/${tpl.id}`)}
                   isFavorite
                   onToggleFavorite={() => {}}
                 />
