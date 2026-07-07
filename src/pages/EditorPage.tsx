@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { MouseEvent as ReactMouseEvent, TouchEvent as ReactTouchEvent } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import {
   ArrowLeft, Brush, Eraser, PaintBucket, Pipette, Undo2, Redo2,
   Trash2, Save, Plus, Minus, Grid3x3, Check, X,
@@ -197,42 +197,6 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
     window.addEventListener('mouseup', handleMouseUp);
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [handleMouseUp]);
-
-  // 全局 touchend 监听（触摸绘制结束）
-  useEffect(() => {
-    window.addEventListener('touchend', handleMouseUp);
-    window.addEventListener('touchcancel', handleMouseUp);
-    return () => {
-      window.removeEventListener('touchend', handleMouseUp);
-      window.removeEventListener('touchcancel', handleMouseUp);
-    };
-  }, [handleMouseUp]);
-
-  // 触摸事件：touchstart 等价于 mousedown
-  const handleCellTouchStart = useCallback((r: number, c: number, e: ReactTouchEvent) => {
-    e.preventDefault();
-    handleCellDown(r, c);
-  }, [handleCellDown]);
-
-  // 触摸事件：touchmove 等价于 mouseenter（按坐标查找目标格子）
-  const gridRef = useRef<HTMLDivElement>(null);
-  const handleGridTouchMove = useCallback((e: ReactTouchEvent) => {
-    if (!isDrawing.current) return;
-    e.preventDefault();
-    const grid = gridRef.current;
-    if (!grid) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    // 用 elementFromPoint 查找手指下的格子
-    const target = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement | null;
-    if (!target) return;
-    const cellIdx = target.getAttribute('data-cell-idx');
-    if (!cellIdx) return;
-    const [r, c] = cellIdx.split('-').map(Number);
-    if (Number.isFinite(r) && Number.isFinite(c)) {
-      handleCellEnter(r, c);
-    }
-  }, [handleCellEnter]);
 
   // 键盘快捷键
   useEffect(() => {
@@ -454,7 +418,7 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
   }, [commit, markDirty, showToast, t]);
 
   return (
-    <div className="page editor-page">
+    <div className="page editor-page" onMouseUp={handleMouseUp}>
       <header className="editor-page__header">
         <button type="button" className="editor-page__back" onClick={handleBack}>
           <ArrowLeft size={20} />
@@ -783,18 +747,15 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
                 />
               )}
               <div
-                ref={gridRef}
                 className="editor-page__grid"
                 style={{
                   display: 'grid',
                   gridTemplateColumns: `repeat(${cols}, 1fr)`,
                   position: 'relative',
                   zIndex: 1,
-                  touchAction: 'none',
                 }}
                 role="img"
                 aria-label={t('pixelGrid.ariaLabel', { count: totalBeads })}
-                onTouchMove={handleGridTouchMove}
               >
                 {(shapePreview ?? grid).map((row, ri) =>
                   row.map((cellValue, ci) => {
@@ -803,13 +764,11 @@ export default function EditorPage({ initialTemplate, onBack, onSave, onNavigate
                       <div
                         key={`${ri}-${ci}`}
                         className="editor-page__cell"
-                        data-cell-idx={`${ri}-${ci}`}
                         style={{
                           backgroundColor: color ? color.hex : 'transparent',
                         }}
                         onMouseDown={(e: ReactMouseEvent) => { e.preventDefault(); handleCellDown(ri, ci); }}
                         onMouseEnter={() => handleCellEnter(ri, ci)}
-                        onTouchStart={(e: ReactTouchEvent) => handleCellTouchStart(ri, ci, e)}
                       />
                     );
                   })

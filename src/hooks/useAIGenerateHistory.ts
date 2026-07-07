@@ -1,5 +1,4 @@
-import { useState, useCallback } from 'react';
-import { useStorageSync } from './useStorageSync';
+import { useState, useCallback, useEffect } from 'react';
 
 /** AI 生成历史记录项 */
 export interface AIHistoryItem {
@@ -78,9 +77,17 @@ export function useAIGenerateHistory() {
   const [history, setHistory] = useState<AIHistoryItem[]>(() => loadHistory());
 
   // 跨标签页同步
-  useStorageSync(STORAGE_KEY, () => setHistory(loadHistory()));
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        setHistory(loadHistory());
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
-  /** 添加一条历史记录（按 prompt + 网格签名去重） */
+  /** 添加一条历史记录 */
   const addHistory = useCallback((item: Omit<AIHistoryItem, 'id' | 'createdAt'>) => {
     const full: AIHistoryItem = {
       ...item,
@@ -88,10 +95,8 @@ export function useAIGenerateHistory() {
       createdAt: Date.now(),
     };
     setHistory(prev => {
-      // 去重：移除相同 prompt + 相同网格行数的旧记录
-      const deduped = prev.filter(h => !(h.prompt === item.prompt && h.template.rows === item.template.rows));
       // 最新在前
-      const next = [full, ...deduped].slice(0, MAX_HISTORY);
+      const next = [full, ...prev].slice(0, MAX_HISTORY);
       saveHistory(next);
       return next;
     });

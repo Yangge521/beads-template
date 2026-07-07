@@ -41,10 +41,6 @@ import pixelartData from './data/pixelart.json';
 import emojiData from './data/emoji.json';
 import seasonalData from './data/seasonal.json';
 import collabData from './data/collab.json';
-import natureData from './data/nature.json';
-import portraitData from './data/portrait.json';
-import abstractData from './data/abstract.json';
-import logoData from './data/logo.json';
 
 // 内置模板（静态数据）
 const builtinTemplates: BeadTemplate[] = [
@@ -60,10 +56,6 @@ const builtinTemplates: BeadTemplate[] = [
   ...emojiData,
   ...seasonalData,
   ...collabData,
-  ...natureData,
-  ...portraitData,
-  ...abstractData,
-  ...logoData,
 ] as BeadTemplate[];
 
 function AppContent() {
@@ -369,48 +361,20 @@ function AppContent() {
   // 路由分发：所有页面通过 page 变量统一返回，外层用 PageTransition + CommandPalette 包裹
   let page: React.ReactNode;
 
-  // DetailPage 回调 memoize：避免每次 App 重渲染创建新引用导致子组件不必要重渲染
-  const detailId = currentTemplate?.id;
-  const onToggleFavoriteDetail = useCallback(() => {
-    if (detailId) toggleFavorite(detailId);
-  }, [detailId, toggleFavorite]);
-  const onToggleLikeDetail = useCallback(() => {
-    if (detailId) handleToggleLike(detailId);
-  }, [detailId, handleToggleLike]);
-  const onSetRatingDetail = useCallback((stars: number) => {
-    if (detailId) handleSetRating(detailId, stars);
-  }, [detailId, handleSetRating]);
-  const onToggleCellDetail = useCallback((row: number, col: number) => {
-    if (detailId) toggleCell(detailId, row, col);
-  }, [detailId, toggleCell]);
-  const onClearProgressDetail = useCallback(() => {
-    if (detailId) handleClearProgress(detailId);
-  }, [detailId, handleClearProgress]);
-  const onToggleCompareDetail = useCallback(() => {
-    if (!detailId) return;
-    if (isInCompare(detailId)) {
-      removeFromCompare(detailId);
-      showToast(t('compare.removed'), 'info');
-    } else {
-      addToCompare(detailId);
-      showToast(t('compare.added'), 'success');
-    }
-  }, [detailId, isInCompare, addToCompare, removeFromCompare, showToast, t]);
-
   if (routeParts[0] === 'template' && routeParts[1]) {
     page = (
       <DetailPage
         template={currentTemplate}
         onBack={goHome}
         isFavorite={currentTemplate ? isFavorite(currentTemplate.id) : false}
-        onToggleFavorite={onToggleFavoriteDetail}
+        onToggleFavorite={currentTemplate ? () => toggleFavorite(currentTemplate.id) : () => {}}
         isLiked={currentTemplate ? isLiked(currentTemplate.id) : false}
-        onToggleLike={onToggleLikeDetail}
+        onToggleLike={currentTemplate ? () => handleToggleLike(currentTemplate.id) : () => {}}
         rating={currentTemplate ? getRating(currentTemplate.id) : 0}
-        onSetRating={onSetRatingDetail}
+        onSetRating={currentTemplate ? (stars: number) => handleSetRating(currentTemplate.id, stars) : () => {}}
         completedCells={completedCells}
-        onToggleCell={onToggleCellDetail}
-        onClearProgress={onClearProgressDetail}
+        onToggleCell={currentTemplate ? (row: number, col: number) => toggleCell(currentTemplate.id, row, col) : () => {}}
+        onClearProgress={currentTemplate ? () => handleClearProgress(currentTemplate.id) : () => {}}
         progressPercent={currentTemplate ? getProgressPercent(currentTemplate.id, getBeadCount(currentTemplate)) : 0}
         inventory={inventory}
         onAddInventoryColor={addInventoryColor}
@@ -423,7 +387,15 @@ function AppContent() {
         relatedTemplates={relatedTemplates}
         onDeleteCustom={handleDeleteCustom}
         isInCompare={currentTemplate ? isInCompare(currentTemplate.id) : false}
-        onToggleCompare={onToggleCompareDetail}
+        onToggleCompare={currentTemplate ? () => {
+          if (isInCompare(currentTemplate.id)) {
+            removeFromCompare(currentTemplate.id);
+            showToast(t('compare.removed'), 'info');
+          } else {
+            addToCompare(currentTemplate.id);
+            showToast(t('compare.added'), 'success');
+          }
+        } : () => {}}
         onNavigateCompare={handleNavigateCompare}
         compareCount={compareIds.length}
       />
@@ -632,9 +604,7 @@ function AppContent() {
   return (
     <>
       <Suspense fallback={<PageLoader />}>
-        <ErrorBoundary key={hash}>
-          <PageTransition pageKey={hash}>{page}</PageTransition>
-        </ErrorBoundary>
+        <PageTransition pageKey={hash}>{page}</PageTransition>
       </Suspense>
       <button
         type="button"
