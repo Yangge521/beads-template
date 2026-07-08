@@ -490,6 +490,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'upload.build.tagUpload': '上传',
     'upload.build.source': '用户上传',
     'upload.build.colorNamePrefix': '颜色',
+    'upload.photo.title': '照片原图',
+    'upload.photo.detected': '识别到 {count} 种颜色',
+    'upload.photo.upload': '上传照片',
+    'upload.conversion.arrow': '识别转换',
+    'upload.colorCard.usage': '占比 {pct}%',
+    'upload.colorCard.brand': '品牌色号',
+    'upload.colorCard.beads': '{count} 颗',
+    'upload.colorCard.brandNone': '无品牌色号',
 
     // ---- editor ----
     'editor.title': '模板编辑器',
@@ -1328,6 +1336,14 @@ export const translations: Record<Language, Record<string, string>> = {
     'upload.build.tagUpload': 'upload',
     'upload.build.source': 'User upload',
     'upload.build.colorNamePrefix': 'Color',
+    'upload.photo.title': 'Original Photo',
+    'upload.photo.detected': 'Detected {count} colors',
+    'upload.photo.upload': 'Upload Photo',
+    'upload.conversion.arrow': 'Convert',
+    'upload.colorCard.usage': 'Usage {pct}%',
+    'upload.colorCard.brand': 'Brand Code',
+    'upload.colorCard.beads': '{count} beads',
+    'upload.colorCard.brandNone': 'No brand code',
 
     // ---- editor ----
     'editor.title': 'Template Editor',

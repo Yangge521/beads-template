@@ -3277,14 +3277,15 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   margin: 16px 0 4px;
 }
 .upload-page__subtitle {
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 14px;
   margin-bottom: 24px;
 }
 .upload-page__layout {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 28px;
   align-items: start;
 }
 .upload-page__left,
@@ -3292,6 +3293,31 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+}
+
+/* 中间转换指示箭头 */
+.upload-page__conversion {
+  position: absolute;
+  top: 220px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  box-shadow: var(--shadow);
+  color: var(--accent);
+  animation: upload-arrow-pulse 2.4s var(--ease-apple) infinite;
+}
+@keyframes upload-arrow-pulse {
+  0%, 100% { box-shadow: var(--shadow), 0 0 0 0 var(--accent-bg); }
+  50% { box-shadow: var(--shadow), 0 0 0 8px transparent; }
 }
 
 /* 拖拽上传区 */
@@ -3301,35 +3327,37 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   align-items: center;
   justify-content: center;
   gap: 12px;
-  min-height: 280px;
-  padding: 32px;
+  min-height: 420px;
+  padding: 40px;
   background: var(--card-bg);
   border: 2px dashed var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s var(--ease-apple);
   text-align: center;
+  box-shadow: var(--shadow);
 }
 .upload-page__dropzone:hover,
 .upload-page__dropzone--over {
   border-color: var(--accent);
   background: var(--accent-bg);
+  transform: translateY(-2px);
 }
 .upload-page__dropzone:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
 .upload-page__dropzone-icon {
-  color: var(--text);
-  opacity: 0.6;
+  color: var(--accent);
+  opacity: 0.85;
 }
 .upload-page__dropzone-title {
   color: var(--text-h);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
 }
 .upload-page__dropzone-hint {
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 13px;
 }
 .upload-page__file-input {
@@ -3340,12 +3368,176 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   pointer-events: none;
 }
 
-/* 原图预览 */
-.upload-page__preview-original {
+/* 原图卡片 */
+.upload-page__photo-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: var(--radius-xl);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.upload-page__photo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.upload-page__photo-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 600;
+}
+.upload-page__photo-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  min-height: 120px;
+}
+.upload-page__photo {
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  display: block;
+  animation: upload-photo-fade-in 0.5s var(--ease-apple);
+}
+@keyframes upload-photo-fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.upload-page__color-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.upload-page__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-apple);
+}
+.upload-page__icon-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 参数调整（折叠面板） */
+.upload-page__options {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.upload-page__options > summary {
+  list-style: none;
+}
+.upload-page__options > summary::-webkit-details-marker {
+  display: none;
+}
+.upload-page__options-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--text-h);
+  font-size: 14px;
+  font-weight: 600;
+  user-select: none;
+  transition: background 0.2s var(--ease-apple);
+  min-height: 44px;
+}
+.upload-page__options-summary:hover {
+  background: var(--bg-soft);
+}
+.upload-page__options-summary::after {
+  content: '▸';
+  margin-left: auto;
+  color: var(--text-muted);
+  transition: transform 0.2s var(--ease-apple);
+}
+.upload-page__options[open] > .upload-page__options-summary::after {
+  transform: rotate(90deg);
+}
+.upload-page__options-stats {
+  margin-left: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.upload-page__options-body {
+  padding: 4px 16px 16px;
+}
+.upload-page__option {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.upload-page__option--row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.upload-page__option-label {
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 500;
+}
+.upload-page__option-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.upload-page__option input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.upload-page__option input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+}
+.upload-page__option select {
+  padding: 8px 12px;
+  background: var(--bg);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+/* 右侧预览卡片 */
+.upload-page__preview-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 14px;
+  box-shadow: var(--shadow);
 }
 .upload-page__preview-header {
   display: flex;
@@ -3362,135 +3554,130 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   font-weight: 600;
 }
 .upload-page__preview-stats {
-  color: var(--text);
+  color: var(--text-muted);
   font-size: 13px;
 }
-.upload-page__original-img {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-  border-radius: 8px;
-  display: block;
-  margin: 0 auto;
-}
-.upload-page__icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-.upload-page__icon-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* 参数调整 */
-.upload-page__options {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
-}
-.upload-page__options-title {
-  font-size: 15px;
-  margin-bottom: 12px;
-}
-.upload-page__option {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-.upload-page__option--row {
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-.upload-page__option-label {
-  color: var(--text-h);
-  font-size: 13px;
-  font-weight: 500;
-}
-.upload-page__option-hint {
-  color: var(--text);
-  font-size: 12px;
-  opacity: 0.7;
-}
-.upload-page__option input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-}
-.upload-page__option input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
-}
-
-/* 右侧预览区 */
 .upload-page__pixel-preview {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: var(--bg-soft);
+  border-radius: var(--radius-lg);
   padding: 16px;
   overflow: auto;
-  max-height: 400px;
+  max-height: 360px;
   display: flex;
   justify-content: center;
 }
-.upload-page__palette-preview {
+
+/* 颜色卡片网格 */
+.upload-page__palette-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: var(--radius-xl);
+  padding: 14px;
+  box-shadow: var(--shadow);
 }
 .upload-page__palette-label {
   display: block;
   color: var(--text-h);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
-.upload-page__palette-list {
+.upload-page__color-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
 }
-.upload-page__palette-swatch {
+.upload-page__color-card {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px;
-  background: var(--bg);
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg-soft);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
+  opacity: 0;
+  animation: upload-card-stagger 0.4s var(--ease-spring) forwards;
+  transition: transform 0.2s var(--ease-apple), box-shadow 0.2s var(--ease-apple);
 }
-.upload-page__palette-color {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+.upload-page__color-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+@keyframes upload-card-stagger {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.upload-page__color-card-swatch {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
   flex-shrink: 0;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
-.upload-page__palette-info {
+.upload-page__color-card-body {
   display: flex;
   flex-direction: column;
+  gap: 4px;
   min-width: 0;
+  flex: 1;
 }
-.upload-page__palette-hex {
+.upload-page__color-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.upload-page__color-card-hex {
   color: var(--text-h);
   font-size: 12px;
   font-family: monospace;
+  font-weight: 600;
 }
-.upload-page__palette-count {
-  color: var(--text);
+.upload-page__color-card-pct {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+.upload-page__color-card-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.upload-page__color-card-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s var(--ease-apple);
+}
+.upload-page__color-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+.upload-page__color-card-beads {
+  color: var(--text-muted);
   font-size: 11px;
+}
+.upload-page__color-card-brand {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: monospace;
+  text-align: right;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.7;
+  transition: opacity 0.2s var(--ease-apple);
+}
+.upload-page__color-card:hover .upload-page__color-card-brand {
+  opacity: 1;
+  color: var(--text-h);
 }
 
 /* 保存区 */
@@ -3500,8 +3687,9 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   align-items: flex-end;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   padding: 16px;
+  box-shadow: var(--shadow);
 }
 .upload-page__name-label {
   flex: 1;
@@ -3513,13 +3701,14 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   font-weight: 500;
 }
 .upload-page__name-input {
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: var(--bg);
   color: var(--text-h);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 14px;
   font-family: inherit;
+  transition: border-color 0.2s var(--ease-apple);
 }
 .upload-page__name-input:focus {
   outline: none;
@@ -3528,21 +3717,24 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
 .upload-page__save-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 10px 20px;
+  padding: 12px 22px;
+  min-height: 44px;
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 14px;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s var(--ease-apple);
   white-space: nowrap;
 }
 .upload-page__save-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+  transform: translateY(-1px);
 }
 .upload-page__save-btn:disabled {
   opacity: 0.5;
@@ -3559,15 +3751,16 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 420px;
   background: var(--card-bg);
   border: 1px dashed var(--border);
-  border-radius: 12px;
-  gap: 8px;
-  color: var(--text);
+  border-radius: var(--radius-xl);
+  gap: 10px;
+  color: var(--text-muted);
+  box-shadow: var(--shadow);
 }
 .upload-page__empty-icon {
-  font-size: 48px;
+  font-size: 52px;
 }
 .upload-page__empty-text {
   font-size: 14px;
@@ -3577,10 +3770,20 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
 @media (max-width: 768px) {
   .upload-page__layout {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .upload-page__conversion {
+    display: none;
+  }
+  .upload-page__color-cards {
+    grid-template-columns: 1fr;
   }
   .upload-page__save-area {
     flex-direction: column;
     align-items: stretch;
+  }
+  .upload-page__photo {
+    max-height: 360px;
   }
 }
 /* ---- Editor Page ---- */
