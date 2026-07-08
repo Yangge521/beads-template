@@ -5,7 +5,7 @@ import { usePersistentState } from './usePersistentState';
 export interface AIHistoryItem {
   id: string;
   prompt: string;
-  mode: 'preset' | 'match' | 'image';
+  mode: 'agnes' | 'preset' | 'match' | 'image';
   templateName: string;
   /** 生成时间戳 */
   createdAt: number;

@@ -27,6 +27,7 @@ import ToastContainer, { useToast } from './components/ToastContainer';
 import ShortcutHelp from './components/ShortcutHelp';
 import PageTransition from './components/PageTransition';
 import CommandPalette from './components/CommandPalette';
+import ChatAssistant from './components/ChatAssistant';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LanguageProvider, useTranslation } from './context/LanguageContext';
 import { NavigationProvider } from './context/NavigationProvider';
@@ -569,6 +570,7 @@ export default function App() {
           <ToastContainer>
             <AppContent />
             <ShortcutHelp />
+            <ChatAssistant />
           </ToastContainer>
         </ErrorBoundary>
       </LanguageProvider>

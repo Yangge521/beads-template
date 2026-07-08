@@ -7,7 +7,9 @@ import LazyCard from '../components/LazyCard';
 import HeroBackground from '../components/HeroBackground';
 import { useCountUp } from '../hooks/useCountUp';
 import { getBeadCount } from '../utils/beadStats';
-import { ChevronDown, X, Check, Upload } from 'lucide-react';
+import { isAgnesConfigured, getSearchSuggestions } from '../utils/agnesClient';
+import type { SearchSuggestion } from '../utils/agnesClient';
+import { ChevronDown, X, Check, Upload, Sparkles } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { useNavigation } from '../context/NavigationContext';
 
@@ -68,6 +70,69 @@ interface HomePageProps {
   onGridSizeChange: (s: GridSizeFilter) => void;
   colorFilter: string | null;
   onColorFilterChange: (hex: string | null) => void;
+}
+
+/** AI 搜索建议条（仅在 Agnes API 配置后显示） */
+function AISearchSuggestions({ onSearch }: { onSearch: (q: string) => void }) {
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [input, setInput] = useState('');
+  const { t } = useTranslation();
+  const debounceRef = useRef<number | null>(null);
+
+  const fetchSuggestions = useCallback((q: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!q.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    debounceRef.current = window.setTimeout(async () => {
+      setLoading(true);
+      const result = await getSearchSuggestions(q);
+      setSuggestions(result || []);
+      setLoading(false);
+    }, 500);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
+
+  return (
+    <section className="ai-suggest">
+      <div className="ai-suggest__header">
+        <Sparkles size={16} aria-hidden="true" />
+        <span className="ai-suggest__title">{t('home.aiSuggest.title')}</span>
+      </div>
+      <div className="ai-suggest__input-wrap">
+        <input
+          type="text"
+          className="ai-suggest__input"
+          value={input}
+          onChange={(e) => { setInput(e.target.value); fetchSuggestions(e.target.value); }}
+          placeholder={t('home.aiSuggest.placeholder')}
+          aria-label={t('home.aiSuggest.placeholder')}
+        />
+        {loading && <div className="ai-suggest__spinner" aria-hidden="true" />}
+      </div>
+      {suggestions.length > 0 && (
+        <div className="ai-suggest__list">
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              className="ai-suggest__item"
+              onClick={() => { onSearch(s.keyword); }}
+              title={s.reason}
+            >
+              <span className="ai-suggest__keyword">{s.keyword}</span>
+              <span className="ai-suggest__reason">{s.reason}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 }
 
 export default function HomePage({
@@ -308,6 +373,10 @@ export default function HomePage({
               </button>
             </div>
           </section>
+        )}
+
+        {isAgnesConfigured() && (
+          <AISearchSuggestions onSearch={onSearch} />
         )}
 
         {recentTemplates.length > 0 && (

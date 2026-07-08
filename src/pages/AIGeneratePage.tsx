@@ -3,7 +3,7 @@ import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
 import { useToast } from '../components/ToastContainer';
-import { ArrowLeft, Sparkles, Wand2, Check, Shuffle, Layers, Image as ImageIcon, Upload, History, X, Palette } from 'lucide-react';
+import { ArrowLeft, Sparkles, Wand2, Check, Shuffle, Layers, Image as ImageIcon, Upload, History, X, Palette, Bot } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { matchTemplatesByPrompt, matchPresetShape, generatePresetShape, generatePresetShapeWithStyle, extractGridSize } from '../utils/aiGenerate';
 import type { PresetShape } from '../utils/aiGenerate';
@@ -11,6 +11,7 @@ import { analyzeImage } from '../utils/imageToGrid';
 import { STYLE_PRESETS } from '../data/stylePresets';
 import { useAIGenerateHistory } from '../hooks/useAIGenerateHistory';
 import { useNavigation } from '../context/NavigationContext';
+import { useAgnesAI } from '../hooks/useAgnesAI';
 
 interface AIGeneratePageProps {
   templates: BeadTemplate[];
@@ -52,7 +53,7 @@ export default function AIGeneratePage({
   } = nav;
   const [prompt, setPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
-  const [mode, setMode] = useState<'preset' | 'match' | 'image'>('preset');
+  const [mode, setMode] = useState<'agnes' | 'preset' | 'match' | 'image'>('agnes');
   const [result, setResult] = useState<{ grid: number[][]; colors: BeadTemplate['colors']; shape?: PresetShape } | null>(null);
   const [matchedTemplates, setMatchedTemplates] = useState<BeadTemplate[]>([]);
   const [presetSize, setPresetSize] = useState(16);
@@ -79,6 +80,8 @@ export default function AIGeneratePage({
   // 历史面板点击外部关闭
   const historyPanelRef = useRef<HTMLDivElement | null>(null);
   const historyToggleRef = useRef<HTMLButtonElement | null>(null);
+  // Agnes AI
+  const agnes = useAgnesAI();
 
   // 组件卸载时清理所有定时器 + 释放 Blob URL
   useEffect(() => {
@@ -126,11 +129,33 @@ export default function AIGeneratePage({
     };
   }, [presetSize, selectedShape, mode, selectedStyleId]);
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
       showToast(t('ai.prompt.required'), 'error');
       return;
     }
+
+    // Agnes AI 模式：调用真实 AI 生成
+    if (mode === 'agnes') {
+      if (!agnes.isConfigured) {
+        showToast(t('ai.agnes.notConfigured'), 'error');
+        return;
+      }
+      setGenerating(true);
+      const size = extractGridSize(prompt, presetSize);
+      const pattern = await agnes.generatePattern(prompt, size);
+      if (pattern) {
+        setResult({ grid: pattern.grid, colors: pattern.colors });
+        setSelectedShape(null);
+        setMatchedTemplates([]);
+        showToast(t('ai.agnes.generated'), 'success');
+      } else if (agnes.error) {
+        showToast(t('ai.agnes.failed', { error: agnes.error }), 'error');
+      }
+      setGenerating(false);
+      return;
+    }
+
     setGenerating(true);
     try {
       // 模拟"思考"延迟
@@ -173,7 +198,7 @@ export default function AIGeneratePage({
       setGenerating(false);
       showToast(t('ai.generateFailed'), 'error');
     }
-  }, [prompt, mode, templates, presetSize, showToast, t]);
+  }, [prompt, mode, templates, presetSize, showToast, t, agnes]);
 
   const handlePresetClick = useCallback((shape: PresetShape) => {
     setSelectedShape(shape);
@@ -415,6 +440,15 @@ export default function AIGeneratePage({
               <div className="ai-page__mode-tabs">
                 <button
                   type="button"
+                  className={`ai-page__mode-tab ${mode === 'agnes' ? 'active' : ''}`}
+                  onClick={() => setMode('agnes')}
+                  aria-pressed={mode === 'agnes'}
+                >
+                  <Bot size={14} aria-hidden="true" />
+                  {t('ai.mode.agnes')}
+                </button>
+                <button
+                  type="button"
                   className={`ai-page__mode-tab ${mode === 'preset' ? 'active' : ''}`}
                   onClick={() => setMode('preset')}
                   aria-pressed={mode === 'preset'}
@@ -440,6 +474,12 @@ export default function AIGeneratePage({
                 </button>
               </div>
             </div>
+
+            {mode === 'agnes' && !agnes.isConfigured && (
+              <div className="ai-page__agnes-warning" role="alert">
+                <p>{t('ai.agnes.notConfigured')}</p>
+              </div>
+            )}
 
             {mode === 'image' && (
               <div className="ai-page__image-upload">
