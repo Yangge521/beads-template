@@ -9,8 +9,8 @@
  * - 离线编辑：IndexedDB 存储，重新连接后同步到 localStorage
  */
 
-const CACHE_VERSION = 'beads-v4';
-const DATA_CACHE_VERSION = 'beads-data-v4';
+const CACHE_VERSION = 'beads-v5';
+const DATA_CACHE_VERSION = 'beads-data-v5';
 const PRECACHE_URLS = [
   './',
   './index.html',

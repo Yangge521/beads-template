@@ -45,7 +45,7 @@ export default function CommandPalette({
     const ql = q.toLowerCase();
     return fields.some(f => f != null && f.toLowerCase().includes(ql));
   }, []);
-  const [pinyinMatcher, setPinyinMatcher] = useState<PinyinMatcher>(simpleMatch);
+  const [pinyinMatcher, setPinyinMatcher] = useState<PinyinMatcher>(() => simpleMatch);
   useEffect(() => {
     let cancelled = false;
     import('../utils/pinyinSearch').then(m => {
