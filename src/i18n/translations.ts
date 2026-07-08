@@ -1697,3 +1697,6 @@ export const translations: Record<Language, Record<string, string>> = {
     'editor.shapeLib.num8': 'Number 8',
   },
 };
+
+/** 翻译键类型：从 zh 字典派生，让 t('xxx') 的 key 有自动补全 + 缺失检测 */
+export type TranslationKey = keyof typeof translations.zh;

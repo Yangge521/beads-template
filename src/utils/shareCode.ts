@@ -14,6 +14,18 @@ import type { BeadTemplate } from '../types/bead';
 
 const PREFIX = 'BTD1.';
 
+// 字段长度上限，防止恶意超长字符串
+const MAX_NAME_LEN = 100;
+const MAX_DESC_LEN = 500;
+const MAX_TAGS = 20;
+const MAX_TAG_LEN = 30;
+const MAX_GRID_DIM = 128;       // 单边最大 128（128*128=16384）
+const MAX_COLORS = 256;
+const MAX_COLOR_NAME_LEN = 50;
+
+// 合法 hex 颜色正则（#rrggbb）
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
 // 精简字段名，减少分享码体积
 interface CompactTemplate {
   n: string;       // name
@@ -83,6 +95,50 @@ export function encodeShareCode(tpl: BeadTemplate): string {
 }
 
 /**
+ * 校验分享码解码后的 CompactTemplate 是否合法
+ * 校验：字段类型、长度上限、grid 数值范围、hex 格式、difficulty 枚举
+ */
+function validateCompact(c: unknown): c is CompactTemplate {
+  if (!c || typeof c !== 'object') return false;
+  const o = c as Record<string, unknown>;
+  // 字符串字段
+  if (typeof o.n !== 'string' || o.n.length === 0 || o.n.length > MAX_NAME_LEN) return false;
+  if (typeof o.d !== 'string' || o.d.length > MAX_DESC_LEN) return false;
+  if (typeof o.c !== 'string' || o.c.length > MAX_NAME_LEN) return false;
+  if (typeof o.s !== 'string' || o.s.length > MAX_NAME_LEN) return false;
+  // difficulty 枚举
+  if (o.df !== 'easy' && o.df !== 'medium' && o.df !== 'hard') return false;
+  // beadCount 非负整数
+  if (typeof o.b !== 'number' || !Number.isFinite(o.b) || o.b < 0 || o.b > MAX_GRID_DIM * MAX_GRID_DIM) return false;
+  // grid: number[][]
+  if (!Array.isArray(o.g) || o.g.length === 0 || o.g.length > MAX_GRID_DIM) return false;
+  const cols = o.g[0];
+  if (!Array.isArray(cols) || cols.length === 0 || cols.length > MAX_GRID_DIM) return false;
+  const colLen = cols.length;
+  for (const row of o.g) {
+    if (!Array.isArray(row) || row.length !== colLen) return false;
+    for (const v of row) {
+      if (typeof v !== 'number' || !Number.isInteger(v) || v < -1 || v >= MAX_COLORS) return false;
+    }
+  }
+  // colors: [hex, name, count][]
+  if (!Array.isArray(o.cs) || o.cs.length === 0 || o.cs.length > MAX_COLORS) return false;
+  for (const item of o.cs) {
+    if (!Array.isArray(item) || item.length !== 3) return false;
+    const [hex, name, count] = item;
+    if (typeof hex !== 'string' || !HEX_RE.test(hex)) return false;
+    if (typeof name !== 'string' || name.length > MAX_COLOR_NAME_LEN) return false;
+    if (typeof count !== 'number' || !Number.isFinite(count) || count < 0) return false;
+  }
+  // tags: string[]
+  if (!Array.isArray(o.t) || o.t.length > MAX_TAGS) return false;
+  for (const tag of o.t) {
+    if (typeof tag !== 'string' || tag.length > MAX_TAG_LEN) return false;
+  }
+  return true;
+}
+
+/**
  * 从分享码解码模板
  */
 export function decodeShareCode(code: string): BeadTemplate | null {
@@ -91,11 +147,9 @@ export function decodeShareCode(code: string): BeadTemplate | null {
     if (!trimmed.startsWith(PREFIX)) return null;
     const b64 = trimmed.slice(PREFIX.length);
     const json = decodeBase64Url(b64);
-    const compact = JSON.parse(json) as CompactTemplate;
-    // 基本校验
-    if (!compact || !Array.isArray(compact.g) || !Array.isArray(compact.cs)) return null;
-    if (compact.g.length === 0) return null;
-    return fromCompact(compact);
+    const parsed = JSON.parse(json);
+    if (!validateCompact(parsed)) return null;
+    return fromCompact(parsed);
   } catch {
     return null;
   }

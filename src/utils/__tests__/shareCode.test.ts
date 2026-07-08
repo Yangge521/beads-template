@@ -86,6 +86,28 @@ describe('encodeShareCode / decodeShareCode', () => {
     const d2 = decodeShareCode(code);
     expect(d1!.id).not.toBe(d2!.id);
   });
+
+  it('非法 hex 颜色返回 null', () => {
+    // 直接构造非法 base64url JSON 绕过 encodeShareCode
+    const evil = btoa(unescape(encodeURIComponent(JSON.stringify({
+      n: 'x', c: 'a', d: '', g: [[0]], cs: [['red', '红', 1]], b: 1, df: 'easy', t: [], s: '',
+    }))));
+    expect(decodeShareCode('BTD1.' + evil.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))).toBeNull();
+  });
+
+  it('grid 数值超范围返回 null', () => {
+    const evil = btoa(unescape(encodeURIComponent(JSON.stringify({
+      n: 'x', c: 'a', d: '', g: [[9999]], cs: [['#ff0000', '红', 1]], b: 1, df: 'easy', t: [], s: '',
+    }))));
+    expect(decodeShareCode('BTD1.' + evil.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))).toBeNull();
+  });
+
+  it('非法 difficulty 返回 null', () => {
+    const evil = btoa(unescape(encodeURIComponent(JSON.stringify({
+      n: 'x', c: 'a', d: '', g: [[0]], cs: [['#ff0000', '红', 1]], b: 1, df: 'impossible', t: [], s: '',
+    }))));
+    expect(decodeShareCode('BTD1.' + evil.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))).toBeNull();
+  });
 });
 
 describe('extractShareCodeFromUrl', () => {

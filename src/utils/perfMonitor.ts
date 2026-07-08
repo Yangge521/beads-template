@@ -34,6 +34,17 @@ function ratingOf(name: string, value: number): VitalMetric['rating'] {
   return 'poor';
 }
 
+/**
+ * 上报端点：可通过 setVitalsEndpoint 配置。
+ * 未配置时仅控制台输出，不发送网络请求。
+ */
+let vitalsEndpoint: string | null = null;
+
+/** 配置 Web Vitals 上报端点（如 '/api/vitals'） */
+export function setVitalsEndpoint(endpoint: string | null): void {
+  vitalsEndpoint = endpoint;
+}
+
 function emit(metric: VitalMetric) {
   if (!import.meta.env.PROD) return;
   const style =
@@ -45,8 +56,20 @@ function emit(metric: VitalMetric) {
   // 性能指标输出，仅在控制台用，eslint 允许
   // eslint-disable-next-line no-console
   console.log('%c[Vitals] %s: %s (%s)', style, metric.name, metric.value.toFixed(2), metric.rating);
-  // TODO: 接入上报端点（如 Sentry / 自建 analytics）
-  // navigator.sendBeacon('/api/vitals', JSON.stringify(metric));
+
+  // 上报到配置的端点（sendBeacon 不阻塞页面卸载）
+  if (vitalsEndpoint && typeof navigator !== 'undefined' && navigator.sendBeacon) {
+    try {
+      const payload = JSON.stringify({
+        ...metric,
+        path: location.pathname,
+        ts: Date.now(),
+      });
+      navigator.sendBeacon(vitalsEndpoint, payload);
+    } catch {
+      // 上报失败不影响功能
+    }
+  }
 }
 
 /** 初始化所有 Vitals 监听器 */

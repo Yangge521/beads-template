@@ -1,21 +1,21 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { translations } from '../i18n/translations';
-import type { Language, TranslationParams } from '../i18n/translations';
+import type { Language, TranslationParams, TranslationKey } from '../i18n/translations';
 
 interface LanguageContextType {
   lang: Language;
   setLang: (lang: Language) => void;
   toggleLang: () => void;
   /** 翻译函数：t('home.hero.title') 或带插值 t('nav.favorites.ariaLabel', { count: 3 }) */
-  t: (key: string, params?: TranslationParams) => string;
+  t: (key: TranslationKey, params?: TranslationParams) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType>({
   lang: 'zh',
   setLang: () => {},
   toggleLang: () => {},
-  t: (k) => k,
+  t: (k: TranslationKey) => k,
 });
 
 const STORAGE_KEY = 'beads-lang';
@@ -32,11 +32,36 @@ function detectInitialLang(): Language {
   return 'zh';
 }
 
-function translate(lang: Language, key: string, params?: TranslationParams): string {
+/**
+ * 轻量 ICU 复数支持：处理 {count, plural, =0{无} one{# 颗} other{# 颗}} 语法
+ * 不引入完整 ICU 库，仅支持简单的 plural/select 语法
+ */
+function applyICU(str: string, params: TranslationParams): string {
+  // 处理 {varName, plural, =0{...} one{...} other{...}}
+  return str.replace(/\{(\w+),\s*plural,\s*([^}]+(?:\{[^}]*\}[^}]*)+)\}/g, (_match, varName: string, body: string) => {
+    const count = Number(params[varName] ?? 0);
+    // 匹配 =N{...} one{...} other{...}
+    const exactMatch = body.match(new RegExp(`=${count}\\{([^}]*)\\}`));
+    if (exactMatch) return exactMatch[1].replace(/#/g, String(count));
+    if (count === 1) {
+      const oneMatch = body.match(/one\{([^}]*)\}/);
+      if (oneMatch) return oneMatch[1].replace(/#/g, String(count));
+    }
+    const otherMatch = body.match(/other\{([^}]*)\}/);
+    if (otherMatch) return otherMatch[1].replace(/#/g, String(count));
+    return String(count);
+  });
+}
+
+function translate(lang: Language, key: TranslationKey, params?: TranslationParams): string {
   const dict = translations[lang] as Record<string, string>;
   // 1) 当前语言命中；2) 回退到 zh；3) 再回退到 key 本身，便于发现遗漏
-  let str = dict[key] ?? (translations.zh as Record<string, string>)[key] ?? key;
+  const fallbackKey = key as string;
+  let str = dict[fallbackKey] ?? (translations.zh as Record<string, string>)[fallbackKey] ?? fallbackKey;
   if (params) {
+    // 先处理 ICU 复数语法
+    str = applyICU(str, params);
+    // 再处理普通 {varName} 占位符
     for (const [k, v] of Object.entries(params)) {
       str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
     }
@@ -88,7 +113,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback(
-    (key: string, params?: TranslationParams) => translate(lang, key, params),
+    (key: TranslationKey, params?: TranslationParams) => translate(lang, key, params),
     [lang],
   );
 
