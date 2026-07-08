@@ -40,7 +40,7 @@ export async function lazyExportMaterialCSV(
 
 export async function lazyExportPrintChart(
   ...args: Parameters<typeof import('./exportPrintChart')['exportPrintChart']>
-): Promise<boolean> {
+): Promise<void> {
   const { exportPrintChart } = await import('./exportPrintChart');
   return exportPrintChart(...args);
 }

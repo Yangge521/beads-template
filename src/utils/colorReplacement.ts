@@ -27,7 +27,9 @@ export function detectMissingColors(
   threshold = 0.15
 ): MissingColorInfo[] {
   const result: MissingColorInfo[] = [];
-  const inventorySet = new Set(inventoryHexes.map(h => h.toLowerCase()));
+  const inventorySet = new Set(
+    inventoryHexes.filter((h): h is string => typeof h === 'string').map(h => h.toLowerCase())
+  );
   const colors = template.colors;
   // 用 grid 实际用量统计
   const counts: number[] = [];
@@ -38,6 +40,7 @@ export function detectMissingColors(
   }
   for (let i = 0; i < colors.length; i++) {
     const c = colors[i];
+    if (!c || !c.hex) continue;
     const count = counts[i] ?? 0;
     if (count <= 0) continue;
     const hexLower = c.hex.toLowerCase();
@@ -65,11 +68,12 @@ export function applyColorReplacements(
 ): ColorInfo[] {
   const map = new Map<string, string>();
   for (const r of replacements) {
-    if (r.replacement) {
+    if (r.replacement && r.hex) {
       map.set(r.hex.toLowerCase(), r.replacement);
     }
   }
   return colors.map(c => {
+    if (!c || !c.hex) return c;
     const newHex = map.get(c.hex.toLowerCase());
     return newHex ? { ...c, hex: newHex } : c;
   });
