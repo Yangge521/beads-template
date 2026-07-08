@@ -14,12 +14,14 @@
 import type { ColorInfo } from '../types/bead';
 
 const API_ENDPOINT = import.meta.env.VITE_AGNES_API_ENDPOINT || 'https://apihub.agnes-ai.com/v1/chat/completions';
-const API_KEY = import.meta.env.VITE_AGNES_API_KEY || '';
+// 环境变量优先；无环境变量时使用内置 key（纯前端项目 key 会暴露，仅用于个人项目）
+const BUILTIN_API_KEY = 'sk-Izfj0ii6fTarzwEfKyWO1ETsF8EohiGohyhQetdZe9WBcC78';
+const API_KEY = import.meta.env.VITE_AGNES_API_KEY || BUILTIN_API_KEY;
 const MODEL = import.meta.env.VITE_AGNES_MODEL || 'agnes-2.0-flash';
 
 /** 检查 API Key 是否已配置 */
 export function isAgnesConfigured(): boolean {
-  return API_KEY.length > 0 && API_KEY !== 'your_api_key_here' && API_KEY !== 'test_key_placeholder';
+  return API_KEY.length > 0 && API_KEY !== 'your_api_key_here';
 }
 
 interface ChatMessage {
@@ -56,7 +58,7 @@ async function callAgnes(opts: AgnesRequestOptions): Promise<string> {
     model: MODEL,
     messages: opts.messages,
     temperature: opts.temperature ?? 0.7,
-    max_tokens: opts.maxTokens ?? 2000,
+    max_tokens: opts.maxTokens ?? 4000,
   };
 
   // 流式响应
@@ -191,7 +193,7 @@ JSON 结构：
       { role: 'user', content: prompt },
     ],
     temperature: 0.8,
-    maxTokens: 4000,
+    maxTokens: 8000,
     signal: options?.signal,
   });
 
@@ -275,7 +277,7 @@ export async function chatWithAgnes(
   return callAgnes({
     messages: allMessages,
     temperature: 0.7,
-    maxTokens: 1000,
+    maxTokens: 2000,
     onStream: options?.onStream,
     signal: options?.signal,
   });
@@ -313,7 +315,7 @@ export async function getSearchSuggestions(
       { role: 'user', content: query },
     ],
     temperature: 0.5,
-    maxTokens: 500,
+    maxTokens: 1000,
     signal: options?.signal,
   });
 
@@ -352,7 +354,7 @@ export async function getDesignAdvice(
       { role: 'user', content: prompt },
     ],
     temperature: 0.6,
-    maxTokens: 600,
+    maxTokens: 1500,
     signal: options?.signal,
   });
 }
