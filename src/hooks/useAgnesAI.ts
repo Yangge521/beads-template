@@ -74,9 +74,11 @@ export function useAgnesAI() {
   /** 聊天助手 */
   const chat = useCallback((
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-    onStream?: (chunk: string) => void
+    onStream?: (chunk: string) => void,
+    onReasoning?: (chunk: string) => void,
+    context?: { page?: string; templateName?: string; favoritesCount?: number; progressPercent?: number }
   ) => {
-    return execute<string>((signal) => chatWithAgnes(messages, { onStream, signal }));
+    return execute<string>((signal) => chatWithAgnes(messages, { onStream, onReasoning, signal, context }));
   }, [execute]);
 
   /** 搜索建议 */

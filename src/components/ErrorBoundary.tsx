@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { useTranslation } from '../context/LanguageContext';
+import { reportError } from '../utils/errorMonitor';
 
 interface Props {
   children: ReactNode;
@@ -58,7 +59,10 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, info);
-    this.setState({ componentStack: info.componentStack ?? undefined });
+    const componentStack = info.componentStack ?? undefined;
+    // 上报到错误监控（生产环境 sendBeacon，开发环境仅 console）
+    reportError(error, { componentStack });
+    this.setState({ componentStack });
   }
 
   handleReset = () => {

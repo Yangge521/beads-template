@@ -3,19 +3,22 @@
  *
  * 浮动在右下角的可折叠聊天面板，支持：
  * - 多轮对话
- * - 流式响应
+ * - 流式响应 + 推理过程（reasoning_content）显示
+ * - 上下文感知（注入当前页面/模板/进度）
  * - 快捷问题
  * - API 未配置时的提示
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, Brain, ChevronDown, ChevronRight } from 'lucide-react';
 import { useAgnesAI } from '../hooks/useAgnesAI';
 import { useTranslation } from '../context/LanguageContext';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  /** AI 思考过程（reasoning_content），可选 */
+  reasoning?: string;
 }
 
 const QUICK_QUESTIONS = [
@@ -30,6 +33,8 @@ export default function ChatAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streamingText, setStreamingText] = useState('');
+  const [reasoningText, setReasoningText] = useState('');
+  const [showReasoning, setShowReasoning] = useState(false);
   const agnes = useAgnesAI();
   const { t } = useTranslation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -38,7 +43,7 @@ export default function ChatAssistant() {
   // 自动滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamingText, open]);
+  }, [messages, streamingText, reasoningText, open]);
 
   // 打开时自动聚焦输入框
   useEffect(() => {
@@ -46,6 +51,40 @@ export default function ChatAssistant() {
       requestAnimationFrame(() => inputRef.current?.focus());
     }
   }, [open]);
+
+  /** 构建聊天上下文（基于当前路由 + localStorage 统计） */
+  const buildContext = useCallback(() => {
+    const hash = window.location.hash.slice(1) || '/';
+    const parts = hash.split('/').filter(Boolean);
+    let page = 'home';
+    if (parts[0] === 'template' && parts[1]) page = 'detail';
+    else if (parts[0] === 'favorites') page = 'favorites';
+    else if (parts[0] === 'ai') page = 'ai-generate';
+    else if (parts[0] === 'colors') page = 'color-reference';
+    else if (parts[0] === 'upload') page = 'upload';
+    else if (parts[0] === 'editor') page = 'editor';
+    else if (parts[0] === 'community') page = 'community';
+
+    let templateName: string | undefined;
+    if (page === 'detail') {
+      // 尝试从 document.title 提取模板名
+      const title = document.title;
+      // 标题格式："模板名 - 拼豆收集"
+      const match = title.match(/^(.+?)\s*-\s*拼豆收集/);
+      if (match) templateName = match[1];
+    }
+
+    let favoritesCount: number | undefined;
+    try {
+      const fav = localStorage.getItem('beads-favorites');
+      if (fav) {
+        const parsed = JSON.parse(fav);
+        if (Array.isArray(parsed)) favoritesCount = parsed.length;
+      }
+    } catch { /* ignore */ }
+
+    return { page, templateName, favoritesCount };
+  }, []);
 
   const handleSend = useCallback(async (text?: string) => {
     const content = (text ?? input).trim();
@@ -64,14 +103,23 @@ export default function ChatAssistant() {
     setMessages(newMessages);
     setInput('');
     setStreamingText('');
+    setReasoningText('');
+    setShowReasoning(true);
 
     // 流式回调
-    const result = await agnes.chat(newMessages, (chunk) => {
-      setStreamingText(prev => prev + chunk);
-    });
+    const result = await agnes.chat(
+      newMessages,
+      (chunk) => setStreamingText(prev => prev + chunk),
+      (reasoningChunk) => setReasoningText(prev => prev + reasoningChunk),
+      buildContext(),
+    );
 
     if (result) {
-      setMessages(prev => [...prev, { role: 'assistant', content: result }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: result,
+        reasoning: reasoningText || undefined,
+      }]);
     } else if (agnes.error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -79,7 +127,8 @@ export default function ChatAssistant() {
       }]);
     }
     setStreamingText('');
-  }, [input, messages, agnes, t]);
+    setReasoningText('');
+  }, [input, messages, agnes, t, reasoningText, buildContext]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -91,6 +140,7 @@ export default function ChatAssistant() {
   const handleClear = useCallback(() => {
     setMessages([]);
     setStreamingText('');
+    setReasoningText('');
   }, []);
 
   if (!open) {
@@ -163,17 +213,55 @@ export default function ChatAssistant() {
             <div className="chat-msg__avatar" aria-hidden="true">
               {msg.role === 'user' ? '👤' : '🤖'}
             </div>
-            <div className="chat-msg__bubble">
-              {msg.content}
+            <div className="chat-msg__body">
+              {msg.reasoning && (
+                <details className="chat-msg__reasoning" onClick={(e) => e.stopPropagation()}>
+                  <summary>
+                    <Brain size={12} aria-hidden="true" />
+                    <span>{t('ai.chat.reasoning')}</span>
+                  </summary>
+                  <div className="chat-msg__reasoning-text">{msg.reasoning}</div>
+                </details>
+              )}
+              <div className="chat-msg__bubble">
+                {msg.content}
+              </div>
             </div>
           </div>
         ))}
+        {/* 流式推理过程 */}
+        {reasoningText && (
+          <div className="chat-msg chat-msg--reasoning">
+            <div className="chat-msg__avatar" aria-hidden="true">
+              <Brain size={16} aria-hidden="true" />
+            </div>
+            <div className="chat-msg__body">
+              <details
+                className="chat-msg__reasoning chat-msg__reasoning--active"
+                open={showReasoning}
+                onToggle={(e) => setShowReasoning(e.currentTarget.open)}
+              >
+                <summary>
+                  {showReasoning ? <ChevronDown size={12} aria-hidden="true" /> : <ChevronRight size={12} aria-hidden="true" />}
+                  <span>{t('ai.chat.thinking')}</span>
+                </summary>
+                <div className="chat-msg__reasoning-text">
+                  {reasoningText}
+                  <span className="chat-msg__cursor" aria-hidden="true">▊</span>
+                </div>
+              </details>
+            </div>
+          </div>
+        )}
+        {/* 流式正文 */}
         {streamingText && (
           <div className="chat-msg chat-msg--assistant">
             <div className="chat-msg__avatar" aria-hidden="true">🤖</div>
-            <div className="chat-msg__bubble">
-              {streamingText}
-              <span className="chat-msg__cursor" aria-hidden="true">▊</span>
+            <div className="chat-msg__body">
+              <div className="chat-msg__bubble">
+                {streamingText}
+                <span className="chat-msg__cursor" aria-hidden="true">▊</span>
+              </div>
             </div>
           </div>
         )}

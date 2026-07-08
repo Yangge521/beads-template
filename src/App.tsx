@@ -45,6 +45,7 @@ import { getBeadCount } from './utils/beadStats';
 import { CATEGORIES } from './categories';
 import type { BeadTemplate } from './types/bead';
 import { downloadBackupFile, parseBackupFile, importUserData } from './utils/dataSync';
+import { initErrorMonitor } from './utils/errorMonitor';
 
 function AppContent() {
   const { theme, toggleTheme } = useTheme();
@@ -562,6 +563,12 @@ function PageLoader() {
 }
 
 export default function App() {
+  // 初始化错误监控：挂载 window error / unhandledrejection / CSP 监听
+  // 空依赖数组确保只初始化一次
+  useEffect(() => {
+    initErrorMonitor();
+  }, []);
+
   return (
     <ThemeProvider>
       <LanguageProvider>

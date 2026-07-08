@@ -12,8 +12,15 @@
  */
 
 import type { ColorInfo } from '../types/bead';
+import { callWithCache, buildCacheKey, withRetry } from './aiCache';
 
-const API_ENDPOINT = import.meta.env.VITE_AGNES_API_ENDPOINT || 'https://apihub.agnes-ai.com/v1/chat/completions';
+// 代理端点（如 Cloudflare Workers 代理）：配置后所有请求走代理，隐藏 API Key
+const PROXY_ENDPOINT = import.meta.env.VITE_AGNES_PROXY_ENDPOINT || '';
+const API_ENDPOINT = PROXY_ENDPOINT || (import.meta.env.VITE_AGNES_API_ENDPOINT || 'https://apihub.agnes-ai.com/v1/chat/completions');
+// 代理模式下，图像端点由 chat 端点路径替换而来；否则使用默认图像端点
+const IMAGE_API_ENDPOINT = PROXY_ENDPOINT
+  ? PROXY_ENDPOINT.replace('/chat/completions', '/images/generations')
+  : 'https://apihub.agnes-ai.com/v1/images/generations';
 // 环境变量优先；无环境变量时使用内置 key（纯前端项目 key 会暴露，仅用于个人项目）
 const BUILTIN_API_KEY = 'sk-Izfj0ii6fTarzwEfKyWO1ETsF8EohiGohyhQetdZe9WBcC78';
 const API_KEY = import.meta.env.VITE_AGNES_API_KEY || BUILTIN_API_KEY;
@@ -35,6 +42,8 @@ interface AgnesRequestOptions {
   maxTokens?: number;
   /** 流式响应回调（未实现则等待完整响应） */
   onStream?: (chunk: string) => void;
+  /** 流式推理内容回调（reasoning_content，思考过程） */
+  onReasoning?: (chunk: string) => void;
   signal?: AbortSignal;
 }
 
@@ -94,10 +103,15 @@ async function callAgnes(opts: AgnesRequestOptions): Promise<string> {
         if (data === '[DONE]') continue;
         try {
           const json = JSON.parse(data);
-          const delta = json.choices?.[0]?.delta?.content;
-          if (delta) {
-            full += delta;
-            opts.onStream(delta);
+          const delta = json.choices?.[0]?.delta;
+          // 推理内容（思考过程）：单独回调，不进入正文
+          if (delta?.reasoning_content && opts.onReasoning) {
+            opts.onReasoning(delta.reasoning_content);
+          }
+          // 正文内容
+          if (delta?.content) {
+            full += delta.content;
+            opts.onStream(delta.content);
           }
         } catch {
           // 忽略解析失败的行
@@ -187,15 +201,19 @@ JSON 结构：
 4. 使用尽量少的颜色（3-5 种为佳）
 5. 颜色要有对比度，避免过多相近色调`;
 
-  const content = await callAgnes({
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt },
-    ],
-    temperature: 0.8,
-    maxTokens: 8000,
-    signal: options?.signal,
-  });
+  const content = await callWithCache(
+    buildCacheKey(prompt, { size }),
+    () => withRetry(() => callAgnes({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.8,
+      maxTokens: 8000,
+      signal: options?.signal,
+    })),
+    options?.signal
+  );
 
   try {
     const parsed = extractJSON(content) as {
@@ -250,12 +268,25 @@ export interface ChatMessageResult {
 
 /**
  * 聊天助手：多轮对话
+ *
+ * 可选 context 参数用于注入当前用户上下文（所在页面、模板、收藏数等），
+ * 帮助 AI 给出更贴合用户当前场景的回答。
  */
 export async function chatWithAgnes(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-  options?: { onStream?: (chunk: string) => void; signal?: AbortSignal }
+  options?: {
+    onStream?: (chunk: string) => void;
+    onReasoning?: (chunk: string) => void;
+    signal?: AbortSignal;
+    context?: {
+      page?: string;
+      templateName?: string;
+      favoritesCount?: number;
+      progressPercent?: number;
+    };
+  }
 ): Promise<string> {
-  const systemPrompt = `你是"拼豆助手"，一个专注于拼豆（Perler Bead）制作的 AI 助手。
+  let systemPrompt = `你是"拼豆助手"，一个专注于拼豆（Perler Bead）制作的 AI 助手。
 
 你的职责：
 1. 帮助用户选择拼豆图案、配色方案
@@ -269,18 +300,32 @@ export async function chatWithAgnes(
 - 适当使用 emoji 增加亲和力
 - 如果用户问的是拼豆之外的话题，礼貌引导回拼豆主题`;
 
+  // 注入用户上下文（如有）
+  const ctx = options?.context;
+  if (ctx) {
+    const lines: string[] = ['', '当前用户上下文：'];
+    if (ctx.page !== undefined) lines.push(`- 所在页面：${ctx.page}`);
+    if (ctx.templateName !== undefined) lines.push(`- 正在查看的模板：${ctx.templateName}（如有）`);
+    if (ctx.favoritesCount !== undefined) lines.push(`- 收藏数：${ctx.favoritesCount}`);
+    if (ctx.progressPercent !== undefined) lines.push(`- 制作进度：${ctx.progressPercent}%`);
+    lines.push('请基于此上下文回答用户问题。');
+    systemPrompt += '\n' + lines.join('\n');
+  }
+
   const allMessages: ChatMessage[] = [
     { role: 'system', content: systemPrompt },
     ...messages.map(m => ({ role: m.role, content: m.content }) as ChatMessage),
   ];
 
-  return callAgnes({
+  // 对话不缓存（上下文每次不同），但重试以提升稳定性
+  return withRetry(() => callAgnes({
     messages: allMessages,
     temperature: 0.7,
     maxTokens: 2000,
     onStream: options?.onStream,
+    onReasoning: options?.onReasoning,
     signal: options?.signal,
-  });
+  }));
 }
 
 // ============ 智能搜索建议 ============
@@ -309,15 +354,19 @@ export async function getSearchSuggestions(
 - 每个原因不超过 15 字
 - 使用中文`;
 
-  const content = await callAgnes({
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: query },
-    ],
-    temperature: 0.5,
-    maxTokens: 1000,
-    signal: options?.signal,
-  });
+  const content = await callWithCache(
+    buildCacheKey(query),
+    () => withRetry(() => callAgnes({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: query },
+      ],
+      temperature: 0.5,
+      maxTokens: 1000,
+      signal: options?.signal,
+    })),
+    options?.signal
+  );
 
   try {
     const parsed = extractJSON(content);
@@ -361,7 +410,7 @@ export async function getDesignAdvice(
 
 // ============ 图像生成（agnes-image-2.1-flash） ============
 
-const IMAGE_API_ENDPOINT = 'https://apihub.agnes-ai.com/v1/images/generations';
+// IMAGE_API_ENDPOINT 已在文件顶部常量区定义（支持代理）
 const IMAGE_MODEL = 'agnes-image-2.1-flash';
 
 /** 图像生成结果 */

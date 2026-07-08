@@ -3,13 +3,15 @@ import type { BeadTemplate } from '../types/bead';
 import Navbar from '../components/Navbar';
 import PixelGrid from '../components/PixelGrid';
 import { useToast } from '../components/ToastContainer';
-import { ArrowLeft, ArrowRight, Upload, Image as ImageIcon, Save, RefreshCw, Sliders } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Upload, Image as ImageIcon, Save, RefreshCw, Sliders, Wand2 } from 'lucide-react';
 import { loadImageFromFile, buildTemplateFromImage } from '../utils/imageToGrid';
 import { pixelizeImageEnhanced } from '../utils/imageToGridEnhanced';
 import type { DitherAlgorithm } from '../utils/imageToGridEnhanced';
 import { lookupByHex } from '../utils/brandLookup';
 import { useTranslation } from '../context/LanguageContext';
 import { useNavigation } from '../context/NavigationContext';
+import { AI_STYLE_PRESETS, getStylePresetById } from '../data/aiStylePresets';
+import { useAgnesAI } from '../hooks/useAgnesAI';
 
 interface UploadPageProps {
   onSaveTemplate: (template: Omit<BeadTemplate, 'id'>) => BeadTemplate;
@@ -60,6 +62,10 @@ export default function UploadPage({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
   const { t } = useTranslation();
+  const agnes = useAgnesAI();
+  // 当前选中的 AI 风格预设 id，空字符串表示无风格（使用原图）
+  const [selectedStyle, setSelectedStyle] = useState<string>('');
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   // 像素化预览（实时随参数变化，使用增强算法）
   const preview = useMemo(() => {
@@ -187,6 +193,47 @@ export default function UploadPage({
     setOptions(DEFAULT_OPTIONS);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
+
+  // AI 风格化生成：有图片走图生图，无图片走文生图
+  const handleAIGenerate = useCallback(async () => {
+    // 未选择风格（无原图）时无需生成
+    if (!selectedStyle) return;
+    const preset = getStylePresetById(selectedStyle);
+    if (!preset) return;
+    setAiGenerating(true);
+    try {
+      let result = null;
+      if (img && imgSrc) {
+        // 图生图：基于当前图片重绘为指定风格
+        result = await agnes.editArtwork(preset.prompt, imgSrc, '1024x1024', true);
+      } else {
+        // 文生图：使用名称作为描述并叠加风格提示
+        const userPrompt = name.trim() || t('upload.toast.defaultName');
+        result = await agnes.generateArtwork(`${userPrompt}, ${preset.prompt}`, '1024x1024', true);
+      }
+      if (!result) {
+        showToast(t('upload.toast.loadFailed'), 'error');
+        return;
+      }
+      const src = result.base64 ? `data:image/png;base64,${result.base64}` : result.url;
+      if (!src) {
+        showToast(t('upload.toast.loadFailed'), 'error');
+        return;
+      }
+      // 加载返回的图片为 HTMLImageElement，更新状态后预览会自动重算
+      const image = new Image();
+      image.onload = () => {
+        setImg(image);
+        setImgSrc(src);
+      };
+      image.onerror = () => {
+        showToast(t('upload.toast.loadFailed'), 'error');
+      };
+      image.src = src;
+    } finally {
+      setAiGenerating(false);
+    }
+  }, [selectedStyle, img, imgSrc, name, agnes, showToast, t]);
 
   return (
     <div className="page upload-page">
@@ -377,6 +424,28 @@ export default function UploadPage({
                       onChange={(e) => setOptions(o => ({ ...o, maxColors: Number(e.target.value) }))}
                     />
                   </label>
+                  <div className="upload-page__ai-style">
+                    <span className="upload-page__option-label">{t('upload.ai.style')}</span>
+                    <select
+                      value={selectedStyle}
+                      onChange={(e) => setSelectedStyle(e.target.value)}
+                    >
+                      <option value="">{t('upload.ai.styleNone')}</option>
+                      {AI_STYLE_PRESETS.map(p => (
+                        <option key={p.id} value={p.id}>{p.emoji} {p.nameZh}</option>
+                      ))}
+                    </select>
+                    <p className="upload-page__option-hint">{t('upload.ai.styleHint')}</p>
+                    <button
+                      type="button"
+                      className="upload-page__ai-btn"
+                      onClick={handleAIGenerate}
+                      disabled={aiGenerating || !agnes.isConfigured}
+                    >
+                      <Wand2 size={16} />
+                      {aiGenerating ? t('upload.ai.generating') : t('upload.ai.generate')}
+                    </button>
+                  </div>
                   <p className="upload-page__option-hint">{t('upload.algorithm.hint')}</p>
                 </div>
               </details>

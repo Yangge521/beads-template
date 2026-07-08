@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from '../components/PixelGrid';
 import FavoriteButton from '../components/FavoriteButton';
-import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, FileText, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered, GitCompare, Hash } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ZoomIn, ZoomOut, Check, Copy, Grid3x3, ClipboardList, Share2, Printer, Download, Trash2, FileCode, FileText, Map as MapIcon, Table, ThumbsUp, Star, FlipHorizontal, FlipVertical, RotateCw, RotateCcw, RefreshCw, CheckSquare, Palette as PaletteIcon, ListOrdered, GitCompare, Hash, Timer, Play, Pause, SkipForward, ShoppingCart, Search, Box, GitBranch } from 'lucide-react';
 import { getBeadCount, getCorrectedColors } from '../utils/beadStats';
 import { lazyExportPNG, lazyExportSVG, lazyExportCSV, lazyExportPrintChart, lazyExportPDF } from '../utils/exporters';
 import { applyTransform, type TransformType } from '../utils/transformGrid';
@@ -20,6 +21,14 @@ import AchievementBadges from '../components/AchievementBadges';
 import { useAchievements } from '../hooks/useAchievements';
 import CommentsSection from '../components/CommentsSection';
 import { useComments } from '../hooks/useComments';
+// 新增功能模块导入
+import { usePomodoro } from '../hooks/usePomodoro';
+import WhiteNoisePlayer from '../components/WhiteNoisePlayer';
+import { calculatePurchaseList, calculateTotal, exportPurchaseCSV, generateTaobaoSearchUrl } from '../utils/purchaseList';
+import ARPreview from '../components/ARPreview';
+import { createRemix, buildRemixName } from '../utils/remix';
+import { lookupByHex } from '../utils/brandLookup';
+import { useNavigation } from '../context/NavigationContext';
 
 interface DetailPageProps {
   template: BeadTemplate | null;
@@ -61,6 +70,48 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
 
+// 新增功能面板内联样式（不新增 CSS 文件，保证明暗主题下均可用）
+const panelStyle: CSSProperties = {
+  margin: '12px 0',
+  padding: 16,
+  border: '1px solid rgba(128,128,128,0.25)',
+  borderRadius: 8,
+  background: 'rgba(128,128,128,0.06)',
+};
+const panelTitleStyle: CSSProperties = {
+  margin: '0 0 12px',
+  fontSize: 14,
+  fontWeight: 600,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+};
+const ctrlBtnStyle: CSSProperties = {
+  minWidth: 44,
+  minHeight: 44,
+  padding: '8px 14px',
+  border: '1px solid rgba(128,128,128,0.3)',
+  borderRadius: 6,
+  background: 'transparent',
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  fontSize: 13,
+};
+const purchaseThStyle: CSSProperties = {
+  textAlign: 'left',
+  padding: '6px 8px',
+  borderBottom: '1px solid rgba(128,128,128,0.3)',
+  fontSize: 12,
+  fontWeight: 600,
+};
+const purchaseTdStyle: CSSProperties = {
+  padding: '6px 8px',
+  borderBottom: '1px solid rgba(128,128,128,0.15)',
+  fontSize: 13,
+};
+
 export default function DetailPage({
   template,
   onBack,
@@ -101,6 +152,17 @@ export default function DetailPage({
   const [colorSort, setColorSort] = useState<'count' | 'name' | 'hex'>('count');
   const [beadSize, setBeadSize] = useState<5 | 2.6>(5);
   const [showInventory, setShowInventory] = useState(false);
+  // 新增功能面板开关
+  const [showTimer, setShowTimer] = useState(false);
+  const [showPurchase, setShowPurchase] = useState(false);
+  const [showAR, setShowAR] = useState(false);
+  // 采购清单参数：损耗率（0-0.3）与单价（0.01-0.5 元/颗）
+  const [wasteRate, setWasteRate] = useState(0.1);
+  const [unitPrice, setUnitPrice] = useState(0.05);
+  // 番茄钟计时器（hook 必须在 early return 之前调用）
+  const pomodoro = usePomodoro();
+  // 导航（Remix 跳转编辑器用）
+  const { navigate } = useNavigation();
   const stepGuide = useStepGuide(template?.id);
   const touch = useTouchGesture(true, zoom > 1);
   const [replacedColors, setReplacedColors] = useState<MissingColorInfo[]>([]);
@@ -149,6 +211,22 @@ export default function DetailPage({
     () => (template ? getCorrectedColors(template) : []),
     [template]
   );
+  // 采购清单：基于修正后的颜色用量 + 损耗率/单价计算，通过 lookupByHex 补全品牌色号
+  const purchaseItems = useMemo(
+    () => calculatePurchaseList(correctedColors, {
+      wasteRate,
+      unitPrice,
+      brandLookup: (hex: string) => {
+        const brand = lookupByHex(hex);
+        if (!brand) return undefined;
+        // 返回第一个可用的品牌色号
+        return brand.perler ?? brand.artkal ?? brand.hama ?? brand.nabbi ?? brand.mixiaowo ?? brand.manman ?? brand.coco;
+      },
+    }),
+    [correctedColors, wasteRate, unitPrice]
+  );
+  // 采购合计：总颗数 + 总费用
+  const purchaseTotal = useMemo(() => calculateTotal(purchaseItems), [purchaseItems]);
   // 应用库存颜色替换后的色卡（replacedColors 为空时与 correctedColors 相同）
   const displayColors = useMemo(
     () => replacedColors.length > 0 ? applyColorReplacements(correctedColors, replacedColors) : correctedColors,
@@ -474,6 +552,49 @@ export default function DetailPage({
     showToast(t('detail.inventory.applied'), 'success');
   }, [showToast, t]);
 
+  // 导出采购清单 CSV
+  const handleExportPurchaseCSV = useCallback(() => {
+    const ok = exportPurchaseCSV(purchaseItems, purchaseTotal);
+    showToast(ok ? t('detail.toast.csvExported') : t('detail.toast.exportFailed'), ok ? 'success' : 'error');
+  }, [purchaseItems, purchaseTotal, showToast, t]);
+
+  // 淘宝搜索：用前 5 个颜色名称生成搜索链接并新窗口打开
+  const handleTaobaoSearch = useCallback(() => {
+    const url = generateTaobaoSearchUrl(purchaseItems);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, [purchaseItems]);
+
+  // Remix：从当前模板派生新模板，通过 sessionStorage 传递草稿并跳转编辑器
+  const handleRemix = useCallback(() => {
+    if (!template) return;
+    try {
+      const remixMeta = createRemix(
+        { id: template.id, name: template.name, category: template.category },
+        { name: buildRemixName(template.name), grid: template.grid, colors: template.colors }
+      );
+      const draft: Omit<BeadTemplate, 'id'> = {
+        name: buildRemixName(template.name),
+        category: 'custom',
+        description: template.description,
+        grid: template.grid,
+        colors: template.colors,
+        beadCount: template.beadCount,
+        difficulty: template.difficulty,
+        tags: [...template.tags, 'remix'],
+        source: template.source,
+        originParentId: remixMeta.originParentId,
+        originParentName: remixMeta.originParentName,
+        remixDepth: remixMeta.remixDepth,
+        isRemix: remixMeta.isRemix,
+      };
+      sessionStorage.setItem('editor-draft', JSON.stringify(draft));
+      showToast(t('detail.remix.created'), 'success');
+      navigate('editor');
+    } catch {
+      showToast(t('detail.toast.exportFailed'), 'error');
+    }
+  }, [template, navigate, showToast, t]);
+
   // 滚动监听，控制返回顶部按钮显示（rAF 节流）
   useEffect(() => {
     let rafId: number | null = null;
@@ -538,6 +659,18 @@ export default function DetailPage({
   const zoomIn = () => setZoom(z => Math.min(MAX_ZOOM, +(z + ZOOM_STEP).toFixed(2)));
   const zoomOut = () => setZoom(z => Math.max(MIN_ZOOM, +(z - ZOOM_STEP).toFixed(2)));
   const zoomReset = () => setZoom(1);
+
+  // 番茄钟模式文案：break 模式下根据轮数判断短/长休息
+  const timerModeLabel = pomodoro.mode === 'focus'
+    ? t('detail.timer.focus')
+    : pomodoro.mode === 'break'
+      ? (pomodoro.cycleCount > 0 && pomodoro.cycleCount % 4 === 0
+        ? t('detail.timer.longBreak')
+        : t('detail.timer.shortBreak'))
+      : t('detail.timer.focus');
+  // 番茄钟剩余时间格式化为 MM:SS
+  const timerMM = String(Math.floor(pomodoro.timeLeft / 60)).padStart(2, '0');
+  const timerSS = String(pomodoro.timeLeft % 60).padStart(2, '0');
 
   return (
     <div className="page detail-page">
@@ -669,6 +802,13 @@ export default function DetailPage({
           />
         )}
         <h1 className="detail-page__title">{template.name}</h1>
+        {/* 自定义模板且为 Remix 派生时，显示父模板名称 */}
+        {template.category === 'custom' && template.isRemix && template.originParentName && (
+          <p className="detail-page__remix-origin" style={{ margin: '4px 0 0', fontSize: 13, opacity: 0.7, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <GitBranch size={14} aria-hidden="true" />
+            {t('detail.remix.origin', { name: template.originParentName })}
+          </p>
+        )}
 
         <div className="detail-page__tags">
           <span
@@ -810,7 +950,204 @@ export default function DetailPage({
             >
               <Hash size={16} />
             </button>
+            {/* 新增工具：计时器 / 采购清单 / AR 预览 / Remix */}
+            <div className="detail-page__transform-group" role="group" aria-label={t('detail.timer.title')}>
+              <button
+                type="button"
+                className={`detail-page__zoom-btn ${showTimer ? 'detail-page__zoom-btn--active' : ''}`}
+                onClick={() => setShowTimer(v => !v)}
+                aria-label={t('detail.timer.title')}
+                aria-pressed={showTimer}
+                title={t('detail.timer.title')}
+              >
+                <Timer size={16} />
+              </button>
+              <button
+                type="button"
+                className={`detail-page__zoom-btn ${showPurchase ? 'detail-page__zoom-btn--active' : ''}`}
+                onClick={() => setShowPurchase(v => !v)}
+                aria-label={t('detail.purchase.title')}
+                aria-pressed={showPurchase}
+                title={t('detail.purchase.title')}
+              >
+                <ShoppingCart size={16} />
+              </button>
+              <button
+                type="button"
+                className="detail-page__zoom-btn"
+                onClick={() => setShowAR(true)}
+                aria-label={t('detail.ar.preview')}
+                title={t('detail.ar.preview')}
+              >
+                <Box size={16} />
+              </button>
+              <button
+                type="button"
+                className="detail-page__zoom-btn"
+                onClick={handleRemix}
+                aria-label={t('detail.remix.title')}
+                title={t('detail.remix.create')}
+              >
+                <GitBranch size={16} />
+              </button>
+            </div>
           </div>
+
+          {/* 番茄钟面板：模式 + 剩余时间 + 控制按钮 + 白噪音播放器 */}
+          {showTimer && (
+            <div
+              className="detail-page__timer-panel"
+              role="region"
+              aria-label={t('detail.timer.title')}
+              style={panelStyle}
+            >
+              <h3 style={panelTitleStyle}>
+                <Timer size={16} aria-hidden="true" />
+                {t('detail.timer.title')}
+              </h3>
+              <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>
+                {timerModeLabel}
+              </div>
+              <div style={{ fontSize: 36, fontWeight: 700, fontVariantNumeric: 'tabular-nums', marginBottom: 4 }}>
+                {timerMM}:{timerSS}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 12 }}>
+                {t('detail.timer.cycle', { n: pomodoro.cycleCount })}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={pomodoro.isRunning ? pomodoro.pause : pomodoro.start}
+                  aria-label={pomodoro.isRunning ? t('detail.timer.pause') : t('detail.timer.start')}
+                  title={pomodoro.isRunning ? t('detail.timer.pause') : t('detail.timer.start')}
+                  style={ctrlBtnStyle}
+                >
+                  {pomodoro.isRunning ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
+                  <span>{pomodoro.isRunning ? t('detail.timer.pause') : t('detail.timer.start')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={pomodoro.reset}
+                  aria-label={t('detail.timer.reset')}
+                  title={t('detail.timer.reset')}
+                  style={ctrlBtnStyle}
+                >
+                  <RotateCcw size={16} aria-hidden="true" />
+                  <span>{t('detail.timer.reset')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={pomodoro.skip}
+                  aria-label={t('detail.timer.skip')}
+                  title={t('detail.timer.skip')}
+                  style={ctrlBtnStyle}
+                >
+                  <SkipForward size={16} aria-hidden="true" />
+                  <span>{t('detail.timer.skip')}</span>
+                </button>
+              </div>
+              {/* 白噪音播放器：专注时辅助放松 */}
+              <WhiteNoisePlayer />
+            </div>
+          )}
+
+          {/* 采购清单面板：损耗率/单价滑块 + 明细表 + 合计 + 导出/搜索 */}
+          {showPurchase && (
+            <div
+              className="detail-page__purchase-panel"
+              role="region"
+              aria-label={t('detail.purchase.title')}
+              style={panelStyle}
+            >
+              <h3 style={panelTitleStyle}>
+                <ShoppingCart size={16} aria-hidden="true" />
+                {t('detail.purchase.title')}
+              </h3>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+                  <span>{t('detail.purchase.wasteRate')}: {Math.round(wasteRate * 100)}%</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={0.3}
+                    step={0.01}
+                    value={wasteRate}
+                    onChange={e => setWasteRate(Number(e.target.value))}
+                    aria-label={t('detail.purchase.wasteRate')}
+                  />
+                  <span style={{ opacity: 0.6 }}>{t('detail.purchase.wasteHint', { pct: Math.round(wasteRate * 100) })}</span>
+                </label>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12 }}>
+                  <span>{t('detail.purchase.unitPrice')}: ¥{unitPrice.toFixed(2)}</span>
+                  <input
+                    type="range"
+                    min={0.01}
+                    max={0.5}
+                    step={0.01}
+                    value={unitPrice}
+                    onChange={e => setUnitPrice(Number(e.target.value))}
+                    aria-label={t('detail.purchase.unitPrice')}
+                  />
+                </label>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr>
+                      <th style={purchaseThStyle}>{t('detail.print.col.hex')}</th>
+                      <th style={purchaseThStyle}>{t('detail.print.col.name')}</th>
+                      <th style={purchaseThStyle}>{t('detail.csv.headerCount')}</th>
+                      <th style={purchaseThStyle}>{t('detail.purchase.totalBeads')}</th>
+                      <th style={purchaseThStyle}>{t('detail.purchase.unitPrice')}</th>
+                      <th style={purchaseThStyle}>{t('detail.print.col.count')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {purchaseItems.map(item => (
+                      <tr key={item.hex}>
+                        <td style={purchaseTdStyle}>
+                          <span aria-hidden="true" style={{ display: 'inline-block', width: 12, height: 12, background: item.hex, borderRadius: 2, marginRight: 4, verticalAlign: 'middle' }} />
+                          {item.hex}
+                          {item.brand ? ` (${item.brand})` : ''}
+                        </td>
+                        <td style={purchaseTdStyle}>{item.name}</td>
+                        <td style={purchaseTdStyle}>{item.count}</td>
+                        <td style={purchaseTdStyle}>{item.purchaseCount}</td>
+                        <td style={purchaseTdStyle}>¥{item.unitPrice.toFixed(2)}</td>
+                        <td style={purchaseTdStyle}>¥{item.subtotal.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ fontWeight: 600 }}>
+                      <td style={purchaseTdStyle} colSpan={2}>{t('detail.print.total')}</td>
+                      <td style={purchaseTdStyle}>{purchaseTotal.totalBeads}</td>
+                      <td style={purchaseTdStyle} colSpan={2}>{t('detail.purchase.totalCost')}</td>
+                      <td style={purchaseTdStyle}>¥{purchaseTotal.totalCost.toFixed(2)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleExportPurchaseCSV}
+                  style={ctrlBtnStyle}
+                >
+                  <Download size={14} aria-hidden="true" />
+                  <span>{t('detail.purchase.export')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTaobaoSearch}
+                  style={ctrlBtnStyle}
+                >
+                  <Search size={14} aria-hidden="true" />
+                  <span>{t('detail.purchase.buyOnTaobao')}</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {progressMode && (
             <div className="detail-page__progress-bar" role="region" aria-label={t('detail.progress.title')}>
@@ -1208,6 +1545,16 @@ export default function DetailPage({
         >
           ↑
         </button>
+      )}
+
+      {/* AR 预览：全屏覆盖层，通过 portal 渲染 */}
+      {showAR && (
+        <ARPreview
+          width={cols * 0.5}
+          height={rows * 0.5}
+          colors={template.colors}
+          onClose={() => setShowAR(false)}
+        />
       )}
 
       <Confetti trigger={confettiTrigger} />

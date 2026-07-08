@@ -24,6 +24,8 @@ interface PixelGridProps {
 
 /** 超过此阈值且非交互模式时改用 canvas 渲染，避免过多 DOM 节点 */
 const CANVAS_THRESHOLD = 1024;
+/** 超过此阈值视为超大网格（约 50×50+）：启用分块渲染、viewport culling，并关闭网格线/hover */
+const LARGE_GRID_THRESHOLD = 2500;
 
 /** 根据背景 hex 计算相对亮度，返回适合的前景色（黑/白） */
 function pickContrastText(hex: string): string {
@@ -36,7 +38,9 @@ function pickContrastText(hex: string): string {
   return L > 0.55 ? '#111' : '#fff';
 }
 
-/** Canvas 渲染大网格（非交互模式），显著减少 DOM 节点 */
+/** Canvas 渲染大网格（非交互模式），显著减少 DOM 节点。
+ *  超大网格（>LARGE_GRID_THRESHOLD）额外启用 requestAnimationFrame 分块绘制与 viewport culling，
+ *  避免一次性绘制导致主线程长时间阻塞。 */
 function PixelGridCanvas({
   grid,
   colors,
@@ -55,6 +59,14 @@ function PixelGridCanvas({
   title: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  // 暴露给 IntersectionObserver 回调使用的渲染调度器（ref 避免闭包陈旧）
+  const scheduleRenderRef = useRef<() => void>(() => {});
+
+  // 是否为超大网格：启用分块渲染 / viewport culling / 强制隐藏网格线
+  const isLargeGrid = rows * cols > LARGE_GRID_THRESHOLD;
+  // 超大网格强制隐藏网格线，避免绘制大量细线拖慢渲染
+  const effectiveShowGridLines = showGridLines && !isLargeGrid;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -65,9 +77,10 @@ function PixelGridCanvas({
     // 使用 devicePixelRatio 保证清晰度，上限 2 防止超大网格内存过高
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const cellSize = Math.max(2, Math.floor(512 / cols));
-    const gap = showGridLines ? 0 : 1;
-    const w = cols * (cellSize + gap) - (gap > 0 ? gap : 0);
-    const h = rows * (cellSize + gap) - (gap > 0 ? gap : 0);
+    const gap = effectiveShowGridLines ? 0 : 1;
+    const rowH = cellSize + gap;
+    const w = cols * rowH - (gap > 0 ? gap : 0);
+    const h = rows * rowH - (gap > 0 ? gap : 0);
 
     canvas.width = w * dpr;
     canvas.height = h * dpr;
@@ -78,42 +91,129 @@ function PixelGridCanvas({
     // 背景透明
     ctx.clearRect(0, 0, w, h);
 
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const v = grid[r]?.[c] ?? 0;
-        if (v <= 0) continue;
-        const color = colors[v - 1];
-        if (!color) continue;
-        ctx.fillStyle = color.hex;
-        const x = c * (cellSize + gap);
-        const y = r * (cellSize + gap);
-        ctx.fillRect(x, y, cellSize, cellSize);
+    // 绘制指定行范围 [from, to) 的格子
+    const drawRows = (from: number, to: number) => {
+      for (let r = from; r < to; r++) {
+        for (let c = 0; c < cols; c++) {
+          const v = grid[r]?.[c] ?? 0;
+          if (v <= 0) continue;
+          const color = colors[v - 1];
+          if (!color) continue;
+          ctx.fillStyle = color.hex;
+          ctx.fillRect(c * rowH, r * rowH, cellSize, cellSize);
+        }
       }
-    }
+    };
 
-    if (showGridLines) {
+    // 绘制网格线（仅非超大网格；超大网格已强制关闭）
+    const drawLines = () => {
+      if (!effectiveShowGridLines) return;
       ctx.strokeStyle = 'rgba(0,0,0,0.15)';
       ctx.lineWidth = 0.5;
       for (let r = 0; r <= rows; r++) {
-        const y = r * (cellSize + gap) - (r > 0 ? gap : 0);
+        const y = r * rowH - (r > 0 ? gap : 0);
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(w, y);
         ctx.stroke();
       }
       for (let c = 0; c <= cols; c++) {
-        const x = c * (cellSize + gap) - (c > 0 ? gap : 0);
+        const x = c * rowH - (c > 0 ? gap : 0);
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, h);
         ctx.stroke();
       }
+    };
+
+    // 非超大网格：保持原有同步绘制行为
+    if (!isLargeGrid) {
+      drawRows(0, rows);
+      drawLines();
+      return;
     }
-  }, [grid, colors, rows, cols, showGridLines]);
+
+    // ===== 超大网格：requestAnimationFrame 分块绘制 + viewport culling =====
+    // 视口上下缓冲行数，减少滚动时的白屏闪烁
+    const BUFFER_ROWS = 2;
+    // 每帧目标绘制约 1000 个格子，兼顾流畅度与吞吐量
+    const rowsPerFrame = Math.max(2, Math.ceil(1000 / cols));
+
+    // 计算当前视口内可见的行范围；canvas 完全在视口外时返回空范围
+    const computeVisibleRows = (): { start: number; end: number } => {
+      const rect = canvas.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      // canvas 完全在视口上方或下方 → 不可见
+      if (rect.bottom <= 0 || rect.top >= vh) return { start: 0, end: 0 };
+      const visStartY = Math.max(0, -rect.top);
+      const visEndY = Math.min(rect.height, vh - rect.top);
+      if (visEndY <= visStartY) return { start: 0, end: 0 };
+      const start = Math.max(0, Math.floor(visStartY / rowH) - BUFFER_ROWS);
+      const end = Math.min(rows, Math.ceil(visEndY / rowH) + BUFFER_ROWS);
+      return { start, end };
+    };
+
+    // 记录每行是否已绘制，避免重复绘制
+    const rendered = new Array<boolean>(rows).fill(false);
+    let rafId = 0;
+
+    const step = () => {
+      rafId = 0;
+      const vis = computeVisibleRows();
+      // canvas 当前不可见：跳过绘制，等待进入视口（由 IO / scroll 触发）
+      if (vis.end <= vis.start) return;
+      // 优先绘制可见区域内尚未绘制的行
+      let drawn = 0;
+      for (let r = vis.start; r < vis.end && drawn < rowsPerFrame; r++) {
+        if (!rendered[r]) {
+          drawRows(r, r + 1);
+          rendered[r] = true;
+          drawn++;
+        }
+      }
+      // 仍有可见行未绘制 → 下一帧继续
+      if (drawn > 0) {
+        rafId = requestAnimationFrame(step);
+      }
+    };
+
+    const schedule = () => {
+      if (rafId) return; // 已有调度中，避免重复入队
+      rafId = requestAnimationFrame(step);
+    };
+    scheduleRenderRef.current = schedule;
+
+    schedule();
+
+    // 滚动 / 缩放时重新评估可见区域并补绘新进入视口的行
+    const onViewportChange = () => schedule();
+    window.addEventListener('scroll', onViewportChange, { passive: true });
+    window.addEventListener('resize', onViewportChange);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onViewportChange);
+      window.removeEventListener('resize', onViewportChange);
+      scheduleRenderRef.current = () => {};
+    };
+  }, [grid, colors, rows, cols, effectiveShowGridLines, isLargeGrid]);
+
+  // IntersectionObserver：canvas 进入视口时触发渲染（处理初始位于视口外的场景）
+  useEffect(() => {
+    if (!isLargeGrid) return;
+    const el = wrapRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) scheduleRenderRef.current();
+    }, { rootMargin: '100px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isLargeGrid]);
 
   return (
     <div
-      className="pixel-grid pixel-grid--canvas"
+      ref={wrapRef}
+      className={`pixel-grid pixel-grid--canvas${isLargeGrid ? ' pixel-grid--large' : ''}`}
       role="img"
       aria-label={ariaLabel}
       title={title}
@@ -148,8 +248,15 @@ function PixelGrid({
   const ariaColsVal = ariaCols ?? cols;
   const ariaRowsVal = ariaRows ?? rows;
 
+  const cellCount = rows * cols;
+  const isLargeGrid = cellCount > LARGE_GRID_THRESHOLD;
+  // 超大网格强制隐藏网格线（DOM 与 canvas 路径一致），降低渲染与绘制开销
+  const effectiveShowGridLines = showGridLines && !isLargeGrid;
+  // 超大交互网格禁用 hover 反馈（不显示 pointer 光标）
+  const disableHover = isLargeGrid && interactive;
+
   // 大网格非交互模式改用 canvas 渲染
-  const useCanvas = !interactive && rows * cols > CANVAS_THRESHOLD;
+  const useCanvas = !interactive && cellCount > CANVAS_THRESHOLD;
   const ariaLabel = t('pixelGrid.ariaLabel', { count: ariaCount });
   const ariaTitle = t('pixelGrid.title', { cols: ariaColsVal, rows: ariaRowsVal, count: ariaCount });
 
@@ -208,11 +315,11 @@ function PixelGrid({
   return (
     <div
       ref={gridRef}
-      className={`pixel-grid ${className} ${showGridLines ? 'pixel-grid--lined' : ''} ${interactive ? 'pixel-grid--interactive' : ''}`}
+      className={`pixel-grid ${className} ${effectiveShowGridLines ? 'pixel-grid--lined' : ''} ${interactive ? 'pixel-grid--interactive' : ''} ${isLargeGrid ? 'pixel-grid--large' : ''}`}
       style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        gap: showGridLines ? '0' : '1px',
+        gap: effectiveShowGridLines ? '0' : '1px',
         width: 'fit-content',
         maxWidth: '100%',
       }}
@@ -240,9 +347,9 @@ function PixelGrid({
               style={{
                 backgroundColor: color ? color.hex : 'transparent',
                 aspectRatio: '1',
-                borderRadius: showGridLines ? '0' : '2px',
-                outline: showGridLines ? '0.5px solid var(--pixel-line, rgba(0,0,0,0.15))' : 'none',
-                cursor: interactive && !isEmpty ? 'pointer' : 'default',
+                borderRadius: effectiveShowGridLines ? '0' : '2px',
+                outline: effectiveShowGridLines ? '0.5px solid var(--pixel-line, rgba(0,0,0,0.15))' : 'none',
+                cursor: disableHover ? 'default' : interactive && !isEmpty ? 'pointer' : 'default',
                 position: 'relative',
                 opacity: isCompleted ? 0.45 : 1,
               }}

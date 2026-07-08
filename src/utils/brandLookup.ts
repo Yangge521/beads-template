@@ -1,16 +1,17 @@
 import { BEAD_COLOR_GROUPS, type BeadColor } from '../data/beadColors';
 
 /** 品牌键类型 */
-export type BrandKey = 'perler' | 'artkal' | 'hama' | 'mixiaowo' | 'manman' | 'coco';
+export type BrandKey = 'perler' | 'artkal' | 'hama' | 'nabbi' | 'mixiaowo' | 'manman' | 'coco';
 
 /** 所有品牌键（用于遍历） */
-export const ALL_BRAND_KEYS: BrandKey[] = ['perler', 'artkal', 'hama', 'mixiaowo', 'manman', 'coco'];
+export const ALL_BRAND_KEYS: BrandKey[] = ['perler', 'artkal', 'hama', 'nabbi', 'mixiaowo', 'manman', 'coco'];
 
 /** 品牌显示名称 i18n 键 */
 export const BRAND_LABEL_KEYS: Record<BrandKey, string> = {
   perler: 'colorRef.brand.perler',
   artkal: 'colorRef.brand.artkal',
   hama: 'colorRef.brand.hama',
+  nabbi: 'colorRef.brand.nabbi',
   mixiaowo: 'colorRef.brand.mixiaowo',
   manman: 'colorRef.brand.manman',
   coco: 'colorRef.brand.coco',

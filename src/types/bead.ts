@@ -32,6 +32,14 @@ export interface BeadTemplate {
   author?: string;
   /** 来源标识：builtin 内置 | upload 上传生成 | ai AI 生成 | imported 导入 */
   origin?: 'builtin' | 'upload' | 'ai' | 'imported';
+  /** Remix/Fork 派生来源：父模板 ID */
+  originParentId?: string;
+  /** Remix/Fork 派生来源：父模板名称 */
+  originParentName?: string;
+  /** 派生深度（0=原创，1=一次 Remix，2=Remix 的 Remix...） */
+  remixDepth?: number;
+  /** 是否为 Remix 模板 */
+  isRemix?: boolean;
 }
 
 /** 数据 schema 版本号，用于备份导入时的兼容性判断 */
