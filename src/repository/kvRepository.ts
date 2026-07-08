@@ -16,6 +16,7 @@ export interface KVRepository {
 /** localStorage KV Repository 实现 */
 export class LocalKVRepository implements KVRepository {
   get<T>(key: string, fallback: T): T {
+    if (typeof localStorage === 'undefined') return fallback;
     try {
       const data = localStorage.getItem(key);
       if (!data) return fallback;
@@ -26,6 +27,7 @@ export class LocalKVRepository implements KVRepository {
   }
 
   set<T>(key: string, value: T): boolean {
+    if (typeof localStorage === 'undefined') return false;
     try {
       localStorage.setItem(key, JSON.stringify(value));
       return true;
@@ -35,6 +37,7 @@ export class LocalKVRepository implements KVRepository {
   }
 
   remove(key: string): void {
+    if (typeof localStorage === 'undefined') return;
     try {
       localStorage.removeItem(key);
     } catch {
@@ -43,6 +46,7 @@ export class LocalKVRepository implements KVRepository {
   }
 
   keys(): string[] {
+    if (typeof localStorage === 'undefined') return [];
     const result: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

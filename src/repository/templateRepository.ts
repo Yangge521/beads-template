@@ -33,6 +33,7 @@ export interface TemplateRepository extends TemplateReadRepository, TemplateWrit
 const CUSTOM_TEMPLATES_KEY = 'beads-custom-templates';
 
 function safeParse<T>(key: string, fallback: T): T {
+  if (typeof localStorage === 'undefined') return fallback;
   try {
     const data = localStorage.getItem(key);
     if (!data) return fallback;
@@ -43,6 +44,7 @@ function safeParse<T>(key: string, fallback: T): T {
 }
 
 function safeWrite(key: string, value: unknown): boolean {
+  if (typeof localStorage === 'undefined') return false;
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;

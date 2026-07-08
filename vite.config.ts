@@ -3,22 +3,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    // 生产环境移除 console.log/debug（保留 console.error/warn）
-    {
-      name: 'remove-console',
-      apply: 'build',
-      renderChunk(code) {
-        if (process.env.NODE_ENV !== 'production') return null;
-        // 将 console.log/console.debug 调用替换为 void 0
-        const transformed = code
-          .replace(/console\.(log|debug)\(/g, 'void(')
-          .replace(/\/\/# sourceMappingURL=/g, '//# sourceMappingURL=');
-        return { code: transformed, map: null };
-      },
-    },
-  ],
+  plugins: [react()],
   // 部署到 GitHub Pages 项目站点 https://yangge521.github.io/beads-template/
   // 本地开发时 dev server 自动忽略 base，访问 http://localhost:5173 正常
   base: '/beads-template/',

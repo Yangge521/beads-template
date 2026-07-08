@@ -48,6 +48,18 @@ export function getStorageUsage(): StorageQuotaStatus {
   const usage: StorageUsage[] = [];
   let totalBytes = 0;
 
+  // 防护：localStorage 可能不可用（隐私模式/SSR）
+  if (typeof localStorage === 'undefined') {
+    return {
+      totalBytes: 0,
+      totalKB: 0,
+      totalMB: 0,
+      usage,
+      status: 'ok',
+      cleanableKeys: [],
+    };
+  }
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key) continue;
@@ -89,6 +101,7 @@ export function getStorageUsage(): StorageQuotaStatus {
  */
 export function cleanStorage(): number {
   let freed = 0;
+  if (typeof localStorage === 'undefined') return 0;
   const status = getStorageUsage();
   for (const key of status.cleanableKeys) {
     try {
@@ -107,6 +120,7 @@ export function cleanStorage(): number {
  * @returns true 写入成功，false 写入失败
  */
 export function safeWriteStorage<T>(key: string, value: T): boolean {
+  if (typeof localStorage === 'undefined') return false;
   const json = JSON.stringify(value);
   try {
     localStorage.setItem(key, json);

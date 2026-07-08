@@ -84,8 +84,9 @@ export function useBuiltinTemplates(): UseBuiltinTemplatesResult {
         };
 
         // 使用 requestIdleCallback 在空闲时加载，不支持时用 setTimeout 兜底
-        if ('requestIdleCallback' in window) {
-          (window as Window).requestIdleCallback(loadDeferred, { timeout: 3000 });
+        const ric = (window as unknown as { requestIdleCallback?: typeof window.requestIdleCallback }).requestIdleCallback;
+        if (typeof ric === 'function') {
+          ric(loadDeferred, { timeout: 3000 });
         } else {
           setTimeout(loadDeferred, 200);
         }
