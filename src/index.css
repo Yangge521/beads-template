@@ -480,7 +480,7 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
 
 .template-card:hover {
   transform: translateY(-4px) scale(1.012);
-  box-shadow: var(--shadow-hover);
+  box-shadow: var(--shadow-hover), 0 0 0 1px var(--accent-bg);
   border-color: transparent;
 }
 
@@ -495,7 +495,8 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
   display: flex;
   justify-content: center;
   align-items: center;
-  background: var(--code-bg);
+  background: linear-gradient(135deg, var(--code-bg) 0%, var(--bg-secondary) 100%);
+  overflow: hidden;
 }
 
 .template-card__cover {
@@ -618,6 +619,44 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
 .pixel-cell {
   aspect-ratio: 1;
   border-radius: 2px;
+}
+
+/* 立体豆子光泽：顶部高光 + 底部阴影模拟塑料半球体质感 */
+.pixel-cell--bead {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12);
+}
+
+/* Canvas 大网格全局光照高光层：左上角径向高光模拟光源 */
+.pixel-grid--canvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 30% 22%,
+    rgba(255, 255, 255, 0.14) 0%,
+    transparent 55%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 配色预览条：缩略图底部展示 top 6 颜色，丰富浏览信息 */
+.template-card__palette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  height: 5px;
+  overflow: hidden;
+}
+.template-card__palette-dot {
+  flex: 1;
+  height: 100%;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.25);
 }
 
 .pixel-grid--interactive {
@@ -2341,6 +2380,15 @@ h3 { font-size: clamp(18px, 2vw, 22px); }
 }
 [data-theme="dark"] .pixel-grid--lined {
   --pixel-line: rgba(255, 255, 255, 0.15);
+}
+
+/* 暗色模式：降低 Canvas 高光层强度，避免过亮 */
+[data-theme="dark"] .pixel-grid--canvas::after {
+  background: radial-gradient(
+    ellipse at 30% 22%,
+    rgba(255, 255, 255, 0.08) 0%,
+    transparent 55%
+  );
 }
 
 /* Zoom button active state */

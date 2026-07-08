@@ -91,6 +91,11 @@ function PixelGridCanvas({
     // 背景透明
     ctx.clearRect(0, 0, w, h);
 
+    // 圆角豆子：cellSize 足够大且非超大网格时使用 roundRect 绘制，模拟真实拼豆圆柱外观
+    const supportsRoundRect = typeof ctx.roundRect === 'function';
+    const useRoundRect = cellSize >= 6 && !isLargeGrid && supportsRoundRect;
+    const beadRadius = useRoundRect ? Math.max(1, cellSize * 0.18) : 0;
+
     // 绘制指定行范围 [from, to) 的格子
     const drawRows = (from: number, to: number) => {
       for (let r = from; r < to; r++) {
@@ -100,7 +105,15 @@ function PixelGridCanvas({
           const color = colors[v - 1];
           if (!color) continue;
           ctx.fillStyle = color.hex;
-          ctx.fillRect(c * rowH, r * rowH, cellSize, cellSize);
+          const x = c * rowH;
+          const y = r * rowH;
+          if (useRoundRect) {
+            ctx.beginPath();
+            ctx.roundRect(x, y, cellSize, cellSize, beadRadius);
+            ctx.fill();
+          } else {
+            ctx.fillRect(x, y, cellSize, cellSize);
+          }
         }
       }
     };
@@ -343,11 +356,11 @@ function PixelGrid({
               data-r={ri}
               data-c={ci}
               data-filled={isEmpty ? 'false' : 'true'}
-              className={`pixel-cell ${isCompleted ? 'pixel-cell--completed' : ''}`}
+              className={`pixel-cell ${isCompleted ? 'pixel-cell--completed' : ''} ${!effectiveShowGridLines && !isCompleted ? 'pixel-cell--bead' : ''}`}
               style={{
                 backgroundColor: color ? color.hex : 'transparent',
                 aspectRatio: '1',
-                borderRadius: effectiveShowGridLines ? '0' : '2px',
+                borderRadius: effectiveShowGridLines ? '0' : '3px',
                 outline: effectiveShowGridLines ? '0.5px solid var(--pixel-line, rgba(0,0,0,0.15))' : 'none',
                 cursor: disableHover ? 'default' : interactive && !isEmpty ? 'pointer' : 'default',
                 position: 'relative',

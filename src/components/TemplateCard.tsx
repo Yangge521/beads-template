@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import type { BeadTemplate } from '../types/bead';
 import PixelGrid from './PixelGrid';
 import FavoriteButton from './FavoriteButton';
@@ -63,10 +63,24 @@ function TemplateCard({
   const cols = rows > 0 ? template.grid[0].length : 0;
   const beadCount = getBeadCount(template);
 
-  // Show a thumbnail by using a smaller grid (max 10x10)
+  // 封面图加载失败时回退到 PixelGrid 缩略图
+  const [imgError, setImgError] = useState(false);
+
+  // 居中裁切缩略图：取网格中心区域 max 10×10，避免左上角切片丢失主体
   const thumbRows = Math.min(rows, 10);
   const thumbCols = Math.min(cols, 10);
-  const thumbGrid = template.grid.slice(0, thumbRows).map(r => r.slice(0, thumbCols));
+  const startRow = Math.max(0, Math.floor((rows - thumbRows) / 2));
+  const startCol = Math.max(0, Math.floor((cols - thumbCols) / 2));
+  const thumbGrid = template.grid
+    .slice(startRow, startRow + thumbRows)
+    .map(r => r.slice(startCol, startCol + thumbCols));
+
+  // 配色预览条：取用量最多的前 6 种颜色，一眼展示模板配色方案
+  const palette = useMemo(() => {
+    return [...template.colors]
+      .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
+      .slice(0, 6);
+  }, [template.colors]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -84,16 +98,13 @@ function TemplateCard({
       tabIndex={0}
     >
       <div className="template-card__thumb">
-        {template.image ? (
+        {template.image && !imgError ? (
           <img
             className="template-card__cover"
             src={`${import.meta.env.BASE_URL}${template.image}`}
             alt={template.name}
             loading="lazy"
-            onError={(e) => {
-              // 图片加载失败时回退到 PixelGrid 缩略图
-              (e.currentTarget as HTMLImageElement).style.display = 'none';
-            }}
+            onError={() => setImgError(true)}
           />
         ) : (
           <PixelGrid grid={thumbGrid} colors={template.colors} />
@@ -104,6 +115,18 @@ function TemplateCard({
         >
           {diffLabel}
         </span>
+        {/* 配色预览条：展示模板 top 6 颜色，丰富浏览信息 */}
+        {palette.length > 0 && (
+          <div className="template-card__palette" aria-hidden="true">
+            {palette.map(c => (
+              <span
+                key={c.hex}
+                className="template-card__palette-dot"
+                style={{ backgroundColor: c.hex }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="template-card__info">
