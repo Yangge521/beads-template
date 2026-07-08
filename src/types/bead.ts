@@ -20,7 +20,22 @@ export interface BeadTemplate {
   source: string;
   /** 封面图路径（SVG/JPG/PNG），相对 public 根；缺省时回退到 PixelGrid 缩略图 */
   image?: string;
+  /** 模板标识码（用于跨设备/服务端去重，如 gen-xxxx 或 sha 短摘要） */
+  code?: string;
+  /** 创建时间 ISO 字符串（自定义模板有值，内置模板可省略） */
+  createdAt?: string;
+  /** 最后更新时间 ISO 字符串 */
+  updatedAt?: string;
+  /** 数据 schema 版本号，用于未来数据迁移（当前版本 2） */
+  version?: number;
+  /** 作者标识（用户自定义模板可填本地用户名，未来对接用户系统） */
+  author?: string;
+  /** 来源标识：builtin 内置 | upload 上传生成 | ai AI 生成 | imported 导入 */
+  origin?: 'builtin' | 'upload' | 'ai' | 'imported';
 }
+
+/** 数据 schema 版本号，用于备份导入时的兼容性判断 */
+export const DATA_SCHEMA_VERSION = 2;
 
 export interface Category {
   id: string;

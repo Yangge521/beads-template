@@ -332,5 +332,9 @@ export function buildTemplateFromImage(
     difficulty: size <= 16 ? 'easy' : size <= 28 ? 'medium' : 'hard',
     tags: labels?.tags ?? ['image', 'custom'],
     source: labels?.source ?? 'Upload',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    version: 2,
+    origin: 'upload' as const,
   };
 }

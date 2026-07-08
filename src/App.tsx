@@ -11,6 +11,18 @@ const CommunityPage = lazy(() => import('./pages/CommunityPage'));
 const ComparePage = lazy(() => import('./pages/ComparePage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 import ErrorBoundary from './components/ErrorBoundary';
+
+// 注册路由 lazy chunk 用于 hover 预加载
+import { registerLazyChunk } from './hooks/usePrefetch';
+registerLazyChunk('template', () => import('./pages/DetailPage'));
+registerLazyChunk('favorites', () => import('./pages/FavoritesPage'));
+registerLazyChunk('colors', () => import('./pages/ColorReferencePage'));
+registerLazyChunk('upload', () => import('./pages/UploadPage'));
+registerLazyChunk('editor', () => import('./pages/EditorPage'));
+registerLazyChunk('ai', () => import('./pages/AIGeneratePage'));
+registerLazyChunk('community', () => import('./pages/CommunityPage'));
+registerLazyChunk('compare', () => import('./pages/ComparePage'));
+registerLazyChunk('profile', () => import('./pages/ProfilePage'));
 import ToastContainer, { useToast } from './components/ToastContainer';
 import ShortcutHelp from './components/ShortcutHelp';
 import PageTransition from './components/PageTransition';

@@ -5,6 +5,7 @@
  */
 
 import type { BeadTemplate, FavoriteEntry } from '../types/bead';
+import { DATA_SCHEMA_VERSION } from '../types/bead';
 
 const FAVORITES_KEY = 'beads-favorites';
 const RECENT_KEY = 'beads-recently-viewed';
@@ -16,7 +17,7 @@ const PROGRESS_KEY = 'beads-progress';
 
 export interface ExportPayload {
   __type: 'beads-template-backup';
-  __version: 1;
+  __version: number;
   __exportedAt: string;
   favorites: FavoriteEntry[];
   recentlyViewed: string[];
@@ -40,7 +41,7 @@ function readJson<T>(key: string, fallback: T): T {
 export function exportUserData(): ExportPayload {
   return {
     __type: 'beads-template-backup',
-    __version: 1,
+    __version: DATA_SCHEMA_VERSION,
     __exportedAt: new Date().toISOString(),
     favorites: readJson<FavoriteEntry[]>(FAVORITES_KEY, []),
     recentlyViewed: readJson<string[]>(RECENT_KEY, []),
@@ -96,6 +97,32 @@ function isValidFavoriteEntry(e: unknown): e is FavoriteEntry {
   return !!e && typeof e === 'object' && typeof (e as FavoriteEntry).templateId === 'string';
 }
 
+/**
+ * 备份数据版本迁移
+ * v1 -> v2：补齐自定义模板的 createdAt/version/origin 元数据
+ */
+function migrateBackup(data: Record<string, unknown>, fromVersion: number): Record<string, unknown> {
+  const result = { ...data };
+  if (fromVersion < 2) {
+    // v1 -> v2：为自定义模板补齐元数据字段
+    const templates = Array.isArray(result.customTemplates) ? result.customTemplates : [];
+    const now = new Date().toISOString();
+    result.customTemplates = templates.map((t: unknown) => {
+      if (!t || typeof t !== 'object') return t;
+      const tpl = t as Record<string, unknown>;
+      return {
+        ...tpl,
+        createdAt: tpl.createdAt ?? now,
+        updatedAt: tpl.updatedAt ?? now,
+        version: 2,
+        origin: tpl.origin ?? 'imported',
+      };
+    });
+  }
+  result.__version = DATA_SCHEMA_VERSION;
+  return result;
+}
+
 /** 解析并校验导入的 JSON 文本 */
 export function parseBackupFile(text: string): ExportPayload | null {
   try {
@@ -103,18 +130,23 @@ export function parseBackupFile(text: string): ExportPayload | null {
     if (!parsed || typeof parsed !== 'object') return null;
     // 兼容：必须含 __type 标识或包含已知字段
     if (parsed.__type !== 'beads-template-backup' && !('favorites' in parsed)) return null;
-    const rawFavorites = Array.isArray(parsed.favorites) ? parsed.favorites : [];
-    const rawRecent = Array.isArray(parsed.recentlyViewed) ? parsed.recentlyViewed : [];
-    const rawCustom = Array.isArray(parsed.customTemplates) ? parsed.customTemplates : [];
-    const rawLikes = Array.isArray(parsed.likes) ? parsed.likes : [];
-    const rawRatings = (parsed.ratings && typeof parsed.ratings === 'object' && !Array.isArray(parsed.ratings)) ? parsed.ratings : {};
+
+    // 版本迁移：v1 -> v2（补齐自定义模板的 createdAt/version/origin 等元数据）
+    const version = typeof parsed.__version === 'number' ? parsed.__version : 1;
+    const migrated = version < DATA_SCHEMA_VERSION ? migrateBackup(parsed, version) : parsed;
+
+    const rawFavorites = Array.isArray(migrated.favorites) ? migrated.favorites : [];
+    const rawRecent = Array.isArray(migrated.recentlyViewed) ? migrated.recentlyViewed : [];
+    const rawCustom = Array.isArray(migrated.customTemplates) ? migrated.customTemplates : [];
+    const rawLikes = Array.isArray(migrated.likes) ? migrated.likes : [];
+    const rawRatings = (migrated.ratings && typeof migrated.ratings === 'object' && !Array.isArray(migrated.ratings)) ? migrated.ratings : {};
     const cleanRatings: Record<string, number> = {};
     for (const [k, v] of Object.entries(rawRatings)) {
       if (typeof k === 'string' && typeof v === 'number' && v >= 1 && v <= 5) {
         cleanRatings[k] = Math.floor(v);
       }
     }
-    const rawProgress = (parsed.progress && typeof parsed.progress === 'object' && !Array.isArray(parsed.progress)) ? parsed.progress : {};
+    const rawProgress = (migrated.progress && typeof migrated.progress === 'object' && !Array.isArray(migrated.progress)) ? migrated.progress : {};
     const cleanProgress: Record<string, string[]> = {};
     for (const [k, v] of Object.entries(rawProgress)) {
       if (typeof k === 'string' && Array.isArray(v)) {
@@ -124,15 +156,15 @@ export function parseBackupFile(text: string): ExportPayload | null {
     }
     return {
       __type: 'beads-template-backup',
-      __version: parsed.__version || 1,
-      __exportedAt: parsed.__exportedAt || new Date().toISOString(),
+      __version: DATA_SCHEMA_VERSION,
+      __exportedAt: migrated.__exportedAt || new Date().toISOString(),
       favorites: rawFavorites.filter(isValidFavoriteEntry),
       recentlyViewed: rawRecent.filter((r: unknown): r is string => typeof r === 'string'),
       customTemplates: rawCustom.filter(isValidTemplate),
       likes: rawLikes.filter((l: unknown): l is string => typeof l === 'string'),
       ratings: cleanRatings,
       progress: cleanProgress,
-      theme: typeof parsed.theme === 'string' ? parsed.theme : null,
+      theme: typeof migrated.theme === 'string' ? migrated.theme : null,
     };
   } catch {
     return null;

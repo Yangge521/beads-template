@@ -37,7 +37,15 @@ export function useCustomTemplates() {
   useStorageSync(STORAGE_KEY, () => setTemplates(loadCustomTemplates()));
 
   const addTemplate = useCallback((template: Omit<BeadTemplate, 'id'>): BeadTemplate => {
-    const newTemplate: BeadTemplate = { ...template, id: genId() };
+    const now = new Date().toISOString();
+    const newTemplate: BeadTemplate = {
+      ...template,
+      id: genId(),
+      createdAt: template.createdAt ?? now,
+      updatedAt: now,
+      version: 2,
+      origin: template.origin ?? 'imported',
+    };
     setTemplates(prev => {
       const next = [newTemplate, ...prev];
       saveCustomTemplates(next);
