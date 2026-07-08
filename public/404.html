@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./icon-192.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="拼豆模板收集 — 收录动漫、游戏、食物、动物、节日等分类的像素拼豆图案模板，提供色卡、网格预览、收藏与快捷搜索。" />
+    <meta name="keywords" content="拼豆,Perler Bead,像素画,色卡,模板,拼豆图案" />
+    <meta name="theme-color" content="#ef4444" />
+    <meta property="og:title" content="拼豆收集 - Perler Bead Templates" />
+    <meta property="og:description" content="收录动漫、游戏、食物等分类的像素拼豆图案模板，提供色卡与网格预览。" />
+    <meta property="og:type" content="website" />
+    <title>拼豆收集 - Perler Bead Templates</title>
+    <script>
+      // GitHub Pages SPA fallback：404 时将无 hash 路径转为 hash 路由
+      // 例如 /beads-template/template/anime-xxx -> /beads-template/#/template/anime-xxx
+      (function () {
+        var path = window.location.pathname.replace(/\/+$/, '');
+        var base = '/beads-template';
+        if (path.length > base.length) {
+          var rest = path.slice(base.length);
+          window.location.replace(base + '/#' + rest + window.location.search);
+          return;
+        }
+        // 兜底：回到首页
+        window.location.replace(base + '/');
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <p style="text-align:center;padding:2rem;font-family:sans-serif">正在跳转…</p>
+  </body>
+</html>
