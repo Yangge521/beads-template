@@ -738,57 +738,68 @@
       {
         "name": "深褐背景",
         "hex": "#2B1810",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 230
       },
       {
         "name": "暖褐背景",
         "hex": "#5C3A1E",
-        "code": "P-22"
+        "code": "P-22",
+        "count": 50
       },
       {
         "name": "头发深褐",
         "hex": "#3D2817",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 64
       },
       {
         "name": "头发亮褐",
         "hex": "#8B5A2B",
-        "code": "P-47"
+        "code": "P-47",
+        "count": 34
       },
       {
         "name": "肤色浅",
         "hex": "#F2D5A8",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 60
       },
       {
         "name": "肤色影",
         "hex": "#C4956A",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 72
       },
       {
         "name": "衣墨绿",
         "hex": "#2A3D2A",
-        "code": "P-19"
+        "code": "P-19",
+        "count": 100
       },
       {
         "name": "衣暗红",
         "hex": "#4A2020",
-        "code": "P-24"
+        "code": "P-24",
+        "count": 12
       },
       {
         "name": "雾纱金",
         "hex": "#B89968",
-        "code": "P-45"
+        "code": "P-45",
+        "count": 30
       },
       {
         "name": "唇红",
         "hex": "#8B3A3A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 12
       },
       {
         "name": "眼黑",
         "hex": "#1A1A1A",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 4
       }
     ],
     "beadCount": 668,
@@ -1541,62 +1552,74 @@
       {
         "name": "湛蓝背景",
         "hex": "#1E3A5F",
-        "code": "P-61"
+        "code": "P-61",
+        "count": 195
       },
       {
         "name": "浅蓝旋涡",
         "hex": "#3B6EA5",
-        "code": "P-62"
+        "code": "P-62",
+        "count": 98
       },
       {
         "name": "草帽黄",
         "hex": "#E8C547",
-        "code": "P-52"
+        "code": "P-52",
+        "count": 54
       },
       {
         "name": "草帽深",
         "hex": "#B8902A",
-        "code": "P-46"
+        "code": "P-46",
+        "count": 33
       },
       {
         "name": "头发橘红",
         "hex": "#C13B1E",
-        "code": "P-22"
+        "code": "P-22",
+        "count": 12
       },
       {
         "name": "胡须橘",
         "hex": "#D45A2A",
-        "code": "P-25"
+        "code": "P-25",
+        "count": 22
       },
       {
         "name": "肤色浅",
         "hex": "#F0C8A0",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 60
       },
       {
         "name": "肤色影",
         "hex": "#B8845C",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 22
       },
       {
         "name": "衣深蓝",
         "hex": "#1A2A4A",
-        "code": "P-63"
+        "code": "P-63",
+        "count": 150
       },
       {
         "name": "衣浅蓝",
         "hex": "#2C4A7A",
-        "code": "P-62"
+        "code": "P-62",
+        "count": 16
       },
       {
         "name": "眼绿",
         "hex": "#4A7A4A",
-        "code": "P-71"
+        "code": "P-71",
+        "count": 2
       },
       {
         "name": "唇",
         "hex": "#8B4A3A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 4
       }
     ],
     "beadCount": 668,
@@ -2349,62 +2372,74 @@
       {
         "name": "深背景",
         "hex": "#1A1A2E",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 242
       },
       {
         "name": "头巾深蓝",
         "hex": "#1B3A6B",
-        "code": "P-63"
+        "code": "P-63",
+        "count": 66
       },
       {
         "name": "头巾浅蓝",
         "hex": "#3A6BA8",
-        "code": "P-62"
+        "code": "P-62",
+        "count": 52
       },
       {
         "name": "头巾高光",
         "hex": "#6B9BD8",
-        "code": "P-61"
+        "code": "P-61",
+        "count": 22
       },
       {
         "name": "肤色浅",
         "hex": "#F2D9B8",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 73
       },
       {
         "name": "肤色影",
         "hex": "#C49A6A",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 25
       },
       {
         "name": "黄衣亮",
         "hex": "#F0C419",
-        "code": "P-51"
+        "code": "P-51",
+        "count": 104
       },
       {
         "name": "黄衣深",
         "hex": "#C49A14",
-        "code": "P-46"
+        "code": "P-46",
+        "count": 62
       },
       {
         "name": "眼黑",
         "hex": "#2B2B2B",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 8
       },
       {
         "name": "唇红",
         "hex": "#8B2B3A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 4
       },
       {
         "name": "颈影",
         "hex": "#A8784A",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 8
       },
       {
         "name": "珍珠白",
         "hex": "#F0E8D8",
-        "code": "P-01"
+        "code": "P-01",
+        "count": 2
       }
     ],
     "beadCount": 668,
@@ -3157,57 +3192,68 @@
       {
         "name": "橙红天",
         "hex": "#E8642A",
-        "code": "P-41"
+        "code": "P-41",
+        "count": 175
       },
       {
         "name": "深橙天",
         "hex": "#C13B1E",
-        "code": "P-22"
+        "code": "P-22",
+        "count": 26
       },
       {
         "name": "黄天",
         "hex": "#F0A838",
-        "code": "P-42"
+        "code": "P-42",
+        "count": 155
       },
       {
         "name": "深蓝海",
         "hex": "#1A2A4A",
-        "code": "P-63"
+        "code": "P-63",
+        "count": 56
       },
       {
         "name": "海蓝",
         "hex": "#2A4A6A",
-        "code": "P-62"
+        "code": "P-62",
+        "count": 104
       },
       {
         "name": "肤色苍白",
         "hex": "#E8D5B8",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 37
       },
       {
         "name": "肤色影",
         "hex": "#B89878",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 30
       },
       {
         "name": "头发深",
         "hex": "#3A2A1A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 43
       },
       {
         "name": "眼黑",
         "hex": "#1A1A1A",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 8
       },
       {
         "name": "嘴黑",
         "hex": "#2A1A1A",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 12
       },
       {
         "name": "手苍白",
         "hex": "#D8C5A8",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 22
       }
     ],
     "beadCount": 668,
@@ -3960,57 +4006,68 @@
       {
         "name": "浅天蓝",
         "hex": "#8EC5E8",
-        "code": "P-61"
+        "code": "P-61",
+        "count": 158
       },
       {
         "name": "深海蓝",
         "hex": "#5A9BD4",
-        "code": "P-62"
+        "code": "P-62",
+        "count": 96
       },
       {
         "name": "贝壳粉",
         "hex": "#F5C5D8",
-        "code": "P-31"
+        "code": "P-31",
+        "count": 160
       },
       {
         "name": "贝壳白",
         "hex": "#FAE8E8",
-        "code": "P-01"
+        "code": "P-01",
+        "count": 30
       },
       {
         "name": "金发亮",
         "hex": "#F0D040",
-        "code": "P-52"
+        "code": "P-52",
+        "count": 88
       },
       {
         "name": "金发深",
         "hex": "#C49A20",
-        "code": "P-46"
+        "code": "P-46",
+        "count": 32
       },
       {
         "name": "肤色浅",
         "hex": "#F8DCAE",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 56
       },
       {
         "name": "肤色影",
         "hex": "#D4A878",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 38
       },
       {
         "name": "眼蓝",
         "hex": "#4A6A9A",
-        "code": "P-62"
+        "code": "P-62",
+        "count": 2
       },
       {
         "name": "唇粉",
         "hex": "#D8708A",
-        "code": "P-33"
+        "code": "P-33",
+        "count": 4
       },
       {
         "name": "海绿",
         "hex": "#6BB89A",
-        "code": "P-71"
+        "code": "P-71",
+        "count": 4
       }
     ],
     "beadCount": 668,
@@ -4651,57 +4708,68 @@
       {
         "name": "米色背景",
         "hex": "#E8DCC8",
-        "code": "P-02"
+        "code": "P-02",
+        "count": 150
       },
       {
         "name": "红头巾深",
         "hex": "#B81E2A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 72
       },
       {
         "name": "红头巾亮",
         "hex": "#E83A3A",
-        "code": "P-21"
+        "code": "P-21",
+        "count": 64
       },
       {
         "name": "头巾影",
         "hex": "#8B1A1A",
-        "code": "P-24"
+        "code": "P-24",
+        "count": 12
       },
       {
         "name": "肤色浅",
         "hex": "#F2D2B0",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 58
       },
       {
         "name": "肤色影",
         "hex": "#C49878",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 34
       },
       {
         "name": "衣黑",
         "hex": "#1A1A1A",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 108
       },
       {
         "name": "衣灰",
         "hex": "#3A3A3A",
-        "code": "P-14"
+        "code": "P-14",
+        "count": 50
       },
       {
         "name": "眼蓝",
         "hex": "#4A6AA8",
-        "code": "P-62"
+        "code": "P-62",
+        "count": 2
       },
       {
         "name": "唇红",
         "hex": "#8B2A2A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 4
       },
       {
         "name": "金发",
         "hex": "#D4A040",
-        "code": "P-45"
+        "code": "P-45",
+        "count": 2
       }
     ],
     "beadCount": 556,
@@ -5342,62 +5410,74 @@
       {
         "name": "褐色背景",
         "hex": "#2A1F18",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 210
       },
       {
         "name": "礼帽黑",
         "hex": "#1A1A1A",
-        "code": "P-12"
+        "code": "P-12",
+        "count": 63
       },
       {
         "name": "礼帽灰",
         "hex": "#4A4A4A",
-        "code": "P-15"
+        "code": "P-15",
+        "count": 9
       },
       {
         "name": "帽带红",
         "hex": "#8B1A1A",
-        "code": "P-24"
+        "code": "P-24",
+        "count": 12
       },
       {
         "name": "肤色浅",
         "hex": "#E8C8A0",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 60
       },
       {
         "name": "肤色影",
         "hex": "#B8885C",
-        "code": "P-48"
+        "code": "P-48",
+        "count": 20
       },
       {
         "name": "胡须棕",
         "hex": "#4A2A1A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 22
       },
       {
         "name": "西装黑",
         "hex": "#1A1A1A",
-        "code": "P-12"
+        "code": "P-12",
+        "count": 110
       },
       {
         "name": "西装深灰",
         "hex": "#2A2A2A",
-        "code": "P-14"
+        "code": "P-14",
+        "count": 38
       },
       {
         "name": "领白",
         "hex": "#E8E8E8",
-        "code": "P-01"
+        "code": "P-01",
+        "count": 8
       },
       {
         "name": "眼黑",
         "hex": "#0A0A0A",
-        "code": "P-12"
+        "code": "P-12",
+        "count": 2
       },
       {
         "name": "唇",
         "hex": "#6A3A2A",
-        "code": "P-23"
+        "code": "P-23",
+        "count": 2
       }
     ],
     "beadCount": 556,
@@ -6150,67 +6230,80 @@
       {
         "name": "深背景",
         "hex": "#0A0A1A",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 236
       },
       {
         "name": "霓虹紫",
         "hex": "#6A1B9E",
-        "code": "P-36"
+        "code": "P-36",
+        "count": 20
       },
       {
         "name": "霓虹青",
         "hex": "#00E5FF",
-        "code": "P-18"
+        "code": "P-18",
+        "count": 49
       },
       {
         "name": "霓虹粉",
         "hex": "#FF1B8B",
-        "code": "P-34"
+        "code": "P-34",
+        "count": 24
       },
       {
         "name": "机械灰",
         "hex": "#4A4A5A",
-        "code": "P-15"
+        "code": "P-15",
+        "count": 33
       },
       {
         "name": "机械深",
         "hex": "#2A2A3A",
-        "code": "P-14"
+        "code": "P-14",
+        "count": 106
       },
       {
         "name": "肤色苍白",
         "hex": "#C8C5D8",
-        "code": "P-04"
+        "code": "P-04",
+        "count": 61
       },
       {
         "name": "肤色影",
         "hex": "#8A87A8",
-        "code": "P-17"
+        "code": "P-17",
+        "count": 24
       },
       {
         "name": "头发黑蓝",
         "hex": "#1A1A3A",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 64
       },
       {
         "name": "头发霓虹",
         "hex": "#3A1B9E",
-        "code": "P-36"
+        "code": "P-36",
+        "count": 36
       },
       {
         "name": "眼红",
         "hex": "#FF2A2A",
-        "code": "P-21"
+        "code": "P-21",
+        "count": 7
       },
       {
         "name": "嘴",
         "hex": "#2A1A3A",
-        "code": "P-13"
+        "code": "P-13",
+        "count": 4
       },
       {
         "name": "电路金",
         "hex": "#FFD700",
-        "code": "P-44"
+        "code": "P-44",
+        "count": 4
       }
     ],
     "beadCount": 668,

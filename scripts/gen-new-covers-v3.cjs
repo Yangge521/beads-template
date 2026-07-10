@@ -8,8 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, 'src', 'data');
-const COVER_DIR = path.join(__dirname, 'public', 'covers');
+const DATA_DIR = path.join(__dirname, '..', 'src', 'data');
+const COVER_DIR = path.join(__dirname, '..', 'public', 'covers');
 
 // 分类主题色（背景渐变 + 装饰色 + 标签）
 const CATEGORY_THEMES = {
